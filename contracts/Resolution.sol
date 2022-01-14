@@ -2,23 +2,34 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
-import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IERC20Mintable is IERC20 {
+    function mint(address, uint256) external;
+}
+
 
 contract ShareholdersRegistry {
     mapping(address => bool) public shareholders;
 }
 
-/* ERC-20 + snapshot */
-abstract contract TelediskoToken is ERC20Snapshot, ERC20PresetMinterPauser {
-    uint256 public totalVotingTokens;
+interface Delegation {
+    function snapshot() external returns (uint);
+    function getDelegatedAt(address, uint256) external returns (address);
+    function getDelegatorsAt(address, uint256) external returns (address[] memory);
+    function getVotingPowerAt(address, uint256) external returns (uint256);
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) override(ERC20PresetMinterPauser, ERC20Snapshot) internal {}
 }
 
-contract Resolution {
-    TelediskoToken private token;
+// TODO:
+// - support resolutions with transfer of existing TT from DAO to addresses
+// - support resolutions with transfer of DAI from DAO to addresses
 
+contract Resolution {
+    address dao;
+
+    mapping(address=>address) public delegateTo;
+    mapping(address=>address[]) public delegateFrom;
 
     struct ResolutionType {
         uint256 quorum;
@@ -32,19 +43,21 @@ contract Resolution {
         bytes32 contentHash;
         uint256 timestamp;
         uint256 totalVotingTokens;
-        address[] forbiddenVoters;
+        address forbiddenVoter;
         address[] yesVoters;
         address[] noVoters;
         mapping(address => uint256) preference;
-        Transaction transaction;
+        Payout payout;
         // Derived:
         uint256 yes;
         uint256 no;
     }
 
-    struct Transaction {
-        uint256[] amounts;
+    struct Payout {
         address[] receivers;
+        uint256[] amounts;
+        IERC20Mintable token;
+        bool mint;
     }
 
     event Voted(
@@ -65,7 +78,8 @@ contract Resolution {
         _;
     }
 
-    modifier isVotingActive() {
+    modifier isVotingActive(uint256 resolutionId) {
+        // the resolution is within the voting time window
         _;
     }
 
@@ -78,11 +92,13 @@ contract Resolution {
     ];
 
     // contentHash contains the e-card digital signature
-    // QUESTION: arrays in method interfaces need to be bounded. Can we assume a maximum length for the ones given below? 
-    function createDraft(uint256 resolutionType, bytes32 contentHash, address[5] memory forbiddenVoters, uint256[100] memory amounts, uint256[100] memory receivers)
-        public onlyAdmin
-        returns (uint256 draftId)
-    {}
+    // QUESTION: arrays in method interfaces need to be bounded. Can we assume a maximum length for the ones given below?
+    function createDraft(
+        uint256 resolutionType,
+        bytes32 contentHash,
+        address forbiddenVoters,
+        Payout memory payout
+    ) public onlyAdmin returns (uint256 draftId) {}
 
     function getResolution(uint256 resolutionId) public view {
         // Returns details about the resolution and the state:
@@ -133,39 +149,68 @@ contract Resolution {
         if (yes * 100 >= absoluteQuorum) {}
     }
 
-
-    function vote(uint256 resolutionId, bool yes) public isVotingActive onlyValidContributor {
+    function vote(uint256 resolutionId, bool yes)
+        public
+        isVotingActive(resolutionId)
+        onlyValidContributor
+    {
         // if already voted, remove old vote
         // append sender to right voters list
         // update total votes count
         // store preference
 
         ResolutionContent storage resolution = resolutions[resolutionId];
-        uint256 votingTokens = resolution.preference[msg.sender];
-        if(votingTokens > 0) {
-            // if inside yesVoters, remove
-            // if inside noVoters, remove
-        }
-        else { 
-            resolution.totalVotingTokens += votingTokens;
-        }
-        
-        if(yes) {
-            resolution.yesVoters.push(msg.sender);
-        }
-        else {
-            resolution.noVoters.push(msg.sender);
+
+        uint256 votingPower = getVotingPower(msg.sender);
+
+        // getDelegators return only delegators that haven't voted in the meantime
+        // TODO: if you delegated someone and this someone already voted, we also have to remove the vote that that someone already put for us
+        address[] memory voters = getDelegators(msg.sender);
+
+        if (votingPower > 0) {
+            // if inside yesVoters, remove all delegators in yesVoters
+            // if inside noVoters, remove all delegators in noVoters
+        } else {
+            resolution.totalVotingTokens += votingPower;
         }
 
-        resolution.preference[msg.sender] = votingTokens;
+        for(uint i = 0; i < voters.length; i++) {
+            if (yes) {
+                resolution.yesVoters.push(voters[i]);
+            } else {
+                resolution.noVoters.push(voters[i]);
+            }
+        }
+
+        resolution.preference[msg.sender] = votingPower;
     }
 
-    function executeResolution(uint resolutionId) public onlyAdmin {
+    function executeResolution(uint256 resolutionId) public onlyAdmin {
         // for each receiver in the resolution, send the specified amount of tokens to them
-        Transaction storage transaction = resolutions[resolutionId].transaction;
-
-        for(uint i = 0; i < transaction.receivers.length; i++) {
-            token.mint(transaction.receivers[i], transaction.amounts[i]); 
+        Payout storage payout = resolutions[resolutionId].payout;
+        // test
+        if(payout.mint) {
+            for (uint256 i = 0; i < payout.receivers.length; i++) {
+                payout.token.mint(payout.receivers[i], payout.amounts[i]);
+            }
         }
+        else {
+            for (uint256 i = 0; i < payout.receivers.length; i++) {
+                payout.token.transferFrom(dao, payout.receivers[i], payout.amounts[i]);
+            }
+        }
+    }
+
+    function getVotingPower(address a) public returns (uint) {
+        
+    }
+
+    function getDelegators(address a) public returns (address[] memory) {
+        
+    }
+
+    function delegate(address delegated) external onlyValidContributor {
+        delegateTo[msg.sender] = delegated;
+        delegateFrom[delegated].push(msg.sender);
     }
 }

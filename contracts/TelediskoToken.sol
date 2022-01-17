@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract TelediskoToken is ERC20Snapshot {
     uint256 public totalVotingTokens;
-    uint256 constant OFFER_DURATION = 2 weeks; 
+    uint256 constant OFFER_DURATION = 2 weeks;
     address constant DAI_ADDRESS = 0x1111111111111111111111111111111111111111;
 
     //mapping(address => mapping(uint256 => uint256)) offers;
@@ -15,36 +15,44 @@ abstract contract TelediskoToken is ERC20Snapshot {
 
     mapping(address => Offer[]) offers;
 
-    mapping(address=>uint) allowance;
+    mapping(address => uint256) allowance;
 
     struct Offer {
-        uint ts;
-        uint amount;
+        uint256 ts;
+        uint256 amount;
     }
 
-    function isContributor(address a) internal view returns (bool) {
-        
-    }
+    function isContributor(address a) internal view returns (bool) {}
 
     modifier onlyContributor() {
         require(isContributor(_msgSender()), "TT: not a contributor");
         _;
     }
 
+    modifier onlyAdmin() {
+        _;
+    }
+
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    function mint(address, uint256) public {}
+    function mint(address, uint256) public onlyAdmin {}
 
-    function offer(uint amount) public onlyContributor {
-        require(balanceOf(_msgSender()) - offered[_msgSender()] >= amount, "TT: not enough balance");
+    function offer(uint256 amount) public onlyContributor {
+        require(
+            balanceOf(_msgSender()) - offered[_msgSender()] >= amount,
+            "TT: not enough balance"
+        );
         // Create offer
         offered[_msgSender()] += amount;
         // offers[_msgSender()][block.timestamp] = amount;
         // Add offers to various mappings
     }
 
-
-    function buy(address from, uint id, uint amount) public onlyContributor payable {
+    function buy(
+        address from,
+        uint256 id,
+        uint256 amount
+    ) public payable onlyContributor {
         // Contributor needs to call `approve` on the DAI contract
         IERC20 dai = IERC20(DAI_ADDRESS);
         Offer memory o = offers[from][id];
@@ -53,12 +61,16 @@ abstract contract TelediskoToken is ERC20Snapshot {
         _transfer(from, _msgSender(), amount);
     }
 
-    function updateAllowance(address contributor) public view returns (uint){
-        uint total;
+    function updateAllowance(address contributor)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 total;
         Offer[] storage contributorOffers = offers[contributor];
-        for(uint i=0; i<contributorOffers.length; i++){
+        for (uint256 i = 0; i < contributorOffers.length; i++) {
             Offer memory o = contributorOffers[i];
-            if (block.timestamp >= o.ts + OFFER_DURATION){
+            if (block.timestamp >= o.ts + OFFER_DURATION) {
                 total += o.amount;
             }
             // Remove offer from array
@@ -71,10 +83,13 @@ abstract contract TelediskoToken is ERC20Snapshot {
         address,
         uint256 amount
     ) internal view override {
-        if(isContributor(_msgSender())){
+        if (isContributor(_msgSender())) {
             updateAllowance(_msgSender());
         }
-        require(!isContributor(_msgSender()) || allowance[from] <= amount, "TelediskoToken: not enough allowance");
+        require(
+            !isContributor(_msgSender()) || allowance[from] <= amount,
+            "TelediskoToken: not enough allowance"
+        );
     }
 
     function _afterTokenTransfer(
@@ -82,7 +97,7 @@ abstract contract TelediskoToken is ERC20Snapshot {
         address,
         uint256 amount
     ) internal view override {
-        if(isContributor(_msgSender())){
+        if (isContributor(_msgSender())) {
             allowance[from] -= amount;
             offered[_msgSender()] -= amount;
         }

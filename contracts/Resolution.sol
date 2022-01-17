@@ -13,12 +13,25 @@ contract ShareholdersRegistry {
     mapping(address => bool) public shareholders;
 }
 
-interface Delegation {
-    function snapshot() external returns (uint);
-    function getDelegatedAt(address, uint256) external returns (address);
-    function getDelegatorsAt(address, uint256) external returns (address[] memory);
-    function getVotingPowerAt(address, uint256) external returns (uint256);
+abstract contract Delegation {
+    mapping(address=>address) public delegateTo;
+    mapping(address=>address[]) public delegateFrom;
 
+
+    function snapshot() external virtual returns (uint);
+    
+    function getDelegatedAt(address, uint256) external virtual returns (address);
+    function getDelegatorsAt(address, uint256) external virtual returns (address[] memory);
+    function getVotingPowerAt(address, uint256) external virtual returns (uint256);
+
+    function getDelegated(address) external virtual returns (address);
+    function getDelegators(address) external virtual returns (address[] memory);
+    function getVotingPower(address) external virtual returns (uint256);
+
+    function delegate(address delegated) external {
+        delegateTo[msg.sender] = delegated;
+        delegateFrom[delegated].push(msg.sender);
+    }
 }
 
 // TODO:
@@ -26,10 +39,8 @@ interface Delegation {
 // - support resolutions with transfer of DAI from DAO to addresses
 
 contract Resolution {
+    Delegation delegation;
     address dao;
-
-    mapping(address=>address) public delegateTo;
-    mapping(address=>address[]) public delegateFrom;
 
     struct ResolutionType {
         uint256 quorum;
@@ -161,11 +172,11 @@ contract Resolution {
 
         ResolutionContent storage resolution = resolutions[resolutionId];
 
-        uint256 votingPower = getVotingPower(msg.sender);
+        uint256 votingPower = delegation.getVotingPower(msg.sender);
 
         // getDelegators return only delegators that haven't voted in the meantime
         // TODO: if you delegated someone and this someone already voted, we also have to remove the vote that that someone already put for us
-        address[] memory voters = getDelegators(msg.sender);
+        address[] memory voters = delegation.getDelegators(msg.sender);
 
         if (votingPower > 0) {
             // if inside yesVoters, remove all delegators in yesVoters
@@ -199,18 +210,5 @@ contract Resolution {
                 payout.token.transferFrom(dao, payout.receivers[i], payout.amounts[i]);
             }
         }
-    }
-
-    function getVotingPower(address a) public returns (uint) {
-        
-    }
-
-    function getDelegators(address a) public returns (address[] memory) {
-        
-    }
-
-    function delegate(address delegated) external onlyValidContributor {
-        delegateTo[msg.sender] = delegated;
-        delegateFrom[delegated].push(msg.sender);
     }
 }

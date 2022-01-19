@@ -13,27 +13,6 @@ contract ShareholdersRegistry {
     mapping(address => bool) public shareholders;
 }
 
-abstract contract Delegation {
-    mapping(address=>address) public delegateTo;
-    mapping(address=>address[]) public delegateFrom;
-
-
-    function snapshot() external virtual returns (uint);
-    
-    function getDelegatedAt(address, uint256) external virtual returns (address);
-    function getDelegatorsAt(address, uint256) external virtual returns (address[] memory);
-    function getVotingPowerAt(address, uint256) external virtual returns (uint256);
-
-    function getDelegated(address) external virtual returns (address);
-    function getDelegators(address) external virtual returns (address[] memory);
-    function getVotingPower(address) external virtual returns (uint256);
-
-    function delegate(address delegated) external {
-        delegateTo[msg.sender] = delegated;
-        delegateFrom[delegated].push(msg.sender);
-    }
-}
-
 // TODO:
 // - support resolutions with transfer of existing TT from DAO to addresses
 // - support resolutions with transfer of DAI from DAO to addresses

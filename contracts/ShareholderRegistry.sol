@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // TODO: consider using this
-// import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-abstract contract Shareholder is ERC20Snapshot {
+contract ShareholderRegistry is ERC20Snapshot, AccessControl {
     // I as a founder* can transfer a share to a wallet and the wallet becomes an Investor
     // I as a founder* can elect a shareholder to either contributor or investor
     // I as a founder* can deactivate a shareholder share, hence their TT tokens for voting (after resolution) -> it's sufficient to set the role to ANON
@@ -19,27 +19,31 @@ abstract contract Shareholder is ERC20Snapshot {
     // I as a contributor-shareholder can use my TT to vote resolutions
     // I as an investor-shareholder cannot use my TT to vote resolutions
 
-    // Anon avoids being FOUNDER if not present in the `roles` mapping.
+    // Anon avoids being FOUNDER if not present in the `types` mapping.
 
     // Benjamin takes all the decisions in first months, assuming the role of
     // the "Resolution", to then delegate to the resolution contract what comes
     // next.
     // This is what zodiac calls "incremental decentralization".
-
-    address RESOLUTION_ADDRESS = address(0);
+    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     // Role should be snapshotted too
-    enum Role {
-        ANON,
-        FOUNDER,
+    enum Type {
         INVESTOR,
+        FOUNDER,
         CONTRIBUTOR
     }
 
-    mapping(address => Role) roles;
+    event TypeChanged(address indexed account);
 
-    modifier onlyFounder() {
-        _;
+    mapping(address => Type) types;
+
+    constructor() ERC20("TelediskoToken", "TT") {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
+
+    function mint(address account, uint256 amount) public onlyRole(MANAGER_ROLE) {
+        _mint(account, amount);
     }
 
     // ACL
@@ -48,7 +52,7 @@ abstract contract Shareholder is ERC20Snapshot {
     }
 
     function isInvestor(address a) public view returns (bool) {
-        return isFounderAt(a, 666);
+        return isInvestorAt(a, 666);
     }
 
     function isContributor(address a) public view returns (bool) {
@@ -59,16 +63,12 @@ abstract contract Shareholder is ERC20Snapshot {
         return isShareholderAt(a, 666);
     }
 
-    function isResolution(address a) public view returns (bool) {
-        return isResolutionAt(a, 666);
-    }
-
     function isFounderAt(address a, uint256 snapshotId)
         public
         view
         returns (bool)
     {
-        return roles[a] == Role.FOUNDER;
+        return isShareholderAt(a, snapshotId) && types[a] == Type.FOUNDER;
     }
 
     function isInvestorAt(address a, uint256 snapshotId)
@@ -76,7 +76,7 @@ abstract contract Shareholder is ERC20Snapshot {
         view
         returns (bool)
     {
-        return roles[a] == Role.INVESTOR;
+        return isShareholderAt(a, snapshotId);
     }
 
     function isContributorAt(address a, uint256 snapshotId)
@@ -84,7 +84,7 @@ abstract contract Shareholder is ERC20Snapshot {
         view
         returns (bool)
     {
-        return roles[a] == Role.CONTRIBUTOR;
+        return isShareholderAt(a, snapshotId) && types[a] == Type.CONTRIBUTOR;
     }
 
     function isShareholderAt(address a, uint256 snapshotId)
@@ -95,22 +95,27 @@ abstract contract Shareholder is ERC20Snapshot {
         return balanceOf(a) > 0;
     }
 
-    function isResolutionAt(address a, uint256 snapshotId)
-        public
-        view
-        returns (bool)
-    {
-        return a == RESOLUTION_ADDRESS;
+    // Admin
+    function setType(Type r, address a) public onlyRole(MANAGER_ROLE) {
+        require(isShareholder(a), "Shareholder: address is not shareholder");
+        types[a] = r;
     }
 
-    // Admin
-    function setRole(address a, Role r) public {
-        require(
-            isResolution(a),
-            "Shareholder: only resolutions can changes roles"
-        );
-        require(isShareholder(a), "Shareholder: address is not shareholder");
-        roles[a] = r;
+    function transfer(address recipient, uint256 amount)
+        public
+        override
+        onlyRole(MANAGER_ROLE)
+        returns (bool)
+    {
+        return super.transfer(recipient, amount);
+    }
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public override onlyRole(MANAGER_ROLE) returns (bool) {
+        return super.transferFrom(sender, recipient, amount);
     }
 
     function _beforeTokenTransfer(
@@ -119,21 +124,8 @@ abstract contract Shareholder is ERC20Snapshot {
         uint256
     ) internal view override {
         require(
-            isResolution(_msgSender()), // 2.7
-            "ShareholderRegistry: only resolution can transfer shares"
-        );
-
-        require(
             isFounder(to) || !isShareholder(to), // 2.8
             "ShareholderRegistry: more than one share assigned to shareholder"
         );
-    }
-
-    function _afterTokenTransfer(
-        address,
-        address to,
-        uint256
-    ) internal override {
-        setRole(to, Role.INVESTOR);
     }
 }

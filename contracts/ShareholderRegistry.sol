@@ -19,7 +19,7 @@ contract ShareholderRegistry is ERC20Snapshot, AccessControl {
     // I as a contributor-shareholder can use my TT to vote resolutions
     // I as an investor-shareholder cannot use my TT to vote resolutions
 
-    // Anon avoids being FOUNDER if not present in the `types` mapping.
+    // Anon avoids being FOUNDER if not present in the `statuses` mapping.
 
     // Benjamin takes all the decisions in first months, assuming the role of
     // the "Resolution", to then delegate to the resolution contract what comes
@@ -28,15 +28,15 @@ contract ShareholderRegistry is ERC20Snapshot, AccessControl {
     bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     // Role should be snapshotted too
-    enum Type {
+    enum Status {
         INVESTOR,
         FOUNDER,
         CONTRIBUTOR
     }
 
-    event TypeChanged(address indexed account);
+    event StatusChanged(address indexed account);
 
-    mapping(address => Type) types;
+    mapping(address => Status) statuses;
 
     constructor() ERC20("TelediskoToken", "TT") {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -68,7 +68,7 @@ contract ShareholderRegistry is ERC20Snapshot, AccessControl {
         view
         returns (bool)
     {
-        return isShareholderAt(a, snapshotId) && types[a] == Type.FOUNDER;
+        return isShareholderAt(a, snapshotId) && statuses[a] == Status.FOUNDER;
     }
 
     function isInvestorAt(address a, uint256 snapshotId)
@@ -84,7 +84,7 @@ contract ShareholderRegistry is ERC20Snapshot, AccessControl {
         view
         returns (bool)
     {
-        return isShareholderAt(a, snapshotId) && types[a] == Type.CONTRIBUTOR;
+        return isShareholderAt(a, snapshotId) && statuses[a] == Status.CONTRIBUTOR;
     }
 
     function isShareholderAt(address a, uint256 snapshotId)
@@ -96,9 +96,9 @@ contract ShareholderRegistry is ERC20Snapshot, AccessControl {
     }
 
     // Admin
-    function setType(Type r, address a) public onlyRole(MANAGER_ROLE) {
+    function setStatus(Status r, address a) public onlyRole(MANAGER_ROLE) {
         require(isShareholder(a), "Shareholder: address is not shareholder");
-        types[a] = r;
+        statuses[a] = r;
     }
 
     function transfer(address recipient, uint256 amount)

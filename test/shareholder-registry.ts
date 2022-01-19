@@ -48,16 +48,23 @@ describe("Shareholder Registry", () => {
   describe("type assignment logic", async () => {
     it("should fail if address is not a shareholder set the given type for an address", async () => {
       await expect(
-        registry.setType(Type.CONTRIBUTOR, alice.address)
+        registry.setStatus(Type.CONTRIBUTOR, alice.address)
       ).revertedWith("Shareholder: address is not shareholder");
     });
 
     it("should be callable only by a manager", async () => {
       await expect(
-        registry.connect(alice).setType(Type.CONTRIBUTOR, alice.address)
+        registry.connect(alice).setStatus(Type.CONTRIBUTOR, alice.address)
       ).revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${managerRole}`
       );
+    });
+
+    it("should say 'false' for all types if Alice does not have shares", async () => {
+      expect(await registry.isShareholder(alice.address)).equal(false);
+      expect(await registry.isInvestor(alice.address)).equal(false);
+      expect(await registry.isContributor(alice.address)).equal(false);
+      expect(await registry.isFounder(alice.address)).equal(false);
     });
 
     it("should return true if Alice is a contributor", async () => {
@@ -67,24 +74,24 @@ describe("Shareholder Registry", () => {
         parseEther("1")
       );
       expect(await registry.isContributor(alice.address)).equal(false);
-      await registry.setType(Type.CONTRIBUTOR, alice.address);
+      await registry.setStatus(Type.CONTRIBUTOR, alice.address);
       expect(await registry.isContributor(alice.address)).equal(true);
     });
 
-    it("Alice should be an investor after a share transfer", async () => {
+    it("should make Alice an investor after a share transfer", async () => {
       expect(await registry.isInvestor(alice.address)).equal(false);
       registry.transferFrom(founder.address, alice.address, parseEther("1"));
       expect(await registry.isInvestor(alice.address)).equal(true);
     });
 
-    it("Alice can become founder", async () => {
+    it("should make Alice a founder", async () => {
       await registry.transferFrom(
         founder.address,
         alice.address,
         parseEther("1")
       );
       expect(await registry.isFounder(alice.address)).equal(false);
-      await registry.setType(Type.FOUNDER, alice.address);
+      await registry.setStatus(Type.FOUNDER, alice.address);
       expect(await registry.isFounder(alice.address)).equal(true);
     });
   });

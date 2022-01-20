@@ -2,130 +2,54 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-// TODO: consider using this
-import "@openzeppelin/contracts/access/AccessControl.sol";
-
-contract ShareholderRegistry is ERC20Snapshot, AccessControl {
-    // I as a founder* can transfer a share to a wallet and the wallet becomes an Investor
-    // I as a founder* can elect a shareholder to either contributor or investor
-    // I as a founder* can deactivate a shareholder share, hence their TT tokens for voting (after resolution) -> it's sufficient to set the role to ANON
-    // *to replace with "I as a Resolution contract" as soon as the founder gives away the responsability
-
-    // I as a shareholder can transfer shares only through Resolution contract
-    // I as a shareholder can have up to 1 share
-    // I as a contributor-shareholder can use my TT to vote resolutions
-    // I as an investor-shareholder cannot use my TT to vote resolutions
-
-    // Anon avoids being FOUNDER if not present in the `statuses` mapping.
-
-    // Benjamin takes all the decisions in first months, assuming the role of
-    // the "Resolution", to then delegate to the resolution contract what comes
-    // next.
-    // This is what zodiac calls "incremental decentralization".
-    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
-
-    // Role should be snapshotted too
+contract ShareholderRegistry is ERC20 {
     enum Status {
+        NULL,
+        SHAREHOLDER,
         INVESTOR,
-        FOUNDER,
-        CONTRIBUTOR
+        CONTRIBUTOR,
+        FOUNDER
     }
 
-    event StatusChanged(address indexed account);
+    event StatusChanged(
+        address indexed account,
+        Status previous,
+        Status current
+    );
 
-    mapping(address => Status) statuses;
+    mapping(address => Status) private _statuses;
 
-    constructor() ERC20("TelediskoToken", "TT") {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+
+    function _setStatus(address account, Status status) internal virtual {
+        Status previous = _statuses[account];
+        _beforeSetStatus(account, status);
+        _statuses[account] = status;
+        _afterSetStatus(account, status);
+        emit StatusChanged(account, previous, status);
     }
 
-    function mint(address account, uint256 amount) public onlyRole(MANAGER_ROLE) {
-        _mint(account, amount);
+    function getStatus(address account) public view returns (Status) {
+        if (balanceOf(account) > 0) {
+            return _statuses[account];
+        }
+        return Status.NULL;
     }
 
-    // ACL
-    function isFounder(address a) public view returns (bool) {
-        return isFounderAt(a, 666);
-    }
-
-    function isInvestor(address a) public view returns (bool) {
-        return isInvestorAt(a, 666);
-    }
-
-    function isContributor(address a) public view returns (bool) {
-        return isContributorAt(a, 666);
-    }
-
-    function isShareholder(address a) public view returns (bool) {
-        return isShareholderAt(a, 666);
-    }
-
-    function isFounderAt(address a, uint256 snapshotId)
+    function hasStatus(address account, Status status)
         public
         view
         returns (bool)
     {
-        return isShareholderAt(a, snapshotId) && statuses[a] == Status.FOUNDER;
+        return balanceOf(account) > 0 && _statuses[account] == status;
     }
 
-    function isInvestorAt(address a, uint256 snapshotId)
-        public
-        view
-        returns (bool)
-    {
-        return isShareholderAt(a, snapshotId);
-    }
+    function _beforeSetStatus(address account, Status status)
+        internal
+        virtual
+    {}
 
-    function isContributorAt(address a, uint256 snapshotId)
-        public
-        view
-        returns (bool)
-    {
-        return isShareholderAt(a, snapshotId) && statuses[a] == Status.CONTRIBUTOR;
-    }
-
-    function isShareholderAt(address a, uint256 snapshotId)
-        public
-        view
-        returns (bool)
-    {
-        return balanceOf(a) > 0;
-    }
-
-    // Admin
-    function setStatus(Status r, address a) public onlyRole(MANAGER_ROLE) {
-        require(isShareholder(a), "Shareholder: address is not shareholder");
-        statuses[a] = r;
-    }
-
-    function transfer(address recipient, uint256 amount)
-        public
-        override
-        onlyRole(MANAGER_ROLE)
-        returns (bool)
-    {
-        return super.transfer(recipient, amount);
-    }
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public override onlyRole(MANAGER_ROLE) returns (bool) {
-        return super.transferFrom(sender, recipient, amount);
-    }
-
-    function _beforeTokenTransfer(
-        address,
-        address to,
-        uint256
-    ) internal view override {
-        require(
-            isFounder(to) || !isShareholder(to), // 2.8
-            "ShareholderRegistry: more than one share assigned to shareholder"
-        );
-    }
+    function _afterSetStatus(address account, Status status) internal virtual {}
 }

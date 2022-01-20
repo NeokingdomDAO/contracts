@@ -88,7 +88,11 @@ contract Resolution {
         bytes32 contentHash,
         address forbiddenVoters,
         Payout memory payout
-    ) public onlyAdmin returns (uint256 draftId) {}
+    ) public onlyAdmin returns (uint256 draftId) {
+        // create snapshot shareholder status
+        // create snapshot telediskotoken
+        // create snapshot delegations
+    }
 
     function getResolution(uint256 resolutionId) public view {
         // Returns details about the resolution and the state:
@@ -151,11 +155,11 @@ contract Resolution {
 
         ResolutionContent storage resolution = resolutions[resolutionId];
 
-        uint256 votingPower = delegation.getVotingPower(msg.sender);
+        uint256 votingPower = delegation.getVotingPowerAt(msg.sender, snapshotId);
 
         // getDelegators return only delegators that haven't voted in the meantime
         // TODO: if you delegated someone and this someone already voted, we also have to remove the vote that that someone already put for us
-        address[] memory voters = delegation.getDelegators(msg.sender);
+        address[] memory voters = delegation.getDelegatorsAt(msg.sender, snapshotId);
 
         if (votingPower > 0) {
             // if inside yesVoters, remove all delegators in yesVoters

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./ShareholderRegistryBase.sol";
-import "./Snapshottable.sol";
+import "./extensions/Snapshottable.sol";
 
 contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
     struct TotalSupplySnapshots {

@@ -32,26 +32,33 @@ contract Delegation is IDelegation {
 
     mapping(address => Snapshots) _delegationSnapshots;
 
-    function delegate(address delegated) external override {
-        Snapshots storage delegatorSnapshots = _delegationSnapshots[msg.sender];
-        address[] storage delegatorLastDelegators = delegatorSnapshots.delegatorLists[_lastSnapshotId(delegatorSnapshots.ids)];
-        _updateSnapshot(delegatorSnapshots, delegated, delegatorLastDelegators);
+    mapping(address => address) _delegates;
+    mapping(address => address[]) _delegators;
+    
 
+    function delegate(address delegated) external override {
+        address oldDelegated = _delegates[msg.sender];
+        
+        Snapshots storage delegatorSnapshots = _delegationSnapshots[msg.sender];
         Snapshots storage delegatedSnapshots = _delegationSnapshots[delegated];
-        uint256 delegatedLastSnapshotId = _lastSnapshotId(delegatedSnapshots.ids);
-        address currentDelegate = delegatedSnapshots.delegates[delegatedLastSnapshotId];
-        address[] memory delegatedLastDelegators = delegatedSnapshots.delegatorLists[delegatedLastSnapshotId];
-        delegatedLastDelegators[delegatedLastDelegators.length] = msg.sender;
-        _updateSnapshot(delegatedSnapshots, currentDelegate, delegatedLastDelegators);
+        Snapshots storage oldDelegatedSnapshots = _delegationSnapshots[oldDelegated];
+        
+        _updateSnapshot(oldDelegatedSnapshots, _delegates[oldDelegated], _delegators[oldDelegated]);
+        _updateSnapshot(delegatorSnapshots, _delegates[msg.sender], _delegators[msg.sender]);
+        _updateSnapshot(delegatedSnapshots, _delegates[delegated], _delegators[delegated]);
+        
+        _removeDelegator(_delegators[oldDelegated], msg.sender); 
+        _delegates[msg.sender] = delegated;
+        _delegators[delegated].push(msg.sender);
     }
 
 
     function getDelegated(address account) external view override returns (address) {
-        return getDelegatedAt(account, _getCurrentSnapshotId());
+        return _delegates[account];
     }
 
     function getDelegators(address account) external view override returns (address[] memory) {
-        return getDelegatorsAt(account, _getCurrentSnapshotId());
+        return _delegators[account];
     }
 
     function getVotingPower(address) external override returns (uint256) {
@@ -63,11 +70,21 @@ contract Delegation is IDelegation {
     }
             
     function getDelegatedAt(address account, uint256 snapshotId) public view override returns (address) {
-        return _delegateAt(snapshotId, _delegationSnapshots[account]);
+        Snapshots storage snapshot = _delegationSnapshots[account];
+        (bool valid, uint256 index) = _indexAt(snapshotId, snapshot.ids);
+        
+        return valid? snapshot.delegates[index] : _delegates[account];
     }
 
     function getDelegatorsAt(address account, uint256 snapshotId) public view override returns (address[] memory) {
-        return _delegatorsAt(snapshotId, _delegationSnapshots[account]);
+        Snapshots storage snapshot = _delegationSnapshots[account];
+        (bool valid, uint256 index) = _indexAt(snapshotId, snapshot.ids);
+        
+        return valid? snapshot.delegatorLists[index] : _delegators[account];
+    }
+
+    function _removeDelegator(address[] storage delegators, address toRemove) internal {
+        // TODO
     }
 
     function _getSnapshotIndex(uint256 snapshotId, Snapshots storage snapshots) internal view returns (uint256) {
@@ -83,28 +100,12 @@ contract Delegation is IDelegation {
         }
     }
 
-    function _delegatorsAt(uint256 snapshotId, Snapshots storage snapshots) private view returns (address[] memory) {
-        return snapshots.delegatorLists[_getSnapshotIndex(snapshotId, snapshots)];
-    }
-
-    function _delegateAt(uint256 snapshotId, Snapshots storage snapshots) private view returns (address) {
-        return snapshots.delegates[_getSnapshotIndex(snapshotId, snapshots)];
-    }
-
     function _updateSnapshot(Snapshots storage snapshots, address currentDelegate, address[] memory currentDelegators) private {
         uint256 currentId = _getCurrentSnapshotId();
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);
             snapshots.delegates.push(currentDelegate);
             snapshots.delegatorLists.push(currentDelegators);
-        }
-    }
-
-    function _lastSnapshotId(uint256[] storage ids) private view returns (uint256) {
-        if (ids.length == 0) {
-            return 0;
-        } else {
-            return ids[ids.length - 1];
         }
     }
 }

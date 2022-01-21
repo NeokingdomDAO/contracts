@@ -2,54 +2,33 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./ShareholderRegistrySnapshot.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract ShareholderRegistry is ERC20 {
-    enum Status {
-        NULL,
-        SHAREHOLDER,
-        INVESTOR,
-        CONTRIBUTOR,
-        FOUNDER
-    }
+contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
+    // Benjamin takes all the decisions in first months, assuming the role of
+    // the "Resolution", to then delegate to the resolution contract what comes
+    // next.
+    // This is what zodiac calls "incremental decentralization".
+    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-    event StatusChanged(
-        address indexed account,
-        Status previous,
-        Status current
-    );
-
-    mapping(address => Status) private _statuses;
-
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
-
-    function _setStatus(address account, Status status) internal virtual {
-        Status previous = _statuses[account];
-        _beforeSetStatus(account, status);
-        _statuses[account] = status;
-        _afterSetStatus(account, status);
-        emit StatusChanged(account, previous, status);
-    }
-
-    function getStatus(address account) public view returns (Status) {
-        if (balanceOf(account) > 0) {
-            return _statuses[account];
-        }
-        return Status.NULL;
-    }
-
-    function hasStatus(address account, Status status)
-        public
-        view
-        returns (bool)
+    constructor(string memory name, string memory symbol)
+        ShareholderRegistrySnapshot(name, symbol)
     {
-        return balanceOf(account) > 0 && _statuses[account] == status;
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
-    function _beforeSetStatus(address account, Status status)
-        internal
-        virtual
-    {}
+    function setStatus(bytes32 status, address account)
+        public
+        onlyRole(MANAGER_ROLE)
+    {
+        _setStatus(status, account);
+    }
 
-    function _afterSetStatus(address account, Status status) internal virtual {}
+    function mint(address account, uint256 amount)
+        public
+        onlyRole(MANAGER_ROLE)
+    {
+        _mint(account, amount);
+    }
 }

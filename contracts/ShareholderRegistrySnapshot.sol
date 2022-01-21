@@ -4,10 +4,10 @@
 pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./ShareholderRegistry.sol";
+import "./ShareholderRegistryBase.sol";
 import "./Snapshottable.sol";
 
-contract ShareholderRegistrySnapshot is ShareholderRegistry, Snapshottable {
+contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
     struct TotalSupplySnapshots {
         uint256[] ids;
         uint256[] values;
@@ -16,7 +16,7 @@ contract ShareholderRegistrySnapshot is ShareholderRegistry, Snapshottable {
     TotalSupplySnapshots private _totalSupplySnapshots;
 
     struct StatusAndBalance {
-        Status status;
+        bytes32 status;
         uint256 balance;
     }
 
@@ -29,7 +29,7 @@ contract ShareholderRegistrySnapshot is ShareholderRegistry, Snapshottable {
         private _accountStatusAndBalanceSnapshots;
 
     constructor(string memory name, string memory symbol)
-        ShareholderRegistry(name, symbol)
+        ShareholderRegistryBase(name, symbol)
     {}
 
     // FIXME: add ACL
@@ -75,7 +75,7 @@ contract ShareholderRegistrySnapshot is ShareholderRegistry, Snapshottable {
         public
         view
         virtual
-        returns (Status)
+        returns (bytes32)
     {
         if (balanceOfAt(account, snapshotId) > 0) {
             StatusAndBalanceSnapshots
@@ -90,23 +90,23 @@ contract ShareholderRegistrySnapshot is ShareholderRegistry, Snapshottable {
                     ? snapshots.values[index].status
                     : getStatus(account);
         }
-        return Status.NULL;
+        return 0;
     }
 
-    function hasStatusAt(
+    function isAtLeastAt(
+        bytes32 status,
         address account,
-        Status status,
         uint256 snapshotId
     ) public view returns (bool) {
         StatusAndBalanceSnapshots
             storage snapshots = _accountStatusAndBalanceSnapshots[account];
         (bool snapshotted, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
-        Status statusAt = snapshotted
+        bytes32 statusAt = snapshotted
             ? snapshots.values[index].status
             : getStatus(account);
 
-        return balanceOfAt(account, snapshotId) > 0 && statusAt == status;
+        return _isAtLeast(balanceOfAt(account, snapshotId), statusAt, status);
     }
 
     // Update balance and/or total supply snapshots before the values are modified. This is implemented
@@ -154,7 +154,7 @@ contract ShareholderRegistrySnapshot is ShareholderRegistry, Snapshottable {
         }
     }
 
-    function _beforeSetStatus(address account, Status status)
+    function _beforeSetStatus(address account, bytes32 status)
         internal
         override
     {

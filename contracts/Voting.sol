@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// Make sure votes transferred to a non contributor do not take part to voting power
+
 contract Voting {
   IERC20 _token;
 
@@ -36,8 +38,6 @@ contract Voting {
   }
 
   function getVotes(address account) public view returns (uint256) {
-    //uint256 votes = _votes[account];
-    //return votes == 0 && getDelegate(account) == address(0) ? balanceOf(account) : votes;
     return _votes[account];
   }
 
@@ -86,13 +86,13 @@ contract Voting {
   ) private {
     if (from != to && amount > 0) {
       if (from != address(0)) {
-        uint256 oldVotes = getVotes(from);
+        uint256 oldVotes = _votes[from];
         _votes[from] = oldVotes - amount;
         //emit DelegateVotesChanged(src, oldVotes, _votes[src]);
       }
 
       if (to != address(0)) {
-        uint256 oldVotes = getVotes(to);
+        uint256 oldVotes = _votes[to];
         _votes[to] = oldVotes + amount;
         //emit DelegateVotesChanged(dst, oldVotes, _votes[dst]);
       }

@@ -50,18 +50,19 @@ contract Resolution {
     // Get all voters -> from snapshot on ShareholderRegistry
     address[] memory voters;
 
-    // Get total voting power -> from snapshot on TelediskoToken
     uint256 totalVotes = 0;
 
     uint256 yesVotes = 0;
     // For each voter
     for (uint256 i = 0; i < voters.length; i++) {
       address voter = voters[i];
-      //    if yes was voted
+      totalVotes += voting.getVotesAt(voter, resolution.snapshotId);
+      // if yes was voted
       if (resolution.preference[voter]) {
-        yesVotes = resolution.votes[voter];
+        yesVotes += resolution.votes[voter];
       }
     }
+    
     // Check if yes count exceed the 50% of total voting power
     return yesVotes * 2 > totalVotes;
   }
@@ -113,7 +114,7 @@ contract Resolution {
     // namely: voter's votes + delegators' votes
 
     // If any of the delegators already voted, the voting power is: voter's votes - delegator's voting power. This value
-    // is computed incrementally as the delegators vote the resolution and stored inside "delegateVotes"
+    // is computed incrementally as the delegators vote the resolution and stored inside "votes"
 
     uint256 votingPower = resolution.votes[account];
     if (

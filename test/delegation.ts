@@ -4,7 +4,6 @@ import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import { Delegation, Delegation__factory } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -13,7 +12,7 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 const AddressOne = AddressZero.replace(/.$/, "1");
 
-describe("Shareholder Registry", () => {
+describe("SDelegation", () => {
   let delegation: Delegation;
   let deployer: SignerWithAddress,
     delegator1: SignerWithAddress,

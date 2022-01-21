@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Arrays.sol";
 import "./Snapshottable.sol";
 import "./Delegation.sol";
-import "@openzeppelin/contracts/utils/Arrays.sol";
 
 contract DelegationSnapshot is Delegation, Snapshottable {
     using Arrays for uint256[];

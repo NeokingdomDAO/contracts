@@ -10,6 +10,7 @@ interface IERC20Mintable is IERC20 {
 
 contract Resolution {
   VotingSnapshot voting;
+  IERC20 token;
 
   struct ResolutionContent {
     //uint256 resolutionType;
@@ -118,7 +119,10 @@ contract Resolution {
     if (
       !resolution.hasVoted[account] && !resolution.delegatorHasVoted[account]
     ) {
-      votingPower = voting.getVotesAt(account, resolution.snapshotId);
+        votingPower = voting.getVotesAt(account, resolution.snapshotId);
+        if(votingPower == 0) {
+            votingPower = token.balanceOf(account); // TODO: use balanceOfAt as soon as contract available
+        }
     }
 
     return votingPower;

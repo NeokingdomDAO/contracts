@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IDelegation.sol";
-
 contract Delegation {
     mapping(address => address) _delegates;
     mapping(address => address[]) _delegators;
@@ -14,6 +12,7 @@ contract Delegation {
 
     function delegate(address delegated) external {
         _beforeDelegate(delegated);
+
         address oldDelegated = _delegates[msg.sender];
         _removeDelegator(_delegators[oldDelegated], msg.sender); 
         _delegates[msg.sender] = delegated;

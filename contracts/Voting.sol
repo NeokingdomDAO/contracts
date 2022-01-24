@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./ShareholderRegistry/IShareholderRegistry.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-// Make sure votes transferred to a non contributor do not take part to voting power
+contract Voting is AccessControl {
+    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-contract Voting {
     IShareholderRegistry _shareholderRegistry;
     IERC20 _token;
 
@@ -16,20 +17,24 @@ contract Voting {
     mapping(address => uint256) _votes;
     mapping(address => uint256) _delegators;
 
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
+
     modifier onlyToken() {
         require(
             msg.sender == address(_token),
-            "Only token can call this method"
+            "Voting: only Token contract can call this method."
         );
         _;
     }
 
-    function setToken(IERC20 token) external {
+    function setToken(IERC20 token) external onlyRole(MANAGER_ROLE) {
         _token = token;
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
-        external
+        external onlyRole(MANAGER_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();

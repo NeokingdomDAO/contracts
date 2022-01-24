@@ -51,7 +51,7 @@ contract ShareholderRegistryBase is ERC20 {
     ) internal view returns (bool) {
         return
             balance > 0 &&
-            // investor < shareholder < contributor < founder
+            // shareholder < investor < contributor < founder
             (status == INVESTOR_STATUS ||
                 status == SHAREHOLDER_STATUS ||
                 status == accountStatus ||

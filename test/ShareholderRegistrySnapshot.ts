@@ -121,7 +121,13 @@ describe("Shareholder Registry", () => {
     });
   });
 
-  describe("Status management snapshots", () => {
-    it("asd", async () => {});
+  describe("Status management snapshot", () => {
+    describe("balanceOfAt", () => {
+      it("reverts with snapshot id of 0", async () => {
+        await expect(registry.balanceOfAt(alice.address, 0)).revertedWith(
+          "Snapshot: id is 0"
+        );
+      });
+    });
   });
 });

@@ -85,17 +85,23 @@ describe("Voting", () => {
     });
 
     it("should throw an error when anyone but the MANAGER calls setToken", async () => {
+      let errorMessage = `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
       await expect(voting.connect(anon).setToken(token.address)).revertedWith(
-        `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`
+        errorMessage
       );
+      
+      voting.grantRole(managerRole, anon.address);
+      voting.connect(anon).setToken(shareholderRegistry.address)
     });
 
     it("should throw an error when anyone but the MANAGER calls setShareholderRegistry", async () => {
+      let errorMessage = `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
       await expect(
         voting.connect(anon).setShareholderRegistry(shareholderRegistry.address)
-      ).revertedWith(
-        `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`
-      );
+      ).revertedWith(errorMessage);
+      
+      voting.grantRole(managerRole, anon.address);
+      voting.connect(anon).setShareholderRegistry(shareholderRegistry.address);
     });
   });
 

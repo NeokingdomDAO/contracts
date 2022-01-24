@@ -19,6 +19,7 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("VotingSnapshot", () => {
+  let managerRole: string;
   let votingSnapshot: VotingSnapshot;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -31,7 +32,7 @@ describe("VotingSnapshot", () => {
     nonContributor: SignerWithAddress;
 
   beforeEach(async () => {
-    [delegator1, delegator2, delegated1, delegated2, nonContributor] =
+    [deployer, delegator1, delegator2, delegated1, delegated2, anon, nonContributor] =
       await ethers.getSigners();
     const VotingSnapshotFactory = (await ethers.getContractFactory(
       "VotingSnapshot",
@@ -49,6 +50,9 @@ describe("VotingSnapshot", () => {
     )) as ShareholderRegistryMock__factory;
 
     votingSnapshot = await VotingSnapshotFactory.deploy();
+    managerRole = await votingSnapshot.MANAGER_ROLE();
+    votingSnapshot.grantRole(managerRole, deployer.address);
+
     token = await ERC20MockFactory.deploy(votingSnapshot.address);
     shareholderRegistry = await ShareholderRegistryFactory.deploy();
 
@@ -234,7 +238,7 @@ describe("VotingSnapshot", () => {
         ).equal(0);
       });
 
-      it.only("should return votes at the time of the snapshots when token transferred to non contributor", async () => {
+      it("should return votes at the time of the snapshots when token transferred to non contributor", async () => {
         await token.mint(delegator1.address, 10);
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();

@@ -16,7 +16,11 @@ contract ERC20Mock is ERC20 {
         _mint(account, amount);
     }
 
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal override {
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
         _voting.afterTokenTransfer(from, to, amount);
     }
 }

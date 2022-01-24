@@ -88,7 +88,11 @@ describe("Shareholder Registry", () => {
       expect(await registry.isAtLeast(INVESTOR_STATUS, alice.address)).equal(
         false
       );
-      registry.transferFrom(founder.address, alice.address, parseEther("1"));
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
       expect(await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)).equal(
         true
       );
@@ -107,7 +111,11 @@ describe("Shareholder Registry", () => {
       expect(await registry.isAtLeast(CONTRIBUTOR_STATUS, alice.address)).equal(
         false
       );
-      registry.transferFrom(founder.address, alice.address, parseEther("1"));
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       expect(await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)).equal(
         true
@@ -122,11 +130,95 @@ describe("Shareholder Registry", () => {
   });
 
   describe("Status management snapshot", () => {
+    describe("snapshot", () => {
+      it("allows MANAGER_ROLE to create a snapshot", async () => {
+        await expect(registry.snapshot()).to.emit(registry, "Snapshot");
+      });
+      it("can only be called by MANAGER_ROLE", async () => {
+        await expect(registry.connect(alice).snapshot()).revertedWith(
+          `AccessControl: account ${alice.address.toLowerCase()} is missing role ${MANAGER_ROLE}`
+        );
+      });
+    });
+
     describe("balanceOfAt", () => {
       it("reverts with snapshot id of 0", async () => {
         await expect(registry.balanceOfAt(alice.address, 0)).revertedWith(
-          "Snapshot: id is 0"
+          "Snapshottable: id is 0"
         );
+      });
+      it("reverts with nonexistent id ", async () => {
+        const futureTs = Math.trunc(Date.now() / 1000) + 1000;
+        await expect(
+          registry.balanceOfAt(alice.address, futureTs)
+        ).revertedWith("Snapshottable: nonexistent id");
+      });
+      it("returns the correct value per snapshot", async () => {
+        expect(await registry.balanceOf(alice.address)).equal(0);
+        await registry.snapshot();
+        const snapshotIdBefore = await registry.getCurrentSnapshotId();
+        await registry.transferFrom(
+          founder.address,
+          alice.address,
+          parseEther("1")
+        );
+        expect(
+          await registry.balanceOfAt(alice.address, snapshotIdBefore)
+        ).equal(0);
+        await registry.snapshot();
+        const snapshotIdAfter = await registry.getCurrentSnapshotId();
+        expect(
+          await registry.balanceOfAt(alice.address, snapshotIdBefore)
+        ).equal(0);
+        expect(
+          await registry.balanceOfAt(alice.address, snapshotIdAfter)
+        ).equal(parseEther("1"));
+      });
+    });
+
+    describe("totalSupplyAt", () => {
+      it("reverts with snapshot id of 0", async () => {
+        await expect(registry.totalSupplyAt(0)).revertedWith(
+          "Snapshottable: id is 0"
+        );
+      });
+      it("reverts with nonexistent id ", async () => {
+        await registry.snapshot();
+        const snapshotId = await registry.getCurrentSnapshotId();
+        await expect(registry.totalSupplyAt(snapshotId.add(1000))).revertedWith(
+          "Snapshottable: nonexistent id"
+        );
+      });
+      it("returns the correct value per snapshot", async () => {
+        expect(await registry.totalSupply()).equal(shareCapital);
+        await registry.snapshot();
+        const snapshotIdBefore = await registry.getCurrentSnapshotId();
+        expect(await registry.totalSupplyAt(snapshotIdBefore)).equal(
+          shareCapital
+        );
+        await registry.mint(founder.address, parseEther("5"));
+        await registry.snapshot();
+        const snapshotIdAfter = await registry.getCurrentSnapshotId();
+        expect(await registry.totalSupplyAt(snapshotIdBefore)).equal(
+          shareCapital
+        );
+        expect(await registry.totalSupplyAt(snapshotIdAfter)).equal(
+          shareCapital.add(parseEther("5"))
+        );
+      });
+    });
+
+    describe("isAtLeastAt", () => {
+      it("reverts with snapshot id of 0", async () => {
+        await expect(
+          registry.isAtLeastAt(CONTRIBUTOR_STATUS, alice.address, 0)
+        ).revertedWith("Snapshottable: id is 0");
+      });
+      it("reverts with nonexistent id ", async () => {
+        const futureTs = Math.trunc(Date.now() / 1000) + 1000;
+        await expect(
+          registry.isAtLeastAt(CONTRIBUTOR_STATUS, alice.address, futureTs)
+        ).revertedWith("Snapshottable: nonexistent id");
       });
     });
   });

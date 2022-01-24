@@ -66,7 +66,8 @@ abstract contract ShareholderRegistrySnapshot is
             _totalSupplySnapshots.ids
         );
 
-        return snapshotted ? _totalSupplySnapshots.ids[index] : totalSupply();
+        return
+            snapshotted ? _totalSupplySnapshots.values[index] : totalSupply();
     }
 
     function getStatusAt(address account, uint256 snapshotId)

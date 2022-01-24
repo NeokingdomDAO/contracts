@@ -18,7 +18,7 @@ abstract contract Snapshottable {
         return _currentSnapshotId;
     }
 
-    function _getCurrentSnapshotId() internal view returns (uint256) {
+    function getCurrentSnapshotId() public view returns (uint256) {
         return _currentSnapshotId;
     }
 
@@ -29,7 +29,7 @@ abstract contract Snapshottable {
     {
         require(snapshotId > 0, "Snapshottable: id is 0");
         require(
-            snapshotId <= _getCurrentSnapshotId(),
+            snapshotId <= getCurrentSnapshotId(),
             "Snapshottable: nonexistent id"
         );
 

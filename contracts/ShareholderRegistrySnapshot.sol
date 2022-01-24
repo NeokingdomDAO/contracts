@@ -132,7 +132,7 @@ abstract contract ShareholderRegistrySnapshot is
     }
 
     function _updateAccountSnapshot(address account) private {
-        uint256 currentId = _getCurrentSnapshotId();
+        uint256 currentId = getCurrentSnapshotId();
         StatusAndBalanceSnapshots
             storage snapshots = _accountStatusAndBalanceSnapshots[account];
         if (_lastSnapshotId(snapshots.ids) < currentId) {
@@ -144,7 +144,7 @@ abstract contract ShareholderRegistrySnapshot is
     }
 
     function _updateTotalSupplySnapshot() private {
-        uint256 currentId = _getCurrentSnapshotId();
+        uint256 currentId = getCurrentSnapshotId();
         TotalSupplySnapshots storage snapshots = _totalSupplySnapshots;
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);

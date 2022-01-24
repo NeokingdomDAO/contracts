@@ -19,6 +19,7 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("Voting", () => {
+  let managerRole: string;
   let voting: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -31,8 +32,15 @@ describe("Voting", () => {
     nonContributor: SignerWithAddress;
 
   beforeEach(async () => {
-    [delegator1, delegator2, delegated1, delegated2, anon, nonContributor] =
-      await ethers.getSigners();
+    [
+      deployer,
+      delegator1,
+      delegator2,
+      delegated1,
+      delegated2,
+      anon,
+      nonContributor,
+    ] = await ethers.getSigners();
     const VotingFactory = (await ethers.getContractFactory(
       "Voting",
       deployer
@@ -53,6 +61,9 @@ describe("Voting", () => {
     shareholderRegistry = await ShareholderRegistryFactory.deploy();
 
     await voting.deployed();
+    managerRole = await voting.MANAGER_ROLE();
+    voting.grantRole(managerRole, deployer.address);
+
     await token.deployed();
     await shareholderRegistry.deployed();
 
@@ -63,6 +74,34 @@ describe("Voting", () => {
 
     [delegator1, delegator2, delegated1, delegated2].forEach((voter) => {
       voting.connect(voter).delegate(voter.address);
+    });
+  });
+
+  describe("access logic", async () => {
+    it("should throw an error when anyone but the Token contract calls afterTokenTransfer", async () => {
+      await expect(
+        voting.afterTokenTransfer(anon.address, anon.address, 10)
+      ).revertedWith("Voting: only Token contract can call this method.");
+    });
+
+    it("should throw an error when anyone but the MANAGER calls setToken", async () => {
+      let errorMessage = `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
+      await expect(voting.connect(anon).setToken(token.address)).revertedWith(
+        errorMessage
+      );
+
+      voting.grantRole(managerRole, anon.address);
+      voting.connect(anon).setToken(shareholderRegistry.address);
+    });
+
+    it("should throw an error when anyone but the MANAGER calls setShareholderRegistry", async () => {
+      let errorMessage = `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
+      await expect(
+        voting.connect(anon).setShareholderRegistry(shareholderRegistry.address)
+      ).revertedWith(errorMessage);
+
+      voting.grantRole(managerRole, anon.address);
+      voting.connect(anon).setShareholderRegistry(shareholderRegistry.address);
     });
   });
 
@@ -135,6 +174,12 @@ describe("Voting", () => {
         voting.connect(delegator1).delegate(nonContributor.address)
       ).revertedWith("Voting: only contributors can be delegated.");
     });
+
+    it("should emit an event", async () => {
+      await expect(voting.connect(delegator1).delegate(delegated1.address))
+        .emit(voting, "DelegateChanged")
+        .withArgs(delegator1.address, delegator1.address, delegated1.address);
+    });
   });
 
   describe("voting power transfer logic", async () => {
@@ -142,6 +187,13 @@ describe("Voting", () => {
       await token.mint(delegator1.address, 10);
 
       expect(await voting.getVotes(delegator1.address)).equals(10);
+    });
+
+    it("should increase voting power after minting new tokens", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegator1.address, 21);
+
+      expect(await voting.getVotes(delegator1.address)).equals(31);
     });
 
     it("should transfer all votes to the delegatee upon delegation", async () => {
@@ -154,7 +206,7 @@ describe("Voting", () => {
     it("should remove all votes from the delegatee upon token transfer", async () => {
       await token.mint(delegator1.address, 10);
       await voting.connect(delegator1).delegate(delegated1.address);
-      await token.transfer(delegated2.address, 10);
+      await token.connect(delegator1).transfer(delegated2.address, 10);
 
       expect(await voting.getVotes(delegated1.address)).equals(0);
     });
@@ -201,6 +253,17 @@ describe("Voting", () => {
       await token.mint(nonContributor.address, 10);
 
       expect(await voting.getVotes(nonContributor.address)).equals(0);
+    });
+
+    it("should emit 2 events with old and new balances of source and destination addresses", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegator2.address, 11);
+
+      await expect(token.connect(delegator1).transfer(delegator2.address, 9))
+        .emit(voting, "DelegateVotesChanged")
+        .withArgs(delegator1.address, 10, 1)
+        .emit(voting, "DelegateVotesChanged")
+        .withArgs(delegator2.address, 11, 20);
     });
   });
 });

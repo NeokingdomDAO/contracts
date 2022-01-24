@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./ShareholderRegistry/IShareholderRegistry.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-// Make sure votes transferred to a non contributor do not take part to voting power
+contract Voting is AccessControl {
+    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-contract Voting {
     IShareholderRegistry _shareholderRegistry;
     IERC20 _token;
 
@@ -16,20 +17,36 @@ contract Voting {
     mapping(address => uint256) _votes;
     mapping(address => uint256) _delegators;
 
+    event DelegateChanged(
+        address delegator,
+        address currentDelegate,
+        address newDelegate
+    );
+    event DelegateVotesChanged(
+        address account,
+        uint256 oldVotes,
+        uint256 newVotes
+    );
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
+
     modifier onlyToken() {
         require(
             msg.sender == address(_token),
-            "Only token can call this method"
+            "Voting: only Token contract can call this method."
         );
         _;
     }
 
-    function setToken(IERC20 token) external {
+    function setToken(IERC20 token) external onlyRole(MANAGER_ROLE) {
         _token = token;
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
+        onlyRole(MANAGER_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -94,14 +111,14 @@ contract Voting {
             "Voting: the delegator is delegated. No sub-delegations allowed."
         );
 
-        _beforeDelegate(delegator, newDelegate);
+        _beforeDelegate(delegator);
 
         uint256 delegatorBalance = balanceOf(delegator);
         _delegates[delegator] = newDelegate;
         _delegators[newDelegate] = _delegators[newDelegate] + 1;
         _delegators[currentDelegate] = _delegators[newDelegate] - 1;
 
-        //emit DelegateChanged(delegator, currentDelegate, delegatee);
+        emit DelegateChanged(delegator, currentDelegate, newDelegate);
 
         _moveVotingPower(currentDelegate, newDelegate, delegatorBalance);
     }
@@ -113,21 +130,22 @@ contract Voting {
     ) private {
         if (from != to && amount > 0) {
             if (from != address(0)) {
+                _beforeMoveVotingPower(from);
                 uint256 oldVotes = _votes[from];
                 _votes[from] = oldVotes - amount;
-                //emit DelegateVotesChanged(src, oldVotes, _votes[src]);
+                emit DelegateVotesChanged(from, oldVotes, _votes[from]);
             }
 
             if (to != address(0)) {
+                _beforeMoveVotingPower(to);
                 uint256 oldVotes = _votes[to];
                 _votes[to] = oldVotes + amount;
-                //emit DelegateVotesChanged(dst, oldVotes, _votes[dst]);
+                emit DelegateVotesChanged(to, oldVotes, _votes[to]);
             }
         }
     }
 
-    function _beforeDelegate(address delegator, address delegated)
-        internal
-        virtual
-    {}
+    function _beforeDelegate(address delegator) internal virtual {}
+
+    function _beforeMoveVotingPower(address account) internal virtual {}
 }

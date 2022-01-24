@@ -29,7 +29,7 @@ contract VotingSnapshot is Voting, Snapshottable {
         Snapshots storage snapshots = _delegationSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
-        return valid ? snapshots.delegates[index] : _delegates[account];
+        return valid ? snapshots.delegates[index] : getDelegate(account);
     }
 
     function getVotesAt(address account, uint256 snapshotId)
@@ -56,19 +56,21 @@ contract VotingSnapshot is Voting, Snapshottable {
         }
     }
 
-    function _beforeDelegate(address delegator, address delegate)
-        internal
-        override
-    {
+    function _beforeDelegate(address delegator) internal override {
+        super._beforeDelegate(delegator);
         _updateSnapshot(
             _delegationSnapshots[delegator],
-            delegator,
+            getDelegate(delegator),
             getVotes(delegator)
         );
+    }
+
+    function _beforeMoveVotingPower(address account) internal override {
+        super._beforeMoveVotingPower(account);
         _updateSnapshot(
-            _delegationSnapshots[delegate],
-            delegate,
-            getVotes(delegate)
+            _delegationSnapshots[account],
+            getDelegate(account),
+            getVotes(account)
         );
     }
 }

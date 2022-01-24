@@ -21,6 +21,10 @@ contract VotingSnapshot is Voting, Snapshottable {
     return _snapshot();
   }
 
+  function getCurrentSnapshotId() public view returns (uint256) {
+    return _getCurrentSnapshotId();
+  }
+
   function getDelegateAt(address account, uint256 snapshotId)
     public
     view

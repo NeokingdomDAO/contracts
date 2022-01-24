@@ -94,7 +94,7 @@ contract Voting {
             "Voting: the delegator is delegated. No sub-delegations allowed."
         );
 
-        _beforeDelegate(delegator, newDelegate);
+        _beforeDelegate(delegator);
 
         uint256 delegatorBalance = balanceOf(delegator);
         _delegates[delegator] = newDelegate;
@@ -113,12 +113,14 @@ contract Voting {
     ) private {
         if (from != to && amount > 0) {
             if (from != address(0)) {
+                _beforeMoveVotingPower(from);
                 uint256 oldVotes = _votes[from];
                 _votes[from] = oldVotes - amount;
                 //emit DelegateVotesChanged(src, oldVotes, _votes[src]);
             }
 
             if (to != address(0)) {
+                _beforeMoveVotingPower(to);
                 uint256 oldVotes = _votes[to];
                 _votes[to] = oldVotes + amount;
                 //emit DelegateVotesChanged(dst, oldVotes, _votes[dst]);
@@ -126,8 +128,7 @@ contract Voting {
         }
     }
 
-    function _beforeDelegate(address delegator, address delegated)
-        internal
-        virtual
-    {}
+    function _beforeDelegate(address delegator) internal virtual {}
+
+    function _beforeMoveVotingPower(address account) internal virtual {}
 }

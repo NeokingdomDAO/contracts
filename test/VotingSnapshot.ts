@@ -67,7 +67,7 @@ describe("VotingSnapshot", () => {
   });
 
   describe("snapshot logic", async () => {
-    it.only("should increase snapshot id", async () => {
+    it("should increase snapshot id", async () => {
       await votingSnapshot.snapshot();
       let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 
@@ -78,7 +78,6 @@ describe("VotingSnapshot", () => {
     });
 
     it("should return the delegate at the time of the snapshot", async () => {
-      console.log(delegated1.address)
       await votingSnapshot.connect(delegator1).delegate(delegated1.address);
       await votingSnapshot.snapshot();
       let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
@@ -95,6 +94,21 @@ describe("VotingSnapshot", () => {
       ).equal(delegated2.address);
     });
 
-    it("should return the votes at the time of the snapshot", async () => {});
+    it("should return the votes at the time of the snapshot", async () => {
+      await token.mint(delegator1.address, 10);
+      await votingSnapshot.snapshot();
+      let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
+
+      await token.mint(delegator1.address, 11);
+      await votingSnapshot.snapshot();
+      let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
+
+      expect(
+        await votingSnapshot.getVotesAt(delegator1.address, snapshotIdBefore)
+      ).equal(10);
+      expect(
+        await votingSnapshot.getVotesAt(delegator1.address, snapshotIdAfter)
+      ).equal(21);
+    });
   });
 });

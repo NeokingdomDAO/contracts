@@ -144,6 +144,13 @@ describe("Voting", () => {
       expect(await voting.getVotes(delegator1.address)).equals(10);
     });
 
+    it.only("should increase voting power after minting new tokens", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegator1.address, 21);
+
+      expect(await voting.getVotes(delegator1.address)).equals(31);
+    });
+
     it("should transfer all votes to the delegatee upon delegation", async () => {
       await token.mint(delegator1.address, 10);
       await voting.connect(delegator1).delegate(delegated1.address);

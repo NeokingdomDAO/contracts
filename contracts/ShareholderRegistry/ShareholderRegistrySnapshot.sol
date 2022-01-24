@@ -60,36 +60,39 @@ abstract contract ShareholderRegistrySnapshot is
         public
         view
         virtual
-        returns (uint256)
+        returns (uint256 balance)
     {
-        StatusAndBalanceSnapshots
-            storage snapshots = _accountStatusAndBalanceSnapshots[account];
-        (bool snapshotted, uint256 index) = _indexAt(snapshotId, snapshots.ids);
-
-        return
-            snapshotted ? snapshots.values[index].balance : balanceOf(account);
+        (balance, ) = getBalanceAndStatusAt(account, snapshotId);
+        return balance;
     }
 
     function getStatusAt(address account, uint256 snapshotId)
         public
         view
         virtual
-        returns (bytes32)
+        returns (bytes32 status)
     {
-        if (balanceOfAt(account, snapshotId) > 0) {
-            StatusAndBalanceSnapshots
-                storage snapshots = _accountStatusAndBalanceSnapshots[account];
-            (bool snapshotted, uint256 index) = _indexAt(
-                snapshotId,
-                snapshots.ids
-            );
+        (, status) = getBalanceAndStatusAt(account, snapshotId);
+        return status;
+    }
 
-            return
-                snapshotted
-                    ? snapshots.values[index].status
-                    : getStatus(account);
-        }
-        return 0;
+    function getBalanceAndStatusAt(address account, uint256 snapshotId)
+        public
+        view
+        virtual
+        returns (uint256, bytes32)
+    {
+        StatusAndBalanceSnapshots
+            storage snapshots = _accountStatusAndBalanceSnapshots[account];
+        (bool snapshotted, uint256 index) = _indexAt(snapshotId, snapshots.ids);
+
+        return
+            snapshotted
+                ? (
+                    snapshots.values[index].balance,
+                    snapshots.values[index].status
+                )
+                : (balanceOf(account), getStatus(account));
     }
 
     function isAtLeastAt(
@@ -97,15 +100,11 @@ abstract contract ShareholderRegistrySnapshot is
         address account,
         uint256 snapshotId
     ) public view returns (bool) {
-        StatusAndBalanceSnapshots
-            storage snapshots = _accountStatusAndBalanceSnapshots[account];
-        (bool snapshotted, uint256 index) = _indexAt(snapshotId, snapshots.ids);
-
-        bytes32 statusAt = snapshotted
-            ? snapshots.values[index].status
-            : getStatus(account);
-
-        return _isAtLeast(balanceOfAt(account, snapshotId), statusAt, status);
+        (uint256 balanceAt, bytes32 statusAt) = getBalanceAndStatusAt(
+            account,
+            snapshotId
+        );
+        return _isAtLeast(balanceAt, statusAt, status);
     }
 
     // Update balance and/or total supply snapshots before the values are modified. This is implemented

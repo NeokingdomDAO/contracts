@@ -224,12 +224,14 @@ describe("Shareholder Registry", () => {
           registry.isAtLeastAt(CONTRIBUTOR_STATUS, alice.address, futureTs)
         ).revertedWith("Snapshottable: nonexistent id");
       });
-      it("returns the correct value per snapshot", async () => {
+      it("returns the correct status per snapshot", async () => {
         expect(
           await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)
         ).equal(false);
+
         await registry.snapshot();
-        const snapshotIdBefore = await registry.getCurrentSnapshotId();
+        const snapshotId0 = await registry.getCurrentSnapshotId();
+
         await registry.transferFrom(
           founder.address,
           alice.address,
@@ -239,28 +241,55 @@ describe("Shareholder Registry", () => {
           await registry.isAtLeastAt(
             SHAREHOLDER_STATUS,
             alice.address,
-            snapshotIdBefore
+            snapshotId0
           )
         ).equal(false);
+
         await registry.snapshot();
-        const snapshotIdAfter = await registry.getCurrentSnapshotId();
+        const snapshotId1 = await registry.getCurrentSnapshotId();
+
         expect(
           await registry.isAtLeastAt(
             SHAREHOLDER_STATUS,
             alice.address,
-            snapshotIdBefore
+            snapshotId0
           )
         ).equal(false);
         expect(
           await registry.isAtLeastAt(
             SHAREHOLDER_STATUS,
             alice.address,
-            snapshotIdAfter
+            snapshotId1
           )
         ).equal(true);
         await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
 
-        const snapshotIdAfterStatus = await registry.getCurrentSnapshotId();
+        await registry.snapshot();
+        const snapshotId2 = await registry.getCurrentSnapshotId();
+
+        await registry.setStatus(INVESTOR_STATUS, alice.address);
+
+        expect(
+          await registry.isAtLeastAt(
+            SHAREHOLDER_STATUS,
+            alice.address,
+            snapshotId0
+          )
+        ).equal(false);
+        expect(
+          await registry.isAtLeastAt(
+            SHAREHOLDER_STATUS,
+            alice.address,
+            snapshotId1
+          )
+        ).equal(true);
+        expect(
+          await registry.isAtLeastAt(
+            INVESTOR_STATUS,
+            alice.address,
+            snapshotId2
+          )
+        ).equal(true);
       });
     });
   });

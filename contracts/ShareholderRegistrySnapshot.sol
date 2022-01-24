@@ -7,7 +7,10 @@ pragma solidity ^0.8.0;
 import "./ShareholderRegistryBase.sol";
 import "./extensions/Snapshottable.sol";
 
-contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
+abstract contract ShareholderRegistrySnapshot is
+    ShareholderRegistryBase,
+    Snapshottable
+{
     struct TotalSupplySnapshots {
         uint256[] ids;
         uint256[] values;
@@ -31,11 +34,6 @@ contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
     constructor(string memory name, string memory symbol)
         ShareholderRegistryBase(name, symbol)
     {}
-
-    // FIXME: add ACL
-    function snapshot() public override returns (uint256) {
-        return _snapshot();
-    }
 
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.
@@ -68,7 +66,8 @@ contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
             _totalSupplySnapshots.ids
         );
 
-        return snapshotted ? _totalSupplySnapshots.ids[index] : totalSupply();
+        return
+            snapshotted ? _totalSupplySnapshots.values[index] : totalSupply();
     }
 
     function getStatusAt(address account, uint256 snapshotId)
@@ -134,7 +133,7 @@ contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
     }
 
     function _updateAccountSnapshot(address account) private {
-        uint256 currentId = _getCurrentSnapshotId();
+        uint256 currentId = getCurrentSnapshotId();
         StatusAndBalanceSnapshots
             storage snapshots = _accountStatusAndBalanceSnapshots[account];
         if (_lastSnapshotId(snapshots.ids) < currentId) {
@@ -146,7 +145,7 @@ contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
     }
 
     function _updateTotalSupplySnapshot() private {
-        uint256 currentId = _getCurrentSnapshotId();
+        uint256 currentId = getCurrentSnapshotId();
         TotalSupplySnapshots storage snapshots = _totalSupplySnapshots;
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);

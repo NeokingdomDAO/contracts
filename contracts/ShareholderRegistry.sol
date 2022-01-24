@@ -18,6 +18,15 @@ contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
+    function snapshot()
+        public
+        override
+        onlyRole(MANAGER_ROLE)
+        returns (uint256)
+    {
+        return _snapshot();
+    }
+
     function setStatus(bytes32 status, address account)
         public
         onlyRole(MANAGER_ROLE)

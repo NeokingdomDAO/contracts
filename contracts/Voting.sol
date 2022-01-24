@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./IShareholderRegistry.sol";
+import "./ShareholderRegistry/IShareholderRegistry.sol";
 
 // Make sure votes transferred to a non contributor do not take part to voting power
 

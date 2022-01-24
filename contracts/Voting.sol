@@ -17,6 +17,17 @@ contract Voting is AccessControl {
     mapping(address => uint256) _votes;
     mapping(address => uint256) _delegators;
 
+    event DelegateChanged(
+        address delegator,
+        address currentDelegate,
+        address newDelegate
+    );
+    event DelegateVotesChanged(
+        address account,
+        uint256 oldVotes,
+        uint256 newVotes
+    );
+
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
@@ -34,7 +45,8 @@ contract Voting is AccessControl {
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
-        external onlyRole(MANAGER_ROLE)
+        external
+        onlyRole(MANAGER_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -106,7 +118,7 @@ contract Voting is AccessControl {
         _delegators[newDelegate] = _delegators[newDelegate] + 1;
         _delegators[currentDelegate] = _delegators[newDelegate] - 1;
 
-        //emit DelegateChanged(delegator, currentDelegate, delegatee);
+        emit DelegateChanged(delegator, currentDelegate, newDelegate);
 
         _moveVotingPower(currentDelegate, newDelegate, delegatorBalance);
     }
@@ -121,14 +133,14 @@ contract Voting is AccessControl {
                 _beforeMoveVotingPower(from);
                 uint256 oldVotes = _votes[from];
                 _votes[from] = oldVotes - amount;
-                //emit DelegateVotesChanged(src, oldVotes, _votes[src]);
+                emit DelegateVotesChanged(from, oldVotes, _votes[from]);
             }
 
             if (to != address(0)) {
                 _beforeMoveVotingPower(to);
                 uint256 oldVotes = _votes[to];
                 _votes[to] = oldVotes + amount;
-                //emit DelegateVotesChanged(dst, oldVotes, _votes[dst]);
+                emit DelegateVotesChanged(to, oldVotes, _votes[to]);
             }
         }
     }

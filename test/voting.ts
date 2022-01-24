@@ -89,9 +89,9 @@ describe("Voting", () => {
       await expect(voting.connect(anon).setToken(token.address)).revertedWith(
         errorMessage
       );
-      
+
       voting.grantRole(managerRole, anon.address);
-      voting.connect(anon).setToken(shareholderRegistry.address)
+      voting.connect(anon).setToken(shareholderRegistry.address);
     });
 
     it("should throw an error when anyone but the MANAGER calls setShareholderRegistry", async () => {
@@ -99,7 +99,7 @@ describe("Voting", () => {
       await expect(
         voting.connect(anon).setShareholderRegistry(shareholderRegistry.address)
       ).revertedWith(errorMessage);
-      
+
       voting.grantRole(managerRole, anon.address);
       voting.connect(anon).setShareholderRegistry(shareholderRegistry.address);
     });
@@ -174,6 +174,12 @@ describe("Voting", () => {
         voting.connect(delegator1).delegate(nonContributor.address)
       ).revertedWith("Voting: only contributors can be delegated.");
     });
+
+    it("should emit an event", async () => {
+      await expect(voting.connect(delegator1).delegate(delegated1.address))
+        .emit(voting, "DelegateChanged")
+        .withArgs(delegator1.address, delegator1.address, delegated1.address);
+    });
   });
 
   describe("voting power transfer logic", async () => {
@@ -247,6 +253,17 @@ describe("Voting", () => {
       await token.mint(nonContributor.address, 10);
 
       expect(await voting.getVotes(nonContributor.address)).equals(0);
+    });
+
+    it("should emit 2 events with old and new balances of source and destination addresses", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegator2.address, 11);
+
+      await expect(token.connect(delegator1).transfer(delegator2.address, 9))
+        .emit(voting, "DelegateVotesChanged")
+        .withArgs(delegator1.address, 10, 1)
+        .emit(voting, "DelegateVotesChanged")
+        .withArgs(delegator2.address, 11, 20);
     });
   });
 });

@@ -7,7 +7,10 @@ pragma solidity ^0.8.0;
 import "./ShareholderRegistryBase.sol";
 import "./extensions/Snapshottable.sol";
 
-contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
+abstract contract ShareholderRegistrySnapshot is
+    ShareholderRegistryBase,
+    Snapshottable
+{
     struct TotalSupplySnapshots {
         uint256[] ids;
         uint256[] values;
@@ -31,11 +34,6 @@ contract ShareholderRegistrySnapshot is ShareholderRegistryBase, Snapshottable {
     constructor(string memory name, string memory symbol)
         ShareholderRegistryBase(name, symbol)
     {}
-
-    // FIXME: add ACL
-    function snapshot() public override returns (uint256) {
-        return _snapshot();
-    }
 
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.

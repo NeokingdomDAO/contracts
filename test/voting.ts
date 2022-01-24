@@ -7,6 +7,8 @@ import {
   Voting__factory,
   ERC20Mock,
   ERC20Mock__factory,
+  ShareholderRegistryMock,
+  ShareholderRegistryMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -15,20 +17,21 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const AddressZero = ethers.constants.AddressZero;
-const AddressOne = AddressZero.replace(/.$/, "1");
 
 describe("Voting", () => {
   let voting: Voting;
   let token: ERC20Mock;
+  let shareholderRegistry: ShareholderRegistryMock;
   let deployer: SignerWithAddress,
     delegator1: SignerWithAddress,
     delegator2: SignerWithAddress,
     delegated1: SignerWithAddress,
     delegated2: SignerWithAddress,
-    anon: SignerWithAddress;
+    anon: SignerWithAddress,
+    nonContributor: SignerWithAddress;
 
   beforeEach(async () => {
-    [delegator1, delegator2, delegated1, delegated2, anon] =
+    [delegator1, delegator2, delegated1, delegated2, anon, nonContributor] =
       await ethers.getSigners();
     const VotingFactory = (await ethers.getContractFactory(
       "Voting",
@@ -40,11 +43,23 @@ describe("Voting", () => {
       deployer
     )) as ERC20Mock__factory;
 
+    const ShareholderRegistryFactory = (await ethers.getContractFactory(
+      "ShareholderRegistryMock",
+      deployer
+    )) as ShareholderRegistryMock__factory;
+
     voting = await VotingFactory.deploy();
     token = await ERC20MockFactory.deploy(voting.address);
-    voting.setToken(token.address);
+    shareholderRegistry = await ShareholderRegistryFactory.deploy();
 
     await voting.deployed();
+    await token.deployed();
+    await shareholderRegistry.deployed();
+
+    await voting.setToken(token.address);
+    await voting.setShareholderRegistry(shareholderRegistry.address);
+
+    await shareholderRegistry.setNonContributor(nonContributor.address);
 
     [delegator1, delegator2, delegated1, delegated2].forEach((voter) => {
       voting.connect(voter).delegate(voter.address);
@@ -108,6 +123,18 @@ describe("Voting", () => {
         "Voting: the delegator is delegated. No sub-delegations allowed."
       );
     });
+
+    it("should throw an error when a non contributor tries to delegate", async () => {
+      await expect(
+        voting.connect(nonContributor).delegate(nonContributor.address)
+      ).revertedWith("Voting: only contributors can delegate.");
+    });
+
+    it("should throw an error when delegating a non contributor", async () => {
+      await expect(
+        voting.connect(delegator1).delegate(nonContributor.address)
+      ).revertedWith("Voting: only contributors can be delegated.");
+    });
   });
 
   describe("voting power transfer logic", async () => {
@@ -154,6 +181,26 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegator1.address);
 
       expect(await voting.getVotes(delegator1.address)).equals(10);
+    });
+
+    it("should not increase voting power if a contributor sends tokens to a non contributor", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.connect(delegator1).transfer(nonContributor.address, 10);
+
+      expect(await voting.getVotes(nonContributor.address)).equals(0);
+    });
+
+    it("should increase voting power if a non contributor sends tokens to a contributor", async () => {
+      await token.mint(nonContributor.address, 10);
+      await token.connect(nonContributor).transfer(delegator1.address, 10);
+
+      expect(await voting.getVotes(delegator1.address)).equals(10);
+    });
+
+    it("should not increase voting power if a non contributor is given tokens", async () => {
+      await token.mint(nonContributor.address, 10);
+
+      expect(await voting.getVotes(nonContributor.address)).equals(0);
     });
   });
 });

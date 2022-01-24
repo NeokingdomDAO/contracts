@@ -162,6 +162,7 @@ describe("Shareholder Registry", () => {
           alice.address,
           parseEther("1")
         );
+        expect(await registry.balanceOf(alice.address)).equal(parseEther("1"));
         expect(
           await registry.balanceOfAt(alice.address, snapshotIdBefore)
         ).equal(0);
@@ -197,6 +198,9 @@ describe("Shareholder Registry", () => {
           shareCapital
         );
         await registry.mint(founder.address, parseEther("5"));
+        expect(await registry.totalSupply()).equal(
+          shareCapital.add(parseEther("5"))
+        );
         await registry.snapshot();
         const snapshotIdAfter = await registry.getCurrentSnapshotId();
         expect(await registry.totalSupplyAt(snapshotIdBefore)).equal(
@@ -219,6 +223,44 @@ describe("Shareholder Registry", () => {
         await expect(
           registry.isAtLeastAt(CONTRIBUTOR_STATUS, alice.address, futureTs)
         ).revertedWith("Snapshottable: nonexistent id");
+      });
+      it("returns the correct value per snapshot", async () => {
+        expect(
+          await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)
+        ).equal(false);
+        await registry.snapshot();
+        const snapshotIdBefore = await registry.getCurrentSnapshotId();
+        await registry.transferFrom(
+          founder.address,
+          alice.address,
+          parseEther("1")
+        );
+        expect(
+          await registry.isAtLeastAt(
+            SHAREHOLDER_STATUS,
+            alice.address,
+            snapshotIdBefore
+          )
+        ).equal(false);
+        await registry.snapshot();
+        const snapshotIdAfter = await registry.getCurrentSnapshotId();
+        expect(
+          await registry.isAtLeastAt(
+            SHAREHOLDER_STATUS,
+            alice.address,
+            snapshotIdBefore
+          )
+        ).equal(false);
+        expect(
+          await registry.isAtLeastAt(
+            SHAREHOLDER_STATUS,
+            alice.address,
+            snapshotIdAfter
+          )
+        ).equal(true);
+        await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+
+        const snapshotIdAfterStatus = await registry.getCurrentSnapshotId();
       });
     });
   });

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../IShareholderRegistry.sol";
+import "../ShareholderRegistry/IShareholderRegistry.sol";
 
 // This mock is currently used to test some cases in Voting when non contribuors
 // access some functionalities. Its logic has therefore be kept at the bare

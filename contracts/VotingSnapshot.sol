@@ -20,8 +20,8 @@ contract VotingSnapshot is Voting, Snapshottable {
     }
 
     mapping(address => SnapshotsDelegates) _delegationSnapshots;
-    mapping(address => SnapshotsValues) _votesSnapshots;
-    SnapshotsValues private _votingPowerSnapshots;
+    mapping(address => SnapshotsValues) _votingPowerSnapshots;
+    SnapshotsValues private _totalVotingPowerSnapshots;
 
     function snapshot() public virtual override returns (uint256) {
         return _snapshot();
@@ -38,15 +38,15 @@ contract VotingSnapshot is Voting, Snapshottable {
         return valid ? snapshots.delegates[index] : getDelegate(account);
     }
 
-    function getVotesAt(address account, uint256 snapshotId)
+    function getVotingPowerAt(address account, uint256 snapshotId)
         public
         view
         returns (uint256)
     {
-        SnapshotsValues storage snapshots = _votesSnapshots[account];
+        SnapshotsValues storage snapshots = _votingPowerSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
-        return valid ? snapshots.values[index] : getVotes(account);
+        return valid ? snapshots.values[index] : getVotingPower(account);
     }
 
     function getTotalVotingPowerAt(uint256 snapshotId)
@@ -56,11 +56,11 @@ contract VotingSnapshot is Voting, Snapshottable {
     {
         (bool valid, uint256 index) = _indexAt(
             snapshotId,
-            _votingPowerSnapshots.ids
+            _totalVotingPowerSnapshots.ids
         );
 
         return
-            valid ? _votingPowerSnapshots.values[index] : getTotalVotingPower();
+            valid ? _totalVotingPowerSnapshots.values[index] : getTotalVotingPower();
     }
 
     /*
@@ -103,11 +103,11 @@ contract VotingSnapshot is Voting, Snapshottable {
 
     function _beforeMoveVotingPower(address account) internal override {
         super._beforeMoveVotingPower(account);
-        _updateSnaphshotValues(_votesSnapshots[account], getVotes(account));
+        _updateSnaphshotValues(_votingPowerSnapshots[account], getVotingPower(account));
     }
 
     function _beforeUpdateTotalVotingPower() internal override {
         super._beforeUpdateTotalVotingPower();
-        _updateSnaphshotValues(_votingPowerSnapshots, getTotalVotingPower());
+        _updateSnaphshotValues(_totalVotingPowerSnapshots, getTotalVotingPower());
     }
 }

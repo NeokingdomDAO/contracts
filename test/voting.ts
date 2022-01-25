@@ -11,6 +11,7 @@ import {
   ShareholderRegistryMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { resourceUsage } from "process";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -20,6 +21,7 @@ const AddressZero = ethers.constants.AddressZero;
 
 describe("Voting", () => {
   let managerRole: string;
+  let resolutionRole: string;
   let voting: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -62,7 +64,9 @@ describe("Voting", () => {
 
     await voting.deployed();
     managerRole = await voting.MANAGER_ROLE();
+    resolutionRole = await voting.RESOLUTION_ROLE();
     voting.grantRole(managerRole, deployer.address);
+    voting.grantRole(resolutionRole, deployer.address);
 
     await token.deployed();
     await shareholderRegistry.deployed();
@@ -106,6 +110,16 @@ describe("Voting", () => {
       voting
         .connect(noDelegate)
         .setShareholderRegistry(shareholderRegistry.address);
+    });
+
+    it("should throw an error when anyone but the RESOLUTION calls afterRemoveContributor", async () => {
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${resolutionRole.toLowerCase()}`;
+      await expect(
+        voting.connect(noDelegate).afterRemoveContributor(delegator1.address)
+      ).revertedWith(errorMessage);
+
+      voting.grantRole(resolutionRole, noDelegate.address);
+      voting.connect(noDelegate).afterRemoveContributor(delegator1.address);
     });
   });
 
@@ -208,6 +222,19 @@ describe("Voting", () => {
         votingPowerBefore.toNumber() - 10
       );
     });
+
+    it("should decrease voting power when a contributor is removed", async () => {
+      await token.mint(delegator1.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await shareholderRegistry.setNonContributor(delegator1.address);
+      await voting.afterRemoveContributor(delegator1.address);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() - 10
+      );
+    });
   });
 
   describe("delegation logic", async () => {
@@ -254,7 +281,7 @@ describe("Voting", () => {
       await expect(
         voting.connect(delegator2).delegate(delegator1.address)
       ).revertedWith(
-        "Voting: the proposed delegatee has itself a delegate. No sub-delegations allowed."
+        "Voting: the proposed delegatee already has a delegate. No sub-delegations allowed."
       );
     });
 
@@ -280,6 +307,12 @@ describe("Voting", () => {
       ).revertedWith("Voting: only contributors can be delegated.");
     });
 
+    it("should throw an error when delegating a contributor that has not delegated itself first", async () => {
+      await expect(
+        voting.connect(delegator1).delegate(noDelegate.address)
+      ).revertedWith("Voting: the proposed delegate should delegate itself first.");
+    });
+
     it("should emit an event", async () => {
       await expect(voting.connect(delegator1).delegate(delegated1.address))
         .emit(voting, "DelegateChanged")
@@ -291,21 +324,21 @@ describe("Voting", () => {
     it("should have as many votes as the balance of the account if not delegate exists", async () => {
       await token.mint(delegator1.address, 10);
 
-      expect(await voting.getVotes(delegator1.address)).equals(10);
+      expect(await voting.getVotingPower(delegator1.address)).equals(10);
     });
 
     it("should increase voting power after minting new tokens", async () => {
       await token.mint(delegator1.address, 10);
       await token.mint(delegator1.address, 21);
 
-      expect(await voting.getVotes(delegator1.address)).equals(31);
+      expect(await voting.getVotingPower(delegator1.address)).equals(31);
     });
 
     it("should transfer all votes to the delegatee upon delegation", async () => {
       await token.mint(delegator1.address, 10);
       await voting.connect(delegator1).delegate(delegated1.address);
 
-      expect(await voting.getVotes(delegated1.address)).equals(10);
+      expect(await voting.getVotingPower(delegated1.address)).equals(10);
     });
 
     it("should remove all votes from the delegatee upon token transfer", async () => {
@@ -313,7 +346,7 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       await token.connect(delegator1).transfer(delegated2.address, 10);
 
-      expect(await voting.getVotes(delegated1.address)).equals(0);
+      expect(await voting.getVotingPower(delegated1.address)).equals(0);
     });
 
     it("should move as many votes as tokens transferred to the existing delegatee if delegator receives new tokens", async () => {
@@ -322,14 +355,14 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       await token.connect(noDelegate).transfer(delegator1.address, 15);
 
-      expect(await voting.getVotes(delegated1.address)).equals(25);
+      expect(await voting.getVotingPower(delegated1.address)).equals(25);
     });
 
     it("should have 0 votes after delegating", async () => {
       await token.mint(delegator1.address, 10);
       await voting.connect(delegator1).delegate(delegated1.address);
 
-      expect(await voting.getVotes(delegator1.address)).equals(0);
+      expect(await voting.getVotingPower(delegator1.address)).equals(0);
     });
 
     it("should have as many votes as the balance after retransfering delegation to itself", async () => {
@@ -337,27 +370,27 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       await voting.connect(delegator1).delegate(delegator1.address);
 
-      expect(await voting.getVotes(delegator1.address)).equals(10);
+      expect(await voting.getVotingPower(delegator1.address)).equals(10);
     });
 
     it("should not increase voting power if a contributor sends tokens to a non contributor", async () => {
       await token.mint(delegator1.address, 10);
       await token.connect(delegator1).transfer(nonContributor.address, 10);
 
-      expect(await voting.getVotes(nonContributor.address)).equals(0);
+      expect(await voting.getVotingPower(nonContributor.address)).equals(0);
     });
 
     it("should increase voting power if a non contributor sends tokens to a contributor", async () => {
       await token.mint(nonContributor.address, 10);
       await token.connect(nonContributor).transfer(delegator1.address, 10);
 
-      expect(await voting.getVotes(delegator1.address)).equals(10);
+      expect(await voting.getVotingPower(delegator1.address)).equals(10);
     });
 
     it("should not increase voting power if a non contributor is given tokens", async () => {
       await token.mint(nonContributor.address, 10);
 
-      expect(await voting.getVotes(nonContributor.address)).equals(0);
+      expect(await voting.getVotingPower(nonContributor.address)).equals(0);
     });
 
     it("should emit 2 events with old and new balances of source and destination addresses", async () => {
@@ -369,6 +402,16 @@ describe("Voting", () => {
         .withArgs(delegator1.address, 10, 1)
         .emit(voting, "DelegateVotesChanged")
         .withArgs(delegator2.address, 11, 20);
+    });
+
+    it("should decrease to 0 the voting power of an account when it's removed from contributors", async () => {
+      await token.mint(delegator1.address, 10);
+      await shareholderRegistry.setNonContributor(delegator1.address);
+      await voting.afterRemoveContributor(delegator1.address);
+
+      let votingPowerAfter = await voting.getVotingPower(delegator1.address);
+
+      expect(votingPowerAfter.toNumber()).equal(0);
     });
   });
 });

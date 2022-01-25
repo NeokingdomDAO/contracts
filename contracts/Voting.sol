@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract Voting is AccessControl {
     bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public RESOLUTION_ROLE = keccak256("RESOLUTION_ROLE");
 
     IShareholderRegistry _shareholderRegistry;
     IERC20 _token;
@@ -14,20 +15,20 @@ contract Voting is AccessControl {
     bytes32 private _contributorRole;
 
     mapping(address => address) _delegates;
-    mapping(address => uint256) _votes;
+    mapping(address => uint256) _votingPower;
     mapping(address => uint256) _delegators;
 
     uint256 _totalVotingPower;
 
     event DelegateChanged(
-        address delegator,
+        address indexed delegator,
         address currentDelegate,
         address newDelegate
     );
     event DelegateVotesChanged(
-        address account,
-        uint256 oldVotes,
-        uint256 newVotes
+        address indexed account,
+        uint256 oldVotingPower,
+        uint256 newVotingPower
     );
 
     constructor() {
@@ -54,10 +55,28 @@ contract Voting is AccessControl {
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
     }
 
-    function balanceOf(address account) public view returns (uint256) {
-        return _token.balanceOf(account);
+    function afterRemoveContributor(address account)
+        external
+        onlyRole(RESOLUTION_ROLE)
+    {
+        address delegated = getDelegate(account);
+        uint256 votingPower = getVotingPower(delegated);
+
+        if (delegated != account) {
+            _delegate(account, account);
+        }
+
+        if (votingPower > 0) {
+            _moveVotingPower(delegated, address(0), votingPower);
+        }
     }
 
+    /// @dev Hook to be called by the companion token upon token transfer
+    /// @notice Only the companion token can call this method
+    /// @notice The voting power transfer logic relies on the correct usage of this hook from the companion token
+    /// @param from The sender's address
+    /// @param to The receiver's address
+    /// @param amount The amount sent
     function afterTokenTransfer(
         address from,
         address to,
@@ -66,18 +85,33 @@ contract Voting is AccessControl {
         _moveVotingPower(getDelegate(from), getDelegate(to), amount);
     }
 
+    /// @dev Returns the account's current delegate
+    /// @param account The account whose delegate is requested
+    /// @return Account's voting power
     function getDelegate(address account) public view returns (address) {
         return _delegates[account];
     }
 
-    function getVotes(address account) public view returns (uint256) {
-        return _votes[account];
+    /// @dev Returns the amount of valid votes for a given address
+    /// @notice An address that is not a contributor, will have always 0 voting power
+    /// @notice An address that has not delegated at least itself, will have always 0 voting power
+    /// @param account The account whose voting power is requested
+    /// @return Account's voting power
+    function getVotingPower(address account) public view returns (uint256) {
+        return _votingPower[account];
     }
 
+    /// @dev Returns the total amount of valid votes
+    /// @notice It's the sum of all tokens owned by contributors who has been at least delegated to themselves
+    /// @return Total voting power
     function getTotalVotingPower() public view returns (uint256) {
         return _totalVotingPower;
     }
 
+    /// @dev Allows sender to delegate another address for voting
+    /// @notice The first address to be delegated must be the sender itself
+    /// @notice Sub-delegation is not allowed
+    /// @param newDelegate Destination address of module transaction.
     function delegate(address newDelegate) public {
         require(
             _shareholderRegistry.isAtLeast(_contributorRole, msg.sender),
@@ -104,13 +138,17 @@ contract Voting is AccessControl {
             "Voting: the proposed delegate is already your delegate."
         );
 
-        address currentDelegateeDelegate = getDelegate(newDelegate);
-        require(
-            currentDelegateeDelegate == newDelegate ||
-                currentDelegateeDelegate == address(0) ||
-                newDelegate == delegator,
-            "Voting: the proposed delegatee has itself a delegate. No sub-delegations allowed."
-        );
+        if (delegator != newDelegate) {
+            address currentDelegateeDelegate = getDelegate(newDelegate);
+            require(
+                currentDelegateeDelegate != address(0),
+                "Voting: the proposed delegate should delegate itself first."
+            );
+            require(
+                currentDelegateeDelegate == newDelegate,
+                "Voting: the proposed delegatee already has a delegate. No sub-delegations allowed."
+            );
+        }
 
         require(
             _delegators[delegator] <= 1,
@@ -119,7 +157,7 @@ contract Voting is AccessControl {
 
         _beforeDelegate(delegator);
 
-        uint256 delegatorBalance = balanceOf(delegator);
+        uint256 delegatorBalance = _token.balanceOf(delegator);
         _delegates[delegator] = newDelegate;
         _delegators[newDelegate] = _delegators[newDelegate] + 1;
         _delegators[currentDelegate] = _delegators[newDelegate] - 1;
@@ -137,22 +175,24 @@ contract Voting is AccessControl {
         if (from != to && amount > 0) {
             if (from != address(0)) {
                 _beforeMoveVotingPower(from);
-                uint256 oldVotes = _votes[from];
-                _votes[from] = oldVotes - amount;
-                emit DelegateVotesChanged(from, oldVotes, _votes[from]);
-            }
-            else {
+                uint256 oldVotingPower = _votingPower[from];
+                _votingPower[from] = oldVotingPower - amount;
+                emit DelegateVotesChanged(
+                    from,
+                    oldVotingPower,
+                    _votingPower[from]
+                );
+            } else {
                 _beforeUpdateTotalVotingPower();
                 _totalVotingPower += amount;
             }
 
             if (to != address(0)) {
                 _beforeMoveVotingPower(to);
-                uint256 oldVotes = _votes[to];
-                _votes[to] = oldVotes + amount;
-                emit DelegateVotesChanged(to, oldVotes, _votes[to]);
-            }
-            else {
+                uint256 oldVotingPower = _votingPower[to];
+                _votingPower[to] = oldVotingPower + amount;
+                emit DelegateVotesChanged(to, oldVotingPower, _votingPower[to]);
+            } else {
                 _beforeUpdateTotalVotingPower();
                 _totalVotingPower -= amount;
             }

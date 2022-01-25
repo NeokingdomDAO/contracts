@@ -112,7 +112,7 @@ contract Resolution {
             !resolution.hasVoted[account] &&
             !resolution.delegatorHasVoted[account]
         ) {
-            votingPower = voting.getVotesAt(account, resolution.snapshotId);
+            votingPower = voting.getVotingPowerAt(account, resolution.snapshotId);
             if (votingPower == 0) {
                 votingPower = token.balanceOf(account); // TODO: use balanceOfAt as soon as contract available
             }
@@ -127,7 +127,7 @@ contract Resolution {
         ResolutionContent storage resolution
     ) internal {
         if (!resolution.hasVoted[delegate]) {
-            resolution.votes[delegate] = voting.getVotesAt(
+            resolution.votes[delegate] = voting.getVotingPowerAt(
                 delegate,
                 resolution.snapshotId
             );

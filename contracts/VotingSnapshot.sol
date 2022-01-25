@@ -9,13 +9,19 @@ import "./Voting.sol";
 contract VotingSnapshot is Voting, Snapshottable {
     using Arrays for uint256[];
 
-    struct Snapshots {
+    struct SnapshotsDelegates {
         uint256[] ids;
-        uint256[] votes;
         address[] delegates;
     }
 
-    mapping(address => Snapshots) _delegationSnapshots;
+    struct SnapshotsValues {
+        uint256[] ids;
+        uint256[] values;
+    }
+
+    mapping(address => SnapshotsDelegates) _delegationSnapshots;
+    mapping(address => SnapshotsValues) _votesSnapshots;
+    SnapshotsValues private _votingPowerSnapshots;
 
     function snapshot() public virtual override returns (uint256) {
         return _snapshot();
@@ -26,7 +32,7 @@ contract VotingSnapshot is Voting, Snapshottable {
         view
         returns (address)
     {
-        Snapshots storage snapshots = _delegationSnapshots[account];
+        SnapshotsDelegates storage snapshots = _delegationSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
         return valid ? snapshots.delegates[index] : getDelegate(account);
@@ -37,40 +43,71 @@ contract VotingSnapshot is Voting, Snapshottable {
         view
         returns (uint256)
     {
-        Snapshots storage snapshots = _delegationSnapshots[account];
+        SnapshotsValues storage snapshots = _votesSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
-        return valid ? snapshots.votes[index] : getVotes(account);
+        return valid ? snapshots.values[index] : getVotes(account);
     }
 
-    function _updateSnapshot(
-        Snapshots storage snapshots,
-        address currentDelegate,
-        uint256 currentVotes
+    function getTotalVotingPowerAt(uint256 snapshotId)
+        public
+        view
+        returns (uint256)
+    {
+        (bool valid, uint256 index) = _indexAt(
+            snapshotId,
+            _votingPowerSnapshots.ids
+        );
+
+        return
+            valid ? _votingPowerSnapshots.values[index] : getTotalVotingPower();
+    }
+
+    /*
+     * Snapshots update logic
+     */
+
+    function _updateSnaphshotDelegation(
+        SnapshotsDelegates storage snapshots,
+        address currentDelegate
     ) private {
         uint256 currentId = getCurrentSnapshotId();
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);
             snapshots.delegates.push(currentDelegate);
-            snapshots.votes.push(currentVotes);
         }
     }
 
+    function _updateSnaphshotValues(
+        SnapshotsValues storage snapshots,
+        uint256 currentValue
+    ) private {
+        uint256 currentId = getCurrentSnapshotId();
+        if (_lastSnapshotId(snapshots.ids) < currentId) {
+            snapshots.ids.push(currentId);
+            snapshots.values.push(currentValue);
+        }
+    }
+
+    /*
+     * Callbacks
+     */
+
     function _beforeDelegate(address delegator) internal override {
         super._beforeDelegate(delegator);
-        _updateSnapshot(
+        _updateSnaphshotDelegation(
             _delegationSnapshots[delegator],
-            getDelegate(delegator),
-            getVotes(delegator)
+            getDelegate(delegator)
         );
     }
 
     function _beforeMoveVotingPower(address account) internal override {
         super._beforeMoveVotingPower(account);
-        _updateSnapshot(
-            _delegationSnapshots[account],
-            getDelegate(account),
-            getVotes(account)
-        );
+        _updateSnaphshotValues(_votesSnapshots[account], getVotes(account));
+    }
+
+    function _beforeUpdateTotalVotingPower() internal override {
+        super._beforeUpdateTotalVotingPower();
+        _updateSnaphshotValues(_votingPowerSnapshots, getTotalVotingPower());
     }
 }

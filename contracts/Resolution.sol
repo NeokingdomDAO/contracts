@@ -16,7 +16,10 @@ contract Resolution {
         //uint256 resolutionType;
         uint256 snapshotId;
         bytes32 contentHash;
+        uint256 yesVotes;
+        uint256 quorum;
         //uint256 timestamp;
+
         mapping(address => uint256) votes;
         mapping(address => bool) preference; // false = no, true = yes
         mapping(address => bool) hasVoted;
@@ -47,24 +50,9 @@ contract Resolution {
     {
         ResolutionContent storage resolution = resolutions[resolutionId];
 
-        // Get all voters -> from snapshot on ShareholderRegistry
-        address[] memory voters;
-
-        uint256 totalVotes = 0;
-
-        uint256 yesVotes = 0;
-        // For each voter
-        for (uint256 i = 0; i < voters.length; i++) {
-            address voter = voters[i];
-            totalVotes += voting.getVotesAt(voter, resolution.snapshotId);
-            // if yes was voted
-            if (resolution.preference[voter]) {
-                yesVotes += resolution.votes[voter];
-            }
-        }
-
-        // Check if yes count exceed the 50% of total voting power
-        return yesVotes * 2 > totalVotes;
+        uint256 totalVotes = voting.getTotalVotingPowerAt(resolution.snapshotId);
+        uint256 absoluteQuorum = resolution.quorum * totalVotes;
+        return resolution.yesVotes * 100 >= absoluteQuorum;
     }
 
     // Returns for each address whether it voted and, in case, what
@@ -168,5 +156,14 @@ contract Resolution {
         resolution.preference[msg.sender] = preference;
         resolution.hasVoted[msg.sender] = true;
         resolution.votes[msg.sender] = senderVotes;
+
+        if(resolution.preference[msg.sender] != resolution.preference[delegate]) {
+            if(resolution.preference[msg.sender]) {
+                resolution.yesVotes += senderVotes;
+            }
+            else {
+                resolution.yesVotes -= senderVotes;
+            }
+        }
     }
 }

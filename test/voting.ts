@@ -28,7 +28,7 @@ describe("Voting", () => {
     delegator2: SignerWithAddress,
     delegated1: SignerWithAddress,
     delegated2: SignerWithAddress,
-    anon: SignerWithAddress,
+    noDelegate: SignerWithAddress,
     nonContributor: SignerWithAddress;
 
   beforeEach(async () => {
@@ -38,7 +38,7 @@ describe("Voting", () => {
       delegator2,
       delegated1,
       delegated2,
-      anon,
+      noDelegate,
       nonContributor,
     ] = await ethers.getSigners();
     const VotingFactory = (await ethers.getContractFactory(
@@ -80,41 +80,146 @@ describe("Voting", () => {
   describe("access logic", async () => {
     it("should throw an error when anyone but the Token contract calls afterTokenTransfer", async () => {
       await expect(
-        voting.afterTokenTransfer(anon.address, anon.address, 10)
+        voting.afterTokenTransfer(noDelegate.address, noDelegate.address, 10)
       ).revertedWith("Voting: only Token contract can call this method.");
     });
 
     it("should throw an error when anyone but the MANAGER calls setToken", async () => {
-      let errorMessage = `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
-      await expect(voting.connect(anon).setToken(token.address)).revertedWith(
-        errorMessage
-      );
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
+      await expect(
+        voting.connect(noDelegate).setToken(token.address)
+      ).revertedWith(errorMessage);
 
-      voting.grantRole(managerRole, anon.address);
-      voting.connect(anon).setToken(shareholderRegistry.address);
+      voting.grantRole(managerRole, noDelegate.address);
+      voting.connect(noDelegate).setToken(shareholderRegistry.address);
     });
 
     it("should throw an error when anyone but the MANAGER calls setShareholderRegistry", async () => {
-      let errorMessage = `AccessControl: account ${anon.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
       await expect(
-        voting.connect(anon).setShareholderRegistry(shareholderRegistry.address)
+        voting
+          .connect(noDelegate)
+          .setShareholderRegistry(shareholderRegistry.address)
       ).revertedWith(errorMessage);
 
-      voting.grantRole(managerRole, anon.address);
-      voting.connect(anon).setShareholderRegistry(shareholderRegistry.address);
+      voting.grantRole(managerRole, noDelegate.address);
+      voting
+        .connect(noDelegate)
+        .setShareholderRegistry(shareholderRegistry.address);
+    });
+  });
+
+  describe("total voting power logic", async () => {
+    it("should not increase voting power when minting tokens to a contributor without delegate", async () => {
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.mint(noDelegate.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter).equal(votingPowerBefore);
+    });
+
+    it("should not increase voting power when minting tokens to a non contributor", async () => {
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.mint(nonContributor.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter).equal(votingPowerBefore);
+    });
+
+    it("should not increase voting power when a non contributor transfers tokens to a contributor without delegate", async () => {
+      await token.mint(nonContributor.address, 10);
+      await token.mint(noDelegate.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.connect(nonContributor).transfer(noDelegate.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter).equal(votingPowerBefore);
+    });
+
+    it("should not increase voting power when a contributor with delegate transfers tokens to another contributor with delegate", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegated1.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.connect(delegator1).transfer(delegated1.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter).equal(votingPowerBefore);
+    });
+
+    it("should increase voting power when a contributor with tokens creates the first delegate", async () => {
+      await token.mint(noDelegate.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await voting.connect(noDelegate).delegate(noDelegate.address);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() + 10
+      );
+    });
+
+    it("should increase voting power when a non contributor transfers tokens to a contributor with delegate", async () => {
+      await token.mint(nonContributor.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.connect(nonContributor).transfer(delegator1.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() + 10
+      );
+    });
+
+    it("should increase voting power when minting tokens to a contributor with delegate", async () => {
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.mint(delegator1.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() + 10
+      );
+    });
+
+    it("should decrease voting power when a contributor with delegate transfers tokens to a non contributor", async () => {
+      await token.mint(delegator1.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.connect(delegator1).transfer(nonContributor.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() - 10
+      );
+    });
+
+    it("should decrease voting power when a contributor with delegate transfers token to a contributor without delegate", async () => {
+      await token.mint(delegator1.address, 10);
+      let votingPowerBefore = await voting.getTotalVotingPower();
+      await token.connect(delegator1).transfer(noDelegate.address, 10);
+
+      let votingPowerAfter = await voting.getTotalVotingPower();
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() - 10
+      );
     });
   });
 
   describe("delegation logic", async () => {
     it("should return address 0x0 when no delegates exist", async () => {
-      expect(await voting.getDelegate(anon.address)).equals(
+      expect(await voting.getDelegate(noDelegate.address)).equals(
         "0x0000000000000000000000000000000000000000"
       );
     });
 
     it("should throw an error when first delegate is not the account itself", async () => {
       await expect(
-        voting.connect(anon).delegate(delegated1.address)
+        voting.connect(noDelegate).delegate(delegated1.address)
       ).revertedWith("Voting: first delegate yourself");
     });
 
@@ -213,9 +318,9 @@ describe("Voting", () => {
 
     it("should move as many votes as tokens transferred to the existing delegatee if delegator receives new tokens", async () => {
       await token.mint(delegator1.address, 10);
-      await token.mint(anon.address, 15);
+      await token.mint(noDelegate.address, 15);
       await voting.connect(delegator1).delegate(delegated1.address);
-      await token.connect(anon).transfer(delegator1.address, 15);
+      await token.connect(noDelegate).transfer(delegator1.address, 15);
 
       expect(await voting.getVotes(delegated1.address)).equals(25);
     });

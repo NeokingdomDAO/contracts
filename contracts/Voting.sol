@@ -17,6 +17,8 @@ contract Voting is AccessControl {
     mapping(address => uint256) _votes;
     mapping(address => uint256) _delegators;
 
+    uint256 _totalVotingPower;
+
     event DelegateChanged(
         address delegator,
         address currentDelegate,
@@ -70,6 +72,10 @@ contract Voting is AccessControl {
 
     function getVotes(address account) public view returns (uint256) {
         return _votes[account];
+    }
+
+    function getTotalVotingPower() public view returns (uint256) {
+        return _totalVotingPower;
     }
 
     function delegate(address newDelegate) public {
@@ -135,6 +141,10 @@ contract Voting is AccessControl {
                 _votes[from] = oldVotes - amount;
                 emit DelegateVotesChanged(from, oldVotes, _votes[from]);
             }
+            else {
+                _beforeUpdateTotalVotingPower();
+                _totalVotingPower += amount;
+            }
 
             if (to != address(0)) {
                 _beforeMoveVotingPower(to);
@@ -142,10 +152,16 @@ contract Voting is AccessControl {
                 _votes[to] = oldVotes + amount;
                 emit DelegateVotesChanged(to, oldVotes, _votes[to]);
             }
+            else {
+                _beforeUpdateTotalVotingPower();
+                _totalVotingPower -= amount;
+            }
         }
     }
 
     function _beforeDelegate(address delegator) internal virtual {}
 
     function _beforeMoveVotingPower(address account) internal virtual {}
+
+    function _beforeUpdateTotalVotingPower() internal virtual {}
 }

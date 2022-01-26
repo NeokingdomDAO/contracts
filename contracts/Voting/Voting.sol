@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ShareholderRegistry/IShareholderRegistry.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "../ShareholderRegistry/IShareholderRegistry.sol";
 
 contract Voting is AccessControl {
     bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -14,7 +14,6 @@ contract Voting is AccessControl {
 
     bytes32 private _contributorRole;
 
-    // TODO handle case when contributor that is delegated turns into investor
     // TODO Turn into struct
     mapping(address => address) _delegates;
     mapping(address => uint256) _votingPower;
@@ -62,17 +61,18 @@ contract Voting is AccessControl {
         onlyRole(RESOLUTION_ROLE)
     {
         address delegated = getDelegate(account);
-        uint256 votingPower = getVotingPower(delegated);
+        if (delegated != address(0)) {
 
-        if (delegated != account) {
-            _delegate(account, account);
-            //delete _delegates[account];
-        }
+            if (delegated != account) {
+                _delegate(account, account);
+            }
 
-        if (votingPower > 0) {
-            //_moveVotingPower(account, address(0), votingPower);
-            // TODO: add test to assure that this fails
-            _moveVotingPower(delegated, address(0), votingPower);
+            delete _delegates[account];
+
+            uint256 individualVotingPower = _token.balanceOf(account);
+            if (individualVotingPower > 0) {
+                _moveVotingPower(account, address(0), individualVotingPower);
+            }
         }
     }
 
@@ -156,9 +156,8 @@ contract Voting is AccessControl {
             );
         }
 
-        // Can it happen that the delegator has one delegator that is not itself?
         require(
-            _delegators[delegator] <= 1,
+            _delegators[delegator] == 0 || delegator == newDelegate,
             "Voting: the delegator is delegated. No sub-delegations allowed."
         );
 
@@ -166,11 +165,14 @@ contract Voting is AccessControl {
 
         uint256 delegatorBalance = _token.balanceOf(delegator);
         _delegates[delegator] = newDelegate;
-        _delegators[newDelegate]++;
 
-        //_delegators[currentDelegate]--;
-        // TODO: Add a test case for this one
-        _delegators[currentDelegate] = _delegators[newDelegate] - 1;
+        if(delegator != newDelegate && newDelegate != address(0)) {
+            _delegators[newDelegate]++;
+        }
+
+        if(delegator != currentDelegate && currentDelegate != address(0)) {
+            _delegators[currentDelegate]--;
+        }
 
         emit DelegateChanged(delegator, currentDelegate, newDelegate);
 

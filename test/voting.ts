@@ -11,6 +11,7 @@ import {
   ShareholderRegistryMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import exp from "constants";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -314,6 +315,21 @@ describe("Voting", () => {
       );
     });
 
+    it("should return address 0x0 for an self-delegated account whose contributor status has been removed", async () => {
+      await voting.afterRemoveContributor(delegator1.address);
+
+      expect(await voting.getDelegate(delegator1.address)).equal(AddressZero);
+    });
+
+    it("should allow an account to re-delegate itself after delegating another account", async () => {
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await voting.connect(delegator1).delegate(delegator1.address);
+
+      expect(await voting.getDelegate(delegator1.address)).equals(
+        delegator1.address
+      );
+    });
+
     it("should emit an event", async () => {
       await expect(voting.connect(delegator1).delegate(delegated1.address))
         .emit(voting, "DelegateChanged")
@@ -413,6 +429,201 @@ describe("Voting", () => {
       let votingPowerAfter = await voting.getVotingPower(delegator1.address);
 
       expect(votingPowerAfter.toNumber()).equal(0);
+    });
+
+    it("should decrease delegate's voting power when its delegator's contributor status is removed", async () => {
+      await token.mint(delegator1.address, 10);
+      await voting.connect(delegator1).delegate(delegated1.address);
+      let votingPowerBefore = await voting.getVotingPower(delegated1.address);
+      await shareholderRegistry.setNonContributor(delegator1.address);
+      await voting.afterRemoveContributor(delegator1.address);
+
+      let votingPowerAfter = await voting.getVotingPower(delegated1.address);
+
+      expect(votingPowerAfter.toNumber()).equal(
+        votingPowerBefore.toNumber() - 10
+      );
+    });
+  });
+
+  describe("complex flows", async () => {
+    it("when a non self-delegated contributor is removed of its status, its delegate can again delegate someone else", async () => {
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await expect(
+        voting.connect(delegated1).delegate(delegated2.address)
+      ).revertedWith(
+        "Voting: the delegator is delegated. No sub-delegations allowed."
+      );
+      expect(await voting.getDelegate(delegated1.address)).equals(
+        delegated1.address
+      );
+
+      await shareholderRegistry.setNonContributor(delegator1.address);
+      await voting.afterRemoveContributor(delegator1.address);
+
+      await voting.connect(delegated1).delegate(delegated2.address);
+
+      expect(await voting.getDelegate(delegated1.address)).equals(
+        delegated2.address
+      );
+    });
+
+    it("should allow an account to re-delegate itself after delegating a multi-delegated account", async () => {
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await voting.connect(delegator2).delegate(delegated1.address);
+      await voting.connect(delegator2).delegate(delegator2.address);
+
+      expect(await voting.getDelegate(delegator2.address)).equals(
+        delegator2.address
+      );
+    });
+
+    it("when an account is delegated by 2 accounts and then one of these re-takes the delegation, the initially delegated account cannot yet delegate (as one more account is delegating it)", async () => {
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await voting.connect(delegator2).delegate(delegated1.address);
+
+      await expect(
+        voting.connect(delegated1).delegate(delegated2.address)
+      ).revertedWith(
+        "Voting: the delegator is delegated. No sub-delegations allowed."
+      );
+      expect(await voting.getDelegate(delegated1.address)).equals(
+        delegated1.address
+      );
+
+      await voting.connect(delegator2).delegate(delegator2.address);
+
+      await expect(
+        voting.connect(delegated1).delegate(delegated2.address)
+      ).revertedWith(
+        "Voting: the delegator is delegated. No sub-delegations allowed."
+      );
+      expect(await voting.getDelegate(delegated1.address)).equals(
+        delegated1.address
+      );
+    });
+
+    it("when an account is delegated by 2 accounts and then both re-take the delegation, the initially delegated account can delegate", async () => {
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await voting.connect(delegator2).delegate(delegated1.address);
+
+      await expect(
+        voting.connect(delegated1).delegate(delegated2.address)
+      ).revertedWith(
+        "Voting: the delegator is delegated. No sub-delegations allowed."
+      );
+      expect(await voting.getDelegate(delegated1.address)).equals(
+        delegated1.address
+      );
+
+      await voting.connect(delegator1).delegate(delegator1.address);
+      await voting.connect(delegator2).delegate(delegator2.address);
+
+      await voting.connect(delegated1).delegate(delegated2.address);
+      expect(await voting.getDelegate(delegated1.address)).equals(
+        delegated2.address
+      );
+    });
+
+    it("when a delegated account loses its contributor state, its delegator should be able to redelegate itself and have back its voting power", async () => {
+      await token.mint(delegator1.address, 10);
+      await voting.connect(delegator1).delegate(delegated1.address);
+      expect(await voting.getVotingPower(delegator1.address)).equal(0);
+
+      await shareholderRegistry.setNonContributor(delegated1.address);
+      await voting.afterRemoveContributor(delegated1.address);
+
+      await voting.connect(delegator1).delegate(delegator1.address);
+      expect(await voting.getDelegate(delegator1.address)).equal(
+        delegator1.address
+      );
+      expect(await voting.getVotingPower(delegator1.address)).equal(10);
+    });
+
+    it("when a account with multiple delegators loses its contributor state, one of the delegators redelegates itself and then the original account regains its contributor status and redelegate itself, its voting power should include the one of the original delegator", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegator2.address, 5);
+      await token.mint(delegated1.address, 8);
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await voting.connect(delegator2).delegate(delegated1.address);
+
+      await shareholderRegistry.setNonContributor(delegated1.address);
+      await voting.afterRemoveContributor(delegated1.address);
+      await voting.connect(delegator1).delegate(delegator1.address);
+
+      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await voting.connect(delegated1).delegate(delegated1.address);
+
+      expect(await voting.getVotingPower(delegated1.address)).equal(13);
+    });
+
+    it("when a account with a delegators loses its contributor state, transfers all its tokens to an another account, then becomes a contributor again, its voting power should equal the one of the original delegator", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegated1.address, 8);
+      await voting.connect(delegator1).delegate(delegated1.address);
+
+      await shareholderRegistry.setNonContributor(delegated1.address);
+      await voting.afterRemoveContributor(delegated1.address);
+
+      await token.connect(delegated1).transfer(nonContributor.address, 8);
+
+      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await voting.connect(delegated1).delegate(delegated1.address);
+
+      expect(await voting.getVotingPower(delegated1.address)).equal(10);
+    });
+
+    it("when a account with a delegator loses its contributor state, transfers all its tokens to the original delegator, then becomes a contributor again, its voting power should equal initial one", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegated1.address, 8);
+      await voting.connect(delegator1).delegate(delegated1.address);
+
+      await shareholderRegistry.setNonContributor(delegated1.address);
+      await voting.afterRemoveContributor(delegated1.address);
+
+      await token.connect(delegated1).transfer(delegator1.address, 8);
+      expect(await voting.getVotingPower(delegator1.address)).equal(0);
+
+      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await voting.connect(delegated1).delegate(delegated1.address);
+
+      expect(await voting.getVotingPower(delegated1.address)).equal(18);
+    });
+
+    it("when A delegates B and then A loses its contributor status, after re-joining as a contributor, B should only have its balance as voting power", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegated1.address, 8);
+      await voting.connect(delegator1).delegate(delegated1.address);
+      expect(await voting.getVotingPower(delegator1.address)).equal(0); 
+      expect(await voting.getVotingPower(delegated1.address)).equal(18); 
+
+      await shareholderRegistry.setNonContributor(delegator1.address);
+      await voting.afterRemoveContributor(delegator1.address);
+
+      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await voting.connect(delegator1).delegate(delegator1.address);
+
+      expect(await voting.getVotingPower(delegator1.address)).equal(10);      
+      expect(await voting.getVotingPower(delegated1.address)).equal(8);
+    });
+
+    it("when A delegates B and then B loses its contributor status, then the DAO mints new tokens to A, the total voting power should be the original one minus B plus the new tokens", async () => {
+      await token.mint(delegator1.address, 10);
+      await token.mint(delegated1.address, 8);
+      await voting.connect(delegator1).delegate(delegated1.address);
+      expect(await voting.getTotalVotingPower()).equal(18); 
+      
+      await shareholderRegistry.setNonContributor(delegated1.address);
+      await voting.afterRemoveContributor(delegated1.address);
+      expect(await voting.getTotalVotingPower()).equal(10); 
+
+      await token.mint(delegator1.address, 2);
+      expect(await voting.getTotalVotingPower()).equal(12); 
+
+      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await voting.connect(delegated1).delegate(delegated1.address);
+      expect(await voting.getTotalVotingPower()).equal(20); 
+
     });
   });
 });

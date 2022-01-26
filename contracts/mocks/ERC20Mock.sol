@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../Voting.sol";
+import "../Voting/Voting.sol";
 
 contract ERC20Mock is ERC20 {
     Voting _voting;

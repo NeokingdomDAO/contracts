@@ -50,7 +50,9 @@ contract Resolution {
     {
         ResolutionContent storage resolution = resolutions[resolutionId];
 
-        uint256 totalVotes = voting.getTotalVotingPowerAt(resolution.snapshotId);
+        uint256 totalVotes = voting.getTotalVotingPowerAt(
+            resolution.snapshotId
+        );
         uint256 absoluteQuorum = resolution.quorum * totalVotes;
         return resolution.yesVotes * 100 >= absoluteQuorum;
     }
@@ -108,11 +110,16 @@ contract Resolution {
         // is computed incrementally as the delegators vote the resolution and stored inside "votes"
 
         uint256 votingPower = resolution.votes[account];
+
         if (
             !resolution.hasVoted[account] &&
             !resolution.delegatorHasVoted[account]
         ) {
-            votingPower = voting.getVotingPowerAt(account, resolution.snapshotId);
+            votingPower = voting.getVotingPowerAt(
+                account,
+                resolution.snapshotId
+            );
+
             if (votingPower == 0) {
                 votingPower = token.balanceOf(account); // TODO: use balanceOfAt as soon as contract available
             }
@@ -143,25 +150,40 @@ contract Resolution {
     function vote(bool preference, uint256 resolutionId) public {
         ResolutionContent storage resolution = resolutions[resolutionId];
 
+        // Load voting power of the voter
         uint256 senderVotes = _getCurrentVotingPower(msg.sender, resolution);
 
+        // Load the delegate of the voter
         address delegate = voting.getDelegateAt(
             msg.sender,
             resolution.snapshotId
         );
-        if (delegate != address(0) && resolution.hasVoted[delegate]) {
-            _updateDelegateVotes(delegate, senderVotes, resolution);
+
+        // If the delegate has voted already...
+        if (resolution.hasVoted[delegate]) {
+            // Subtract from delegate the votes of the current voter
+            resolution.votes[delegate] =
+                resolution.votes[delegate] -
+                senderVotes;
+
+            // Mark that the delegator has voted (useful for `getCurrentVotingPower`)
+            resolution.delegatorHasVoted[delegate] = true;
         }
 
+        // Store the preference YES/NO for the voter
         resolution.preference[msg.sender] = preference;
+        // Mark that the voter has voted
         resolution.hasVoted[msg.sender] = true;
         resolution.votes[msg.sender] = senderVotes;
 
-        if(resolution.preference[msg.sender] != resolution.preference[delegate]) {
-            if(resolution.preference[msg.sender]) {
+        // If the voter is voting differently from their delegate...
+        if (
+            resolution.preference[msg.sender] != resolution.preference[delegate]
+        ) {
+            // Update the yesVotes counter
+            if (resolution.preference[msg.sender]) {
                 resolution.yesVotes += senderVotes;
-            }
-            else {
+            } else {
                 resolution.yesVotes -= senderVotes;
             }
         }

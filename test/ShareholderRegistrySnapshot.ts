@@ -14,6 +14,8 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const AddressZero = ethers.constants.AddressZero;
+const Bytes32Zero =
+  "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 describe("Shareholder Registry", () => {
   let MANAGER_ROLE: string,
@@ -126,6 +128,18 @@ describe("Shareholder Registry", () => {
       expect(await registry.isAtLeast(CONTRIBUTOR_STATUS, alice.address)).equal(
         true
       );
+    });
+
+    it("should cleanup the status when a shareholder transfer all their shares", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+      await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+      expect(await registry.getStatus(alice.address)).equal(CONTRIBUTOR_STATUS);
+      await registry.connect(alice).transfer(founder.address, parseEther("1"));
+      expect(await registry.getStatus(alice.address)).equal(Bytes32Zero);
     });
   });
 

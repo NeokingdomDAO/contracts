@@ -25,7 +25,7 @@ contract ShareholderRegistryBase is ERC20 {
 
     function _setStatus(bytes32 status, address account) internal virtual {
         require(
-            isAtLeast(SHAREHOLDER_STATUS, account),
+            status == 0 || isAtLeast(SHAREHOLDER_STATUS, account),
             "Shareholder: address has no tokens"
         );
         bytes32 previous = _statuses[account];
@@ -71,4 +71,14 @@ contract ShareholderRegistryBase is ERC20 {
         internal
         virtual
     {}
+
+    function _afterTokenTransfer(
+        address from,
+        address,
+        uint256
+    ) internal override {
+        if (balanceOf(from) == 0) {
+            _setStatus(0, from);
+        }
+    }
 }

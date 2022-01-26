@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+// TODO: update _statuses when account has no shares
+// TODO: check who can move shares
+
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -57,16 +60,6 @@ contract ShareholderRegistryBase is ERC20 {
                 status == accountStatus ||
                 (status == CONTRIBUTOR_STATUS &&
                     accountStatus == FOUNDER_STATUS));
-
-        /*
-                (status == INVESTOR_STATUS &&
-                    (accountStatus == FOUNDER_STATUS ||
-                        accountStatus == CONTRIBUTOR_STATUS)) ||
-                (status == SHAREHOLDER_STATUS &&
-                    (accountStatus == FOUNDER_STATUS ||
-                        accountStatus == CONTRIBUTOR_STATUS ||
-                        accountStatus == INVESTOR_STATUS)));
-                        */
     }
 
     function _beforeSetStatus(address account, bytes32 status)
@@ -78,6 +71,4 @@ contract ShareholderRegistryBase is ERC20 {
         internal
         virtual
     {}
-
-    // update _statuses when account has no shares
 }

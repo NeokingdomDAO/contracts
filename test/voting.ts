@@ -11,7 +11,6 @@ import {
   ShareholderRegistryMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { resourceUsage } from "process";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -310,7 +309,9 @@ describe("Voting", () => {
     it("should throw an error when delegating a contributor that has not delegated itself first", async () => {
       await expect(
         voting.connect(delegator1).delegate(noDelegate.address)
-      ).revertedWith("Voting: the proposed delegate should delegate itself first.");
+      ).revertedWith(
+        "Voting: the proposed delegate should delegate itself first."
+      );
     });
 
     it("should emit an event", async () => {

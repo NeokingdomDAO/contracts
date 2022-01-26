@@ -14,6 +14,8 @@ contract Voting is AccessControl {
 
     bytes32 private _contributorRole;
 
+    // TODO handle case when contributor that is delegated turns into investor
+    // TODO Turn into struct
     mapping(address => address) _delegates;
     mapping(address => uint256) _votingPower;
     mapping(address => uint256) _delegators;
@@ -64,9 +66,12 @@ contract Voting is AccessControl {
 
         if (delegated != account) {
             _delegate(account, account);
+            //delete _delegates[account];
         }
 
         if (votingPower > 0) {
+            //_moveVotingPower(account, address(0), votingPower);
+            // TODO: add test to assure that this fails
             _moveVotingPower(delegated, address(0), votingPower);
         }
     }
@@ -140,6 +145,7 @@ contract Voting is AccessControl {
 
         if (delegator != newDelegate) {
             address currentDelegateeDelegate = getDelegate(newDelegate);
+            // Can we remove this?
             require(
                 currentDelegateeDelegate != address(0),
                 "Voting: the proposed delegate should delegate itself first."
@@ -150,6 +156,7 @@ contract Voting is AccessControl {
             );
         }
 
+        // Can it happen that the delegator has one delegator that is not itself?
         require(
             _delegators[delegator] <= 1,
             "Voting: the delegator is delegated. No sub-delegations allowed."
@@ -159,7 +166,10 @@ contract Voting is AccessControl {
 
         uint256 delegatorBalance = _token.balanceOf(delegator);
         _delegates[delegator] = newDelegate;
-        _delegators[newDelegate] = _delegators[newDelegate] + 1;
+        _delegators[newDelegate]++;
+
+        //_delegators[currentDelegate]--;
+        // TODO: Add a test case for this one
         _delegators[currentDelegate] = _delegators[newDelegate] - 1;
 
         emit DelegateChanged(delegator, currentDelegate, newDelegate);

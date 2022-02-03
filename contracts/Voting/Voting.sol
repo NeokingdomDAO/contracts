@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
-contract Voting is AccessControl, IVoting {
+contract Voting is AccessControl {
     bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public RESOLUTION_ROLE = keccak256("RESOLUTION_ROLE");
 

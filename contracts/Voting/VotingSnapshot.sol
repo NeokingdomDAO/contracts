@@ -23,7 +23,12 @@ contract VotingSnapshot is Voting, Snapshottable {
     mapping(address => SnapshotsValues) _votingPowerSnapshots;
     SnapshotsValues private _totalVotingPowerSnapshots;
 
-    function snapshot() public virtual override returns (uint256) {
+    function snapshot()
+        public
+        virtual
+        override(Snapshottable, ISnapshot)
+        returns (uint256)
+    {
         return _snapshot();
     }
 
@@ -60,7 +65,9 @@ contract VotingSnapshot is Voting, Snapshottable {
         );
 
         return
-            valid ? _totalVotingPowerSnapshots.values[index] : getTotalVotingPower();
+            valid
+                ? _totalVotingPowerSnapshots.values[index]
+                : getTotalVotingPower();
     }
 
     /*
@@ -103,11 +110,17 @@ contract VotingSnapshot is Voting, Snapshottable {
 
     function _beforeMoveVotingPower(address account) internal override {
         super._beforeMoveVotingPower(account);
-        _updateSnaphshotValues(_votingPowerSnapshots[account], getVotingPower(account));
+        _updateSnaphshotValues(
+            _votingPowerSnapshots[account],
+            getVotingPower(account)
+        );
     }
 
     function _beforeUpdateTotalVotingPower() internal override {
         super._beforeUpdateTotalVotingPower();
-        _updateSnaphshotValues(_totalVotingPowerSnapshots, getTotalVotingPower());
+        _updateSnaphshotValues(
+            _totalVotingPowerSnapshots,
+            getTotalVotingPower()
+        );
     }
 }

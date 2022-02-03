@@ -151,6 +151,20 @@ contract ResolutionManager {
         emit ResolutionUpdated(msg.sender, resolutionId);
     }
 
+    function getVoterVote(uint256 resolutionId, address voter) public view returns(bool isYes, bool hasVoted, uint256 votingPower) {
+        Resolution storage resolution = resolutions[resolutionId];
+        
+        isYes = resolution.hasVotedYes[voter];
+        hasVoted = resolution.hasVoted[voter];
+
+        if(_voting.getDelegateAt(voter, resolution.snapshotId) != address(0) && hasVoted) {
+            votingPower = _telediskoToken.balanceOfAt(voter, resolution.snapshotId);
+        } 
+        else {
+            votingPower = _voting.getVotingPowerAt(voter, resolution.snapshotId) - resolution.lostVotingPower[voter];
+        }
+    }
+
     /*
     function getResolution(uint256 resolutionId)
         public

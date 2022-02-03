@@ -26,7 +26,7 @@ contract VotingSnapshot is Voting, Snapshottable {
     function snapshot()
         public
         virtual
-        override(Snapshottable, ISnapshot)
+        override(Snapshottable)
         returns (uint256)
     {
         return _snapshot();

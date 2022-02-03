@@ -15,6 +15,10 @@ contract ShareholderRegistryMock is IShareholderRegistry {
 
     address _nonContributor;
 
+    function snapshot() public override returns (uint256) {
+        
+    }
+
     function setNonContributor(address account) public {
         _nonContributor = account;
     }

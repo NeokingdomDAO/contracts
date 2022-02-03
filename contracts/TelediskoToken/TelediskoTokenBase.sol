@@ -39,22 +39,26 @@ contract TelediskoTokenBase is ERC20 {
 
     // TODO: the logic to decide whether an account can transfer tokens or not depends on multiple components
     // that have yet to be implemented. This is only a first draft.
+    /*
     function _canTransfer(address account) internal returns (bool) {
         // This check may potentially burn quite some gas
         return
             _shareholderRegistry.getStatus(account) !=
             _shareholderRegistry.CONTRIBUTOR_STATUS();
     }
+    */
 
     function _transfer(
         address from,
         address to,
         uint256 amount
     ) internal override {
+        /*
         require(
             _canTransfer(from),
             "TelediskoToken: contributors cannot transfer shares before previous approval."
         );
+        */
         return super._transfer(from, to, amount);
     }
 

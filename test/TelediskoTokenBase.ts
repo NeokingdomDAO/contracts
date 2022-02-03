@@ -62,10 +62,19 @@ describe("TelediskoToken", () => {
   });
 
   describe("token transfer logic", async () => {
-    it("should call the Voting hook after a token transfer", async () => {
-      //await chai.spy.on(voting, "afterTokenTransfer");
-      //await telediskoToken.mint(account.address, 10);
-      //await expect(voting.afterTokenTransfer).to.have.been.called();
+    it("should call the Voting hook after a minting", async () => {
+      await expect(telediskoToken.mint(account.address, 10))
+        .emit(voting, "AfterTokenTransferCalled")
+        .withArgs(AddressZero, account.address, 10);
+    });
+
+    it("should call the Voting hook after a token trasnfer", async () => {
+      telediskoToken.mint(account.address, 10);
+      await expect(
+        telediskoToken.connect(account).transfer(nonContributor.address, 10)
+      )
+        .emit(voting, "AfterTokenTransferCalled")
+        .withArgs(account.address, nonContributor.address, 10);
     });
   });
 });

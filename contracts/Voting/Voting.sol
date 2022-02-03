@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
+import "./IVoting.sol";
 
-contract Voting is AccessControl {
+contract Voting is AccessControl, IVoting {
     bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public RESOLUTION_ROLE = keccak256("RESOLUTION_ROLE");
 
@@ -62,7 +63,6 @@ contract Voting is AccessControl {
     {
         address delegated = getDelegate(account);
         if (delegated != address(0)) {
-
             if (delegated != account) {
                 _delegate(account, account);
             }
@@ -166,11 +166,11 @@ contract Voting is AccessControl {
         uint256 delegatorBalance = _token.balanceOf(delegator);
         _delegates[delegator] = newDelegate;
 
-        if(delegator != newDelegate && newDelegate != address(0)) {
+        if (delegator != newDelegate && newDelegate != address(0)) {
             _delegators[newDelegate]++;
         }
 
-        if(delegator != currentDelegate && currentDelegate != address(0)) {
+        if (delegator != currentDelegate && currentDelegate != address(0)) {
             _delegators[currentDelegate]--;
         }
 

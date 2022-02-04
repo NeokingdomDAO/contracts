@@ -1,4 +1,4 @@
-// spdx-license-identifier: mit
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
 
@@ -277,21 +277,17 @@ contract ResolutionManager {
                 resolution.snapshotId
             );
             // If sender didn't vote before and has a delegate
-            if (!resolution.hasVoted[msg.sender]) {
-                // Did sender's delegate vote?
-                if (
-                    resolution.hasVoted[delegate] &&
-                    resolution.hasVotedYes[delegate]
-                ) {
-                    resolution.yesVotesTotal -= votingPower;
-                }
-                resolution.lostVotingPower[delegate] += votingPower;
-                emit DelegateLostVotingPower(
-                    delegate,
-                    resolutionId,
-                    votingPower
-                );
+            //if (!resolution.hasVoted[msg.sender]) {
+            // Did sender's delegate vote?
+            if (
+                resolution.hasVoted[delegate] &&
+                resolution.hasVotedYes[delegate]
+            ) {
+                resolution.yesVotesTotal -= votingPower;
             }
+            resolution.lostVotingPower[delegate] += votingPower;
+            emit DelegateLostVotingPower(delegate, resolutionId, votingPower);
+            //}
         }
 
         // votingPower is set

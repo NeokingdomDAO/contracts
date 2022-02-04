@@ -1,6 +1,5 @@
 import { ethers } from "hardhat";
 import chai from "chai";
-import spies from "chai-spies";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import {
@@ -16,7 +15,6 @@ import exp from "constants";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
-chai.use(spies);
 const { expect } = chai;
 
 const AddressZero = ethers.constants.AddressZero;

@@ -28,13 +28,13 @@ describe("Resolution", () => {
   let resolution: ResolutionManager;
   let shareholderRegistry: ShareholderRegistryMock;
   let deployer: SignerWithAddress,
-    contributor1: SignerWithAddress,
-    contributor2: SignerWithAddress,
+    user1: SignerWithAddress,
+    user2: SignerWithAddress,
     delegate1: SignerWithAddress,
     nonContributor: SignerWithAddress;
 
   beforeEach(async () => {
-    [deployer, contributor1, contributor2, delegate1, nonContributor] =
+    [deployer, user1, user2, delegate1, nonContributor] =
       await ethers.getSigners();
     const VotingMockFactory = (await ethers.getContractFactory(
       "VotingMock",
@@ -87,32 +87,28 @@ describe("Resolution", () => {
 
   describe("creation logic", async () => {
     it("allows to create a resolution", async () => {
-      await expect(
-        resolution.connect(contributor1).createResolution("test", 0, false)
-      )
+      await expect(resolution.connect(user1).createResolution("test", 0, false))
         .to.emit(resolution, "ResolutionCreated")
-        .withArgs(contributor1.address, resolutionId);
+        .withArgs(user1.address, resolutionId);
     });
   });
 
   describe("approval logic", async () => {
     it("should not allow to approve a non existing resolution", async () => {
       await expect(
-        resolution.connect(contributor1).approveResolution(resolutionId)
+        resolution.connect(user1).approveResolution(resolutionId)
       ).revertedWith("Resolution: does not exist");
     });
 
     it("should allow to approve an existing resolution", async () => {
-      await resolution.connect(contributor1).createResolution("test", 0, false);
+      await resolution.connect(user1).createResolution("test", 0, false);
 
       await network.provider.send("evm_setNextBlockTimestamp", [
         resolutionId + DAY,
       ]);
-      await expect(
-        resolution.connect(contributor1).approveResolution(resolutionId)
-      )
+      await expect(resolution.connect(user1).approveResolution(resolutionId))
         .to.emit(resolution, "ResolutionApproved")
-        .withArgs(contributor1.address, resolutionId);
+        .withArgs(user1.address, resolutionId);
       const [, , approveTimestamp] = await resolution.resolutions(resolutionId);
       expect(approveTimestamp.toNumber()).equal(resolutionId + DAY);
     });
@@ -120,24 +116,24 @@ describe("Resolution", () => {
 
   describe("voting prevention logic", async () => {
     it("should not allow to vote on a non approved resolution", async () => {
-      await resolution.connect(contributor1).createResolution("test", 0, false);
+      await resolution.connect(user1).createResolution("test", 0, false);
 
       await expect(
-        resolution.connect(contributor1).vote(resolutionId, false)
+        resolution.connect(user1).vote(resolutionId, false)
       ).revertedWith("Resolution: not approved");
     });
 
     it("should not allow to vote on a resolution when voting didn't start", async () => {
-      await resolution.connect(contributor1).createResolution("test", 0, false);
+      await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
 
       await expect(
-        resolution.connect(contributor1).vote(resolutionId, false)
+        resolution.connect(user1).vote(resolutionId, false)
       ).revertedWith("Resolution: not votable");
     });
 
     it("should not allow to vote on a resolution when voting ended", async () => {
-      await resolution.connect(contributor1).createResolution("test", 0, false);
+      await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
       let resolutionTimestamp = resolutionId;
 
@@ -145,25 +141,25 @@ describe("Resolution", () => {
       await network.provider.send("evm_setNextBlockTimestamp", [resolutionId]);
 
       await expect(
-        resolution.connect(contributor1).vote(resolutionTimestamp, false)
+        resolution.connect(user1).vote(resolutionTimestamp, false)
       ).revertedWith("Resolution: not votable");
     });
 
     it("should allow to vote on an approved resolution when voting started", async () => {
-      await resolution.connect(contributor1).createResolution("test", 0, false);
+      await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
       let resolutionTimestamp = resolutionId;
 
       resolutionId += DAY * 15;
       await network.provider.send("evm_setNextBlockTimestamp", [resolutionId]);
 
-      resolution.connect(contributor1).vote(resolutionTimestamp, false);
+      resolution.connect(user1).vote(resolutionTimestamp, false);
     });
   });
 
   describe("voting logic", async () => {
     beforeEach(async () => {
-      await resolution.connect(contributor1).createResolution("test", 0, false);
+      await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
 
       await network.provider.send("evm_setNextBlockTimestamp", [
@@ -220,7 +216,7 @@ describe("Resolution", () => {
       );
     });
 
-    describe("voting without delegation", async () => {
+    describe("single voting without delegation", async () => {
       beforeEach(async () => {
         await voting.mock_getVotingPowerAt(42);
       });
@@ -237,10 +233,10 @@ describe("Resolution", () => {
       });
 
       it("should return the right stats on a YES vote", async () => {
-        await resolution.connect(contributor1).vote(resolutionId, true);
+        await resolution.connect(user1).vote(resolutionId, true);
         const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
           resolutionId,
-          contributor1.address
+          user1.address
         );
         expect(isYes).equal(true);
         expect(hasVoted).equal(true);
@@ -259,10 +255,10 @@ describe("Resolution", () => {
       });
 
       it("should return the right stats on a NO vote", async () => {
-        await resolution.connect(contributor1).vote(resolutionId, false);
+        await resolution.connect(user1).vote(resolutionId, false);
         const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
           resolutionId,
-          contributor1.address
+          user1.address
         );
         expect(isYes).equal(false);
         expect(hasVoted).equal(true);
@@ -282,11 +278,11 @@ describe("Resolution", () => {
       });
 
       it("should return right stats when updating from yes to no", async () => {
-        await resolution.connect(contributor1).vote(resolutionId, true);
-        await resolution.connect(contributor1).vote(resolutionId, false);
+        await resolution.connect(user1).vote(resolutionId, true);
+        await resolution.connect(user1).vote(resolutionId, false);
         const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
           resolutionId,
-          contributor1.address
+          user1.address
         );
 
         expect(isYes).equal(false);
@@ -305,11 +301,11 @@ describe("Resolution", () => {
       });
 
       it("should return right stats when updating from no to yes", async () => {
-        await resolution.connect(contributor1).vote(resolutionId, false);
-        await resolution.connect(contributor1).vote(resolutionId, true);
+        await resolution.connect(user1).vote(resolutionId, false);
+        await resolution.connect(user1).vote(resolutionId, true);
         const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
           resolutionId,
-          contributor1.address
+          user1.address
         );
 
         expect(isYes).equal(true);
@@ -336,7 +332,7 @@ describe("Resolution", () => {
       - user voted no, delegate votes no:
         - yesVotesTotal = 0
     */
-    describe("voting with delegate", async () => {
+    describe("single voting with delegation", async () => {
       const delegateVotingPower = 42; // includes the one of the user
       const userBalance = 13;
 
@@ -349,7 +345,7 @@ describe("Resolution", () => {
           await voting.mock_getVotingPowerAt(0); // because the power is transferred to the delegate
           await token.mock_balanceOfAt(userBalance);
           await voting.mock_getDelegateAt(delegate1.address);
-          await resolution.connect(contributor1).vote(resolutionId, userVote);
+          await resolution.connect(user1).vote(resolutionId, userVote);
         }
 
         it("should return delegate voting power when delegate voted yes and then user votes yes", async () => {
@@ -385,7 +381,7 @@ describe("Resolution", () => {
           await voting.mock_getVotingPowerAt(0); // because the power is transferred to the delegate
           await token.mock_balanceOfAt(userBalance);
           await voting.mock_getDelegateAt(delegate1.address);
-          await resolution.connect(contributor1).vote(resolutionId, userVote);
+          await resolution.connect(user1).vote(resolutionId, userVote);
 
           // setup delegate
           await voting.mock_getVotingPowerAt(delegateVotingPower);
@@ -418,6 +414,108 @@ describe("Resolution", () => {
           const totalYesVotes = (await resolution.resolutions(resolutionId))[4];
           expect(totalYesVotes.toNumber()).equal(0);
         });
+      });
+    });
+    /*
+    - with delegate multiple users vote
+      - user 1 votes yes, user 2 votes yes:
+        - yesVotesTotal = user 1 voting power + user 2 voting power
+      - user 1 votes no, user 2 votes yes:
+        - yesVotesTotal = user 2 voting power
+      - user 1 votes yes, user 2 votes no:
+        - yesVotesTotal = user 1 voting power
+      - user 1 votes no, user 2 votes no:
+        - yesVotesTotal = 0
+
+      - user 1 and 2 votes yes, user 2 updates to no:
+        - yesVotesTotal = user 1 voting power
+      - user 1 and 2 votes no, user 2 updates to yes:
+        - yesVotesTotal = user 2 voting power
+      - user 1 votes no and 2 votes yes, user 2 updates to no:
+        - yesVotesTotal = 0
+      - user 1 votes yes and 2 votes no, user 2 updates to yes:
+        - yesVotesTotal = user 1 + user 2 voting power
+    */
+
+    describe("multiple voting without delegation", async () => {
+      const votingPowerUser1 = 11;
+      const votingPowerUser2 = 17;
+      let votingPowers: { [key: string]: number };
+
+      beforeEach(async () => {
+        votingPowers = {
+          [user1.address]: votingPowerUser1,
+          [user2.address]: votingPowerUser2,
+        };
+      });
+
+      async function _vote(user: SignerWithAddress, isYes: boolean) {
+        await voting.mock_getVotingPowerAt(votingPowers[user.address]);
+        await resolution.connect(user).vote(resolutionId, isYes);
+      }
+
+      async function _totalYesVotes(resolutionId: number) {
+        return (await resolution.resolutions(resolutionId))[4].toNumber();
+      }
+
+      it("should return user 1 + user 2 voting power when both user 1 and user 2 vote yes", async () => {
+        await _vote(user1, true);
+        await _vote(user2, true);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(votingPowerUser1 + votingPowerUser2);
+      });
+
+      it("should return user 1 voting power when user 1 votes yes and user 2 votes no", async () => {
+        await _vote(user1, true);
+        await _vote(user2, false);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(votingPowerUser1);
+      });
+
+      it("should return user 2 voting power when user 1 votes no and user 2 votes yes", async () => {
+        await _vote(user1, false);
+        await _vote(user2, true);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(votingPowerUser2);
+      });
+
+      it("should return 0 when both user 1 and user 2 vote no", async () => {
+        await _vote(user1, false);
+        await _vote(user2, false);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(0);
+      });
+
+      it("should return user 1 voting power when user 1 and 2 vote YES, then user 2 votes NO", async () => {
+        await _vote(user1, true);
+        await _vote(user2, true);
+        await _vote(user2, false);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(votingPowerUser1);
+      });
+
+      it("should return user 2 voting power when both user 1 and 2 vote NO, then user 2 votes YES", async () => {
+        await _vote(user1, false);
+        await _vote(user2, false);
+        await _vote(user2, true);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(votingPowerUser2);
+      });
+
+      it("should return 0 when user 1 votes NO, user 2 votes YES, user 2 votes NO", async () => {
+        await _vote(user1, false);
+        await _vote(user2, true);
+        await _vote(user2, false);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(0);
+      });
+
+      it("should return user 1 + user 2 voting power when user 1 votes YES, user 2 votes NO, user 2 votes YES", async () => {
+        await _vote(user1, true);
+        await _vote(user2, false);
+        await _vote(user2, true);
+        const result = await _totalYesVotes(resolutionId);
+        expect(result).equal(votingPowerUser1 + votingPowerUser2);
       });
     });
   });

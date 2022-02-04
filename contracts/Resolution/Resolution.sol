@@ -7,18 +7,21 @@ import "../TelediskoToken/ITelediskoToken.sol";
 import "../Voting/IVoting.sol";
 
 contract ResolutionManager {
-    event ResolutionCreated(address indexed from, uint256 indexed id);
-    event ResolutionUpdated(address indexed from, uint256 indexed id);
-    event ResolutionApproved(address indexed from, uint256 indexed id);
+    event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
+    event ResolutionUpdated(address indexed from, uint256 indexed resolutionId);
+    event ResolutionApproved(
+        address indexed from,
+        uint256 indexed resolutionId
+    );
     event ResolutionVoted(
         address indexed from,
-        uint256 indexed id,
+        uint256 indexed resolutionId,
         uint256 votingPower,
         bool isYes
     );
     event DelegateLostVotingPower(
         address indexed from,
-        uint256 indexed id,
+        uint256 indexed resolutionId,
         uint256 amount
     );
 
@@ -43,6 +46,7 @@ contract ResolutionManager {
         uint256 snapshotId;
         uint256 yesVotesTotal;
         bool isNegative;
+        bool isPreDraft;
         mapping(address => bool) hasVoted;
         mapping(address => bool) hasVotedYes;
         mapping(address => uint256) lostVotingPower;
@@ -121,18 +125,21 @@ contract ResolutionManager {
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;
+        resolution.isPreDraft = true;
         emit ResolutionCreated(msg.sender, block.timestamp);
         return block.timestamp;
     }
 
     function approveResolution(uint256 resolutionId) public {
         Resolution storage resolution = resolutions[resolutionId];
+        require(resolution.isPreDraft, "Resolution: does not exist");
         require(
             resolution.approveTimestamp == 0,
             "Resolution: already approved"
         );
         resolution.approveTimestamp = block.timestamp;
         resolution.snapshotId = snapshotAll();
+        resolution.isPreDraft = false;
         emit ResolutionApproved(msg.sender, resolutionId);
     }
 
@@ -151,17 +158,32 @@ contract ResolutionManager {
         emit ResolutionUpdated(msg.sender, resolutionId);
     }
 
-    function getVoterVote(uint256 resolutionId, address voter) public view returns(bool isYes, bool hasVoted, uint256 votingPower) {
+    function getVoterVote(uint256 resolutionId, address voter)
+        public
+        view
+        returns (
+            bool isYes,
+            bool hasVoted,
+            uint256 votingPower
+        )
+    {
         Resolution storage resolution = resolutions[resolutionId];
-        
+
         isYes = resolution.hasVotedYes[voter];
         hasVoted = resolution.hasVoted[voter];
 
-        if(_voting.getDelegateAt(voter, resolution.snapshotId) != address(0) && hasVoted) {
-            votingPower = _telediskoToken.balanceOfAt(voter, resolution.snapshotId);
-        } 
-        else {
-            votingPower = _voting.getVotingPowerAt(voter, resolution.snapshotId) - resolution.lostVotingPower[voter];
+        if (
+            _voting.getDelegateAt(voter, resolution.snapshotId) != address(0) &&
+            hasVoted
+        ) {
+            votingPower = _telediskoToken.balanceOfAt(
+                voter,
+                resolution.snapshotId
+            );
+        } else {
+            votingPower =
+                _voting.getVotingPowerAt(voter, resolution.snapshotId) -
+                resolution.lostVotingPower[voter];
         }
     }
 
@@ -220,6 +242,24 @@ contract ResolutionManager {
 
     function vote(uint256 resolutionId, bool isYes) public {
         Resolution storage resolution = resolutions[resolutionId];
+        ResolutionType storage resolutionType = resolutionTypes[
+            resolution.resolutionTypeId
+        ];
+        require(
+            isYes != resolution.hasVotedYes[msg.sender] ||
+                !resolution.hasVoted[msg.sender],
+            "Resolution: can't repeat same vote"
+        );
+        require(resolution.approveTimestamp > 0, "Resolution: not approved");
+
+        uint256 votingStart = resolution.approveTimestamp +
+            resolutionType.noticePeriod;
+        uint256 votingEnd = votingStart + resolutionType.votingPeriod;
+
+        require(
+            block.timestamp >= votingStart && block.timestamp < votingEnd,
+            "Resolution: not votable"
+        );
 
         uint256 votingPower = _voting.getVotingPowerAt(
             msg.sender,
@@ -261,12 +301,12 @@ contract ResolutionManager {
         if (isYes && !resolution.hasVotedYes[msg.sender]) {
             // If sender votes yes and hasn't voted yes before
             resolution.yesVotesTotal += votingPower;
-            emit ResolutionVoted(msg.sender, resolutionId, votingPower, isYes);
         } else if (resolution.hasVotedYes[msg.sender]) {
             // If sender votes no and voted yes before
             resolution.yesVotesTotal -= votingPower;
-            emit ResolutionVoted(msg.sender, resolutionId, votingPower, isYes);
         }
+
+        emit ResolutionVoted(msg.sender, resolutionId, votingPower, isYes);
 
         resolution.hasVoted[msg.sender] = true;
         resolution.hasVotedYes[msg.sender] = isYes;

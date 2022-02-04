@@ -13,28 +13,36 @@ contract VotingMock {
         emit AfterTokenTransferCalled(from, to, amount);
     }
 
-    address mockResult_getDelegateAt;
-    uint256 mockResult_getVotingPowerAt;
+    mapping(address => address) mockResult_getDelegateAt;
+    mapping(address => uint256) mockResult_getVotingPowerAt;
     uint256 mockResult_getTotalVotingPowerAt;
 
-    function mock_getDelegateAt(address mockResult) public {
-        mockResult_getDelegateAt = mockResult;
+    function mock_getDelegateAt(address account, address mockResult) public {
+        mockResult_getDelegateAt[account] = mockResult;
     }
 
-    function mock_getVotingPowerAt(uint256 mockResult) public {
-        mockResult_getVotingPowerAt = mockResult;
+    function mock_getVotingPowerAt(address account, uint256 mockResult) public {
+        mockResult_getVotingPowerAt[account] = mockResult;
     }
 
     function mock_getTotalVotingPowerAt(uint256 mockResult) public {
         mockResult_getTotalVotingPowerAt = mockResult;
     }
 
-    function getDelegateAt(address, uint256) public view returns (address) {
-        return mockResult_getDelegateAt;
+    function getDelegateAt(address account, uint256)
+        public
+        view
+        returns (address)
+    {
+        return mockResult_getDelegateAt[account];
     }
 
-    function getVotingPowerAt(address, uint256) public view returns (uint256) {
-        return mockResult_getVotingPowerAt;
+    function getVotingPowerAt(address account, uint256)
+        public
+        view
+        returns (uint256)
+    {
+        return mockResult_getVotingPowerAt[account];
     }
 
     function getTotalVotingPowerAt(uint256) public view returns (uint256) {

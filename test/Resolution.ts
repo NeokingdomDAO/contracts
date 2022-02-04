@@ -218,14 +218,14 @@ describe("Resolution", () => {
 
     describe("single voting without delegation", async () => {
       beforeEach(async () => {
-        await voting.mock_getVotingPowerAt(42);
+        await voting.mock_getVotingPowerAt(user1.address, 42);
       });
 
       it("should increase yesVotesTotal on a YES vote", async () => {
         const prevYesVotesTotal = (
           await resolution.resolutions(resolutionId)
         )[4];
-        await resolution.vote(resolutionId, true);
+        await resolution.connect(user1).vote(resolutionId, true);
 
         const yesVotesTotal = (await resolution.resolutions(resolutionId))[4];
 
@@ -247,7 +247,7 @@ describe("Resolution", () => {
         const prevYesVotesTotal = (
           await resolution.resolutions(resolutionId)
         )[4];
-        await resolution.vote(resolutionId, false);
+        await resolution.connect(user1).vote(resolutionId, false);
 
         const yesVotesTotal = (await resolution.resolutions(resolutionId))[4];
 
@@ -266,12 +266,12 @@ describe("Resolution", () => {
       });
 
       it("should decrement total yes when updating from yes to no", async () => {
-        await resolution.vote(resolutionId, false);
+        await resolution.connect(user1).vote(resolutionId, false);
 
         const previousYesVotes = (
           await resolution.resolutions(resolutionId)
         )[4];
-        await resolution.vote(resolutionId, true);
+        await resolution.connect(user1).vote(resolutionId, true);
         const newYesVotes = (await resolution.resolutions(resolutionId))[4];
 
         expect(newYesVotes.sub(previousYesVotes).eq(42)).true;
@@ -291,10 +291,10 @@ describe("Resolution", () => {
       });
 
       it("should increment total yes when updating from no to yes", async () => {
-        await resolution.vote(resolutionId, false);
+        await resolution.connect(user1).vote(resolutionId, false);
         let previousYes = (await resolution.resolutions(resolutionId))[4];
 
-        await resolution.vote(resolutionId, true);
+        await resolution.connect(user1).vote(resolutionId, true);
         let newYes = (await resolution.resolutions(resolutionId))[4];
 
         expect(newYes.sub(previousYes).eq(42)).true;
@@ -338,13 +338,16 @@ describe("Resolution", () => {
 
       describe("delegate votes first", async () => {
         async function _prepare(delegateVote: boolean, userVote: boolean) {
-          await voting.mock_getVotingPowerAt(delegateVotingPower);
-          await resolution.connect(delegate1).vote(resolutionId, delegateVote);
+          // setup delegation and voting power
+          await voting.mock_getVotingPowerAt(
+            delegate1.address,
+            delegateVotingPower
+          );
+          await voting.mock_getDelegateAt(user1.address, delegate1.address);
+          await voting.mock_getVotingPowerAt(user1.address, 0); // because the power is transferred to the delegate
+          await token.mock_balanceOfAt(user1.address, userBalance);
 
-          // setup user
-          await voting.mock_getVotingPowerAt(0); // because the power is transferred to the delegate
-          await token.mock_balanceOfAt(userBalance);
-          await voting.mock_getDelegateAt(delegate1.address);
+          await resolution.connect(delegate1).vote(resolutionId, delegateVote);
           await resolution.connect(user1).vote(resolutionId, userVote);
         }
 
@@ -377,15 +380,16 @@ describe("Resolution", () => {
 
       describe("user votes first", async () => {
         async function _prepare(userVote: boolean, delegateVote: boolean) {
-          // setup user
-          await voting.mock_getVotingPowerAt(0); // because the power is transferred to the delegate
-          await token.mock_balanceOfAt(userBalance);
-          await voting.mock_getDelegateAt(delegate1.address);
-          await resolution.connect(user1).vote(resolutionId, userVote);
+          // setup delegation and voting power
+          await voting.mock_getVotingPowerAt(user1.address, 0); // because the power is transferred to the delegate
+          await token.mock_balanceOfAt(user1.address, userBalance);
+          await voting.mock_getDelegateAt(user1.address, delegate1.address);
+          await voting.mock_getVotingPowerAt(
+            delegate1.address,
+            delegateVotingPower
+          );
 
-          // setup delegate
-          await voting.mock_getVotingPowerAt(delegateVotingPower);
-          await voting.mock_getDelegateAt(AddressZero);
+          await resolution.connect(user1).vote(resolutionId, userVote);
           await resolution.connect(delegate1).vote(resolutionId, delegateVote);
         }
 
@@ -450,7 +454,10 @@ describe("Resolution", () => {
       });
 
       async function _vote(user: SignerWithAddress, isYes: boolean) {
-        await voting.mock_getVotingPowerAt(votingPowers[user.address]);
+        await voting.mock_getVotingPowerAt(
+          user.address,
+          votingPowers[user.address]
+        );
         await resolution.connect(user).vote(resolutionId, isYes);
       }
 
@@ -516,6 +523,137 @@ describe("Resolution", () => {
         await _vote(user2, true);
         const result = await _totalYesVotes(resolutionId);
         expect(result).equal(votingPowerUser1 + votingPowerUser2);
+      });
+    });
+
+    /*
+    - with delegate D that has 2 delegators (U1, U2)
+      - D yes, U1 and U2 no:
+        - total = D - U1 - U2
+      - D no, U1 and U2 yes:
+        - total = U1 + U2
+      - U1 and U2 no, D yes:
+        - total = D - U1 - U2
+      - U1 yes, D yes, U2 no:
+        - total = D - U2
+      - D yes, U1 doesn't vote, U2 no:
+        - total = D - U2
+      - D yes, U1 yes, U2 no:
+        - total = D - U2
+      - D no, U1 yes, D yes:
+        - total = D
+      - D no, U1 and U2 yes, D yes:
+        - total = D
+      - D yes, U1 and U2 yes, D no:
+        - total = U1 + U2
+      - D yes, U1 no, U2 doesn't vote, D no
+        - total = 0
+    */
+    describe("delegate with 2 delegators", async () => {
+      const balanceUser1 = 13;
+      const balanceUser2 = 3;
+      const votingPowerDelegate = 17 + balanceUser1 + balanceUser2;
+
+      beforeEach(async () => {
+        await voting.mock_getDelegateAt(user1.address, delegate1.address);
+        await voting.mock_getDelegateAt(user2.address, delegate1.address);
+        await voting.mock_getVotingPowerAt(user1.address, 0);
+        await voting.mock_getVotingPowerAt(user2.address, 0);
+        await token.mock_balanceOfAt(user1.address, balanceUser1);
+        await token.mock_balanceOfAt(user2.address, balanceUser2);
+        await voting.mock_getVotingPowerAt(
+          delegate1.address,
+          votingPowerDelegate
+        );
+      });
+
+      async function _vote(user: SignerWithAddress, isYes: boolean) {
+        await resolution.connect(user).vote(resolutionId, isYes);
+      }
+
+      async function _totalYesVotes() {
+        return (await resolution.resolutions(resolutionId))[4].toNumber();
+      }
+
+      it("D yes, U1 and U2 no: D - U1 - U2", async () => {
+        await _vote(delegate1, true);
+        await _vote(user1, false);
+        await _vote(user2, false);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate - balanceUser1 - balanceUser2);
+      });
+
+      it("D no, U1 and U2 yes: U1 + U2", async () => {
+        await _vote(delegate1, false);
+        await _vote(user1, true);
+        await _vote(user2, true);
+        const total = await _totalYesVotes();
+        expect(total).equal(balanceUser1 + balanceUser2);
+      });
+
+      it("U1 and U2 no, D yes: D - U1 - U2", async () => {
+        await _vote(user1, false);
+        await _vote(user2, false);
+        await _vote(delegate1, true);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate - balanceUser1 - balanceUser2);
+      });
+
+      it("U1 yes, D yes, U2 no: D - U2", async () => {
+        await _vote(user1, true);
+        await _vote(delegate1, true);
+        await _vote(user2, false);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate - balanceUser2);
+      });
+
+      it("D yes, U2 no: D - U2", async () => {
+        await _vote(delegate1, true);
+        await _vote(user2, false);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate - balanceUser2);
+      });
+
+      it("D yes, U1 yes, U2 no: D - U2", async () => {
+        await _vote(user1, true);
+        await _vote(delegate1, true);
+        await _vote(user2, false);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate - balanceUser2);
+      });
+
+      it("D no, U1 yes, D yes: D", async () => {
+        await _vote(delegate1, false);
+        await _vote(user1, true);
+        await _vote(delegate1, true);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate);
+      });
+
+      it("D no, U1 U2 yes, D yes: D", async () => {
+        await _vote(delegate1, false);
+        await _vote(user1, true);
+        await _vote(user2, true);
+        await _vote(delegate1, true);
+        const total = await _totalYesVotes();
+        expect(total).equal(votingPowerDelegate);
+      });
+
+      it("D yes, U1 U2 yes, D no: U1 + U2", async () => {
+        await _vote(delegate1, true);
+        await _vote(user1, true);
+        await _vote(user2, true);
+        await _vote(delegate1, false);
+        const total = await _totalYesVotes();
+        expect(total).equal(balanceUser1 + balanceUser2);
+      });
+
+      it("D yes, U1 no, D no: 0", async () => {
+        await _vote(delegate1, true);
+        await _vote(user1, false);
+        await _vote(delegate1, false);
+        const total = await _totalYesVotes();
+        expect(total).equal(0);
       });
     });
   });

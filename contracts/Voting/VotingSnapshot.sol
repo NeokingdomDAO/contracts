@@ -43,6 +43,17 @@ contract VotingSnapshot is Voting, Snapshottable {
         return valid ? snapshots.delegates[index] : getDelegate(account);
     }
 
+    function canVoteAt(address account, uint256 snapshotId)
+        public
+        view
+        returns (bool)
+    {
+        SnapshotsDelegates storage snapshots = _delegationSnapshots[account];
+        (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
+
+        return valid ? snapshots.delegates[index] != address(0) : canVote(account);
+    }
+
     function getVotingPowerAt(address account, uint256 snapshotId)
         public
         view

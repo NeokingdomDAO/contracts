@@ -70,13 +70,19 @@ describe("Resolution", () => {
       token.address,
       voting.address
     );
+
+    voting.mock_getDelegateAt(user1.address, user1.address);
+
+    [user1, user2, delegate1].forEach((voter) => {
+      voting.mock_canVoteAt(voter.address, true);
+    });
   });
 
   let resolutionId: number;
   let checkpointId: number;
   beforeEach(async () => {
     let blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
-    resolutionId = blockTimestamp + 1;
+    resolutionId = blockTimestamp + 10; // to prevent occasional InvalidInputError errors
     checkpointId = await network.provider.send("evm_snapshot");
     await network.provider.send("evm_setNextBlockTimestamp", [resolutionId]);
   });
@@ -115,6 +121,14 @@ describe("Resolution", () => {
   });
 
   describe("voting prevention logic", async () => {
+    it("should not allow to vote to a non voter", async () => {
+      await voting.mock_canVoteAt(user1.address, false);
+
+      await expect(
+        resolution.connect(user1).vote(resolutionId, true)
+      ).revertedWith("Resolution: account cannot vote");
+    });
+
     it("should not allow to vote on a non approved resolution", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
 
@@ -168,14 +182,14 @@ describe("Resolution", () => {
     });
 
     it("should emit a specific event when there is a new YES vote", async () => {
-      expect(await resolution.vote(resolutionId, true)).emit(
+      expect(await resolution.connect(user1).vote(resolutionId, true)).emit(
         resolution,
         "ResolutionVoted"
       );
     });
 
     it("should emit a specific event when there is a new NO vote", async () => {
-      expect(await resolution.vote(resolutionId, false)).emit(
+      expect(await resolution.connect(user1).vote(resolutionId, false)).emit(
         resolution,
         "ResolutionVoted"
       );
@@ -203,17 +217,17 @@ describe("Resolution", () => {
     */
 
     it("should not allow to vote YES a second time", async () => {
-      await resolution.vote(resolutionId, true);
-      await expect(resolution.vote(resolutionId, true)).revertedWith(
-        "Resolution: can't repeat same vote"
-      );
+      await resolution.connect(user1).vote(resolutionId, true);
+      await expect(
+        resolution.connect(user1).vote(resolutionId, true)
+      ).revertedWith("Resolution: can't repeat same vote");
     });
 
     it("should not allow to vote NO a second time", async () => {
-      await resolution.vote(resolutionId, false);
-      await expect(resolution.vote(resolutionId, false)).revertedWith(
-        "Resolution: can't repeat same vote"
-      );
+      await resolution.connect(user1).vote(resolutionId, false);
+      await expect(
+        resolution.connect(user1).vote(resolutionId, false)
+      ).revertedWith("Resolution: can't repeat same vote");
     });
 
     describe("single voting without delegation", async () => {
@@ -290,6 +304,14 @@ describe("Resolution", () => {
         expect(votingPower.eq(42)).true;
       });
 
+      it("should fail when asking stats for a user who could not vote", async () => {
+        await voting.mock_canVoteAt(user1.address, false);
+
+        await expect(
+          resolution.getVoterVote(resolutionId, user1.address)
+        ).revertedWith("Resolution: account could not vote resolution");
+      });
+
       it("should increment total yes when updating from no to yes", async () => {
         await resolution.connect(user1).vote(resolutionId, false);
         let previousYes = (await resolution.resolutions(resolutionId))[4];
@@ -339,6 +361,7 @@ describe("Resolution", () => {
       describe("delegate votes first", async () => {
         async function _prepare(delegateVote: boolean, userVote: boolean) {
           // setup delegation and voting power
+          await voting.mock_getDelegateAt(delegate1.address, delegate1.address);
           await voting.mock_getVotingPowerAt(
             delegate1.address,
             delegateVotingPower
@@ -381,6 +404,7 @@ describe("Resolution", () => {
       describe("user votes first", async () => {
         async function _prepare(userVote: boolean, delegateVote: boolean) {
           // setup delegation and voting power
+          await voting.mock_getDelegateAt(delegate1.address, delegate1.address);
           await voting.mock_getVotingPowerAt(user1.address, 0); // because the power is transferred to the delegate
           await token.mock_balanceOfAt(user1.address, userBalance);
           await voting.mock_getDelegateAt(user1.address, delegate1.address);
@@ -458,6 +482,7 @@ describe("Resolution", () => {
           user.address,
           votingPowers[user.address]
         );
+        await voting.mock_getDelegateAt(user.address, user.address);
         await resolution.connect(user).vote(resolutionId, isYes);
       }
 
@@ -555,6 +580,7 @@ describe("Resolution", () => {
       const votingPowerDelegate = 17 + balanceUser1 + balanceUser2;
 
       beforeEach(async () => {
+        await voting.mock_getDelegateAt(delegate1.address, delegate1.address);
         await voting.mock_getDelegateAt(user1.address, delegate1.address);
         await voting.mock_getDelegateAt(user2.address, delegate1.address);
         await voting.mock_getVotingPowerAt(user1.address, 0);

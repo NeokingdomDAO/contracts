@@ -20,6 +20,13 @@ interface IVoting is ISnapshot {
         view
         returns (address);
 
+    function canVote(address account) external view returns (bool);
+
+    function canVoteAt(address account, uint256 snapshotId)
+        external
+        view
+        returns (bool);
+
     function getVotingPower(address account) external view returns (uint256);
 
     function getVotingPowerAt(address account, uint256 snapshotId)

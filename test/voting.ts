@@ -11,7 +11,6 @@ import {
   ShareholderRegistryMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import exp from "constants";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -446,6 +445,28 @@ describe("Voting", () => {
     });
   });
 
+  describe("canVote", async () => {
+    it("should allow voting to accounts that have a delegate", async () => {
+      const result = await voting.canVote(delegator1.address);
+
+      expect(result).equal(true);
+    });
+
+    it("not should allow voting to accounts that don't have a delegate", async () => {
+      const result = await voting.canVote(noDelegate.address);
+
+      expect(result).equal(false);
+    });
+
+    it("should not allow voting when contributor removed", async () => {
+      await voting.afterRemoveContributor(delegator1.address);
+
+      const result = await voting.canVote(delegator1.address);
+
+      expect(result).equal(false);
+    });
+  });
+
   describe("complex flows", async () => {
     it("when a non self-delegated contributor is removed of its status, its delegate can again delegate someone else", async () => {
       await voting.connect(delegator1).delegate(delegated1.address);
@@ -594,8 +615,8 @@ describe("Voting", () => {
       await token.mint(delegator1.address, 10);
       await token.mint(delegated1.address, 8);
       await voting.connect(delegator1).delegate(delegated1.address);
-      expect(await voting.getVotingPower(delegator1.address)).equal(0); 
-      expect(await voting.getVotingPower(delegated1.address)).equal(18); 
+      expect(await voting.getVotingPower(delegator1.address)).equal(0);
+      expect(await voting.getVotingPower(delegated1.address)).equal(18);
 
       await shareholderRegistry.setNonContributor(delegator1.address);
       await voting.afterRemoveContributor(delegator1.address);
@@ -603,7 +624,7 @@ describe("Voting", () => {
       await shareholderRegistry.setNonContributor(nonContributor.address);
       await voting.connect(delegator1).delegate(delegator1.address);
 
-      expect(await voting.getVotingPower(delegator1.address)).equal(10);      
+      expect(await voting.getVotingPower(delegator1.address)).equal(10);
       expect(await voting.getVotingPower(delegated1.address)).equal(8);
     });
 
@@ -611,19 +632,18 @@ describe("Voting", () => {
       await token.mint(delegator1.address, 10);
       await token.mint(delegated1.address, 8);
       await voting.connect(delegator1).delegate(delegated1.address);
-      expect(await voting.getTotalVotingPower()).equal(18); 
-      
+      expect(await voting.getTotalVotingPower()).equal(18);
+
       await shareholderRegistry.setNonContributor(delegated1.address);
       await voting.afterRemoveContributor(delegated1.address);
-      expect(await voting.getTotalVotingPower()).equal(10); 
+      expect(await voting.getTotalVotingPower()).equal(10);
 
       await token.mint(delegator1.address, 2);
-      expect(await voting.getTotalVotingPower()).equal(12); 
+      expect(await voting.getTotalVotingPower()).equal(12);
 
       await shareholderRegistry.setNonContributor(nonContributor.address);
       await voting.connect(delegated1).delegate(delegated1.address);
-      expect(await voting.getTotalVotingPower()).equal(20); 
-
+      expect(await voting.getTotalVotingPower()).equal(20);
     });
   });
 });

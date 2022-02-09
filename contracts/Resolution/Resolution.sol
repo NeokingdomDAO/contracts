@@ -168,12 +168,13 @@ contract ResolutionManager {
         )
     {
         Resolution storage resolution = resolutions[resolutionId];
-
+        require(_voting.canVoteAt(voter, resolution.snapshotId), "Resolution: account could not vote resolution");
+        
         isYes = resolution.hasVotedYes[voter];
         hasVoted = resolution.hasVoted[voter];
 
         if (
-            _voting.getDelegateAt(voter, resolution.snapshotId) != address(0) &&
+            _voting.getDelegateAt(voter, resolution.snapshotId) != voter &&
             hasVoted
         ) {
             votingPower = _telediskoToken.balanceOfAt(
@@ -242,6 +243,8 @@ contract ResolutionManager {
 
     function vote(uint256 resolutionId, bool isYes) public {
         Resolution storage resolution = resolutions[resolutionId];
+        require(_voting.canVoteAt(msg.sender, resolution.snapshotId), "Resolution: account cannot vote");
+        
         ResolutionType storage resolutionType = resolutionTypes[
             resolution.resolutionTypeId
         ];
@@ -271,8 +274,7 @@ contract ResolutionManager {
         );
 
         // If sender has a delegate load voting power from TelediskoToken
-        // TODO: change address(0) to msg.address (a voter cannot have delegate 0, only itself or someoneelse)
-        if (delegate != address(0)) {
+        if (delegate != msg.sender) {
             votingPower = _telediskoToken.balanceOfAt(
                 msg.sender,
                 resolution.snapshotId

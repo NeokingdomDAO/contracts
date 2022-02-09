@@ -152,6 +152,31 @@ describe("VotingSnapshot", () => {
           )
         ).equal(delegator1.address);
       });
+
+      it("should return no delegate from a new snapshot if contributor removed", async () => {
+        const resolutionRole = await votingSnapshot.RESOLUTION_ROLE();
+        await votingSnapshot.grantRole(resolutionRole, deployer.address);
+        await votingSnapshot.snapshot();
+        let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
+
+        await votingSnapshot.afterRemoveContributor(delegator1.address);
+        await votingSnapshot.snapshot();
+        let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
+
+        expect(
+          await votingSnapshot.getDelegateAt(
+            delegator1.address,
+            snapshotIdBefore
+          )
+        ).equal(delegator1.address);
+
+        expect(
+          await votingSnapshot.getDelegateAt(
+            delegator1.address,
+            snapshotIdAfter
+          )
+        ).equal(AddressZero);
+      });
     });
 
     describe("getTotalVotingPowerAt", async () => {
@@ -227,6 +252,51 @@ describe("VotingSnapshot", () => {
       });
     });
 
+    describe("canVoteAt", async () => {
+      it("reverts with snapshot id of 0", async () => {
+        await expect(
+          votingSnapshot.canVoteAt(noDelegate.address, 0)
+        ).revertedWith("Snapshottable: id is 0");
+      });
+
+      it("should return true when contributor had a delegate at the given snapshot", async () => {
+        await votingSnapshot.snapshot();
+
+        let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
+        await votingSnapshot.connect(noDelegate).delegate(noDelegate.address);
+
+        await votingSnapshot.snapshot();
+        let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
+
+        expect(
+          await votingSnapshot.canVoteAt(noDelegate.address, snapshotIdBefore)
+        ).equal(false);
+
+        expect(
+          await votingSnapshot.canVoteAt(noDelegate.address, snapshotIdAfter)
+        ).equal(true);
+      });
+
+      it("should return false when contributor is not anymore a contributor at a given snapshot", async () => {
+        const resolutionRole = await votingSnapshot.RESOLUTION_ROLE();
+        await votingSnapshot.grantRole(resolutionRole, deployer.address);
+        await votingSnapshot.snapshot();
+        let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
+
+        await votingSnapshot.afterRemoveContributor(delegator1.address);
+        await votingSnapshot.snapshot();
+        let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
+
+        expect(
+          await votingSnapshot.canVoteAt(delegator1.address, snapshotIdBefore)
+        ).equal(true);
+
+        expect(
+          await votingSnapshot.canVoteAt(delegator1.address, snapshotIdAfter)
+        ).equal(false);
+      });
+    });
+
     describe("getVotesAt", async () => {
       it("reverts with snapshot id of 0", async () => {
         await expect(
@@ -243,10 +313,16 @@ describe("VotingSnapshot", () => {
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdBefore
+          )
         ).equal(10);
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdAfter
+          )
         ).equal(21);
       });
 
@@ -260,17 +336,29 @@ describe("VotingSnapshot", () => {
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdBefore
+          )
         ).equal(0);
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator2.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegator2.address,
+            snapshotIdBefore
+          )
         ).equal(10);
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdAfter
+          )
         ).equal(10);
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator2.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegator2.address,
+            snapshotIdAfter
+          )
         ).equal(0);
       });
 
@@ -283,17 +371,29 @@ describe("VotingSnapshot", () => {
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdBefore
+          )
         ).equal(10);
         expect(
-          await votingSnapshot.getVotingPowerAt(delegated1.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegated1.address,
+            snapshotIdBefore
+          )
         ).equal(0);
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdAfter
+          )
         ).equal(0);
         expect(
-          await votingSnapshot.getVotingPowerAt(delegated1.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegated1.address,
+            snapshotIdAfter
+          )
         ).equal(10);
       });
 
@@ -310,7 +410,10 @@ describe("VotingSnapshot", () => {
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdBefore
+          )
         ).equal(10);
         expect(
           await votingSnapshot.getVotingPowerAt(
@@ -320,7 +423,10 @@ describe("VotingSnapshot", () => {
         ).equal(0);
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdAfter
+          )
         ).equal(10);
         expect(
           await votingSnapshot.getVotingPowerAt(
@@ -339,7 +445,10 @@ describe("VotingSnapshot", () => {
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdBefore)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdBefore
+          )
         ).equal(10);
         expect(
           await votingSnapshot.getVotingPowerAt(
@@ -349,7 +458,10 @@ describe("VotingSnapshot", () => {
         ).equal(0);
 
         expect(
-          await votingSnapshot.getVotingPowerAt(delegator1.address, snapshotIdAfter)
+          await votingSnapshot.getVotingPowerAt(
+            delegator1.address,
+            snapshotIdAfter
+          )
         ).equal(0);
         expect(
           await votingSnapshot.getVotingPowerAt(

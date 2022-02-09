@@ -15,6 +15,8 @@ contract VotingMock {
 
     mapping(address => address) mockResult_getDelegateAt;
     mapping(address => uint256) mockResult_getVotingPowerAt;
+    mapping(address => bool) mockResult_canVoteAt;
+
     uint256 mockResult_getTotalVotingPowerAt;
 
     function mock_getDelegateAt(address account, address mockResult) public {
@@ -29,12 +31,24 @@ contract VotingMock {
         mockResult_getTotalVotingPowerAt = mockResult;
     }
 
+    function mock_canVoteAt(address account, bool mockResult) public {
+        mockResult_canVoteAt[account] = mockResult;
+    }
+
     function getDelegateAt(address account, uint256)
         public
         view
         returns (address)
     {
         return mockResult_getDelegateAt[account];
+    }
+
+    function canVoteAt(address account, uint256)
+        public
+        view
+        returns (bool)
+    {
+        return mockResult_canVoteAt[account];
     }
 
     function getVotingPowerAt(address account, uint256)

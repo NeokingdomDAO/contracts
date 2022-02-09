@@ -45,6 +45,10 @@ contract Voting is AccessControl {
         _;
     }
 
+    function canVote(address account) public view returns (bool) {
+        return getDelegate(account) != address(0);
+    }
+
     function setToken(IERC20 token) external onlyRole(MANAGER_ROLE) {
         _token = token;
     }
@@ -66,7 +70,10 @@ contract Voting is AccessControl {
             if (delegated != account) {
                 _delegate(account, account);
             }
-
+            else {
+                _beforeDelegate(account);
+            }
+            
             delete _delegates[account];
 
             uint256 individualVotingPower = _token.balanceOf(account);

@@ -79,16 +79,8 @@ describe("Resolution", () => {
   });
 
   let resolutionId: number;
-  let checkpointId: number;
   beforeEach(async () => {
-    let blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
-    resolutionId = blockTimestamp + 10; // to prevent occasional InvalidInputError errors
-    checkpointId = await network.provider.send("evm_snapshot");
-    await network.provider.send("evm_setNextBlockTimestamp", [resolutionId]);
-  });
-
-  afterEach(async () => {
-    await network.provider.send("evm_revert", [checkpointId]);
+    resolutionId = 1; // first resolution ID is always 1
   });
 
   describe("creation logic", async () => {
@@ -109,14 +101,13 @@ describe("Resolution", () => {
     it("should allow to approve an existing resolution", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
 
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        resolutionId + DAY,
-      ]);
       await expect(resolution.connect(user1).approveResolution(resolutionId))
         .to.emit(resolution, "ResolutionApproved")
         .withArgs(user1.address, resolutionId);
       const [, , approveTimestamp] = await resolution.resolutions(resolutionId);
-      expect(approveTimestamp.toNumber()).equal(resolutionId + DAY);
+
+      let blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
+      expect(approveTimestamp.toNumber()).equal(blockTimestamp);
     });
   });
 
@@ -141,33 +132,39 @@ describe("Resolution", () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
 
-      await expect(
-        resolution.connect(user1).vote(resolutionId, false)
-      ).revertedWith("Resolution: not votable");
+      await expect(resolution.connect(user1).vote(1, false)).revertedWith(
+        "Resolution: not votable"
+      );
     });
 
     it("should not allow to vote on a resolution when voting ended", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
-      let resolutionTimestamp = resolutionId;
+      let approvalTimestamp = (await ethers.provider.getBlock("latest"))
+        .timestamp;
 
-      resolutionId += DAY * 21;
-      await network.provider.send("evm_setNextBlockTimestamp", [resolutionId]);
+      let votingTimestamp = approvalTimestamp + DAY * 21;
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        votingTimestamp,
+      ]);
 
       await expect(
-        resolution.connect(user1).vote(resolutionTimestamp, false)
+        resolution.connect(user1).vote(resolutionId, false)
       ).revertedWith("Resolution: not votable");
     });
 
     it("should allow to vote on an approved resolution when voting started", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
-      let resolutionTimestamp = resolutionId;
+      let approvalTimestamp = (await ethers.provider.getBlock("latest"))
+        .timestamp;
 
-      resolutionId += DAY * 15;
-      await network.provider.send("evm_setNextBlockTimestamp", [resolutionId]);
+      let votingTimestamp = approvalTimestamp + DAY * 15;
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        votingTimestamp,
+      ]);
 
-      resolution.connect(user1).vote(resolutionTimestamp, false);
+      resolution.connect(user1).vote(resolutionId, false);
     });
   });
 
@@ -175,9 +172,11 @@ describe("Resolution", () => {
     beforeEach(async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
+      let approvalTimestamp = (await ethers.provider.getBlock("latest"))
+        .timestamp;
 
       await network.provider.send("evm_setNextBlockTimestamp", [
-        resolutionId + DAY * 15,
+        approvalTimestamp + DAY * 15,
       ]);
     });
 

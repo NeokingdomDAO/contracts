@@ -24,8 +24,8 @@ jobs:
           version: 6
           run_install: true
 
+      - name: Compile
+        run: pnpm run compile
+
       - name: Test
-        run: |
-          pnpm install
-          pnpm run compile
-          pnpm test
+        run: pnpm test

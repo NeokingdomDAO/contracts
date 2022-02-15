@@ -106,6 +106,23 @@ contract ResolutionManager {
         _voting = voting;
     }
 
+    function getResolutionTypes()
+        public
+        view
+        returns (ResolutionType[7] memory)
+    {
+        ResolutionType[7] memory fixedResolutionTypes = [
+            resolutionTypes[0],
+            resolutionTypes[1],
+            resolutionTypes[2],
+            resolutionTypes[3],
+            resolutionTypes[4],
+            resolutionTypes[5],
+            resolutionTypes[6]
+        ];
+        return fixedResolutionTypes;
+    }
+
     function snapshotAll() public returns (uint256) {
         _shareholderRegistry.snapshot();
         _telediskoToken.snapshot();

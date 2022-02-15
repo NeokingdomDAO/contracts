@@ -84,6 +84,27 @@ describe("Resolution", () => {
     resolutionId = 1; // first resolution ID is always 1
   });
 
+  describe("reading logic", async () => {
+    it.only("returns all resolution types", async () => {
+      const resolutionTypes = await resolution.getResolutionTypes();
+
+      expect(resolutionTypes.length).equal(7);
+
+      const names = [
+        "amendment",
+        "capitalChange",
+        "preclusion",
+        "fundamentalOther",
+        "significant",
+        "dissolution",
+        "routine",
+      ];
+      resolutionTypes.forEach((value, i) => {
+        expect(value.name).equal(names[i]);
+      });
+    });
+  });
+
   describe("creation logic", async () => {
     it("allows to create a resolution", async () => {
       await expect(resolution.connect(user1).createResolution("test", 0, false))

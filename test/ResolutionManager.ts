@@ -13,6 +13,7 @@ import {
   ResolutionManager__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BigNumber, ContractReceipt } from "ethers";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -88,6 +89,27 @@ describe("Resolution", () => {
       await expect(resolution.connect(user1).createResolution("test", 0, false))
         .to.emit(resolution, "ResolutionCreated")
         .withArgs(user1.address, resolutionId);
+    });
+    it("allows to create a resolution and read the resolutionId with an event", async () => {
+      const tx = await resolution
+        .connect(user1)
+        .createResolution("test", 0, false);
+
+      function getResolutionId(receipt: ContractReceipt) {
+        const filter = resolution.filters.ResolutionCreated(resolution.address);
+        for (const e of receipt.events || []) {
+          if (
+            e.address === filter.address &&
+            // `filter.topics` is set
+            e.topics[0] === filter.topics![0]
+          ) {
+            return e.args!["resolutionId"] as BigNumber;
+          }
+        }
+        throw new Error("resolutionId not found");
+      }
+      const receipt = await tx.wait();
+      expect(getResolutionId(receipt).toNumber()).equal(resolutionId);
     });
   });
 

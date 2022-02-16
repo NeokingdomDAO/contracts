@@ -159,7 +159,7 @@ describe("VotingSnapshot", () => {
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 
-        await votingSnapshot.afterRemoveContributor(delegator1.address);
+        await votingSnapshot.beforeRemoveContributor(delegator1.address);
         await votingSnapshot.snapshot();
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 
@@ -283,7 +283,7 @@ describe("VotingSnapshot", () => {
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 
-        await votingSnapshot.afterRemoveContributor(delegator1.address);
+        await votingSnapshot.beforeRemoveContributor(delegator1.address);
         await votingSnapshot.snapshot();
         let snapshotIdAfter = await votingSnapshot.getCurrentSnapshotId();
 

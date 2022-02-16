@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../extensions/ISnapshot.sol";
 
 interface IVoting is ISnapshot {
-    function afterRemoveContributor(address account) external;
+    function beforeRemoveContributor(address account) external;
 
     function afterTokenTransfer(
         address from,

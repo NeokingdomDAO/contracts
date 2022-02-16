@@ -111,14 +111,14 @@ describe("Voting", () => {
         .setShareholderRegistry(shareholderRegistry.address);
     });
 
-    it("should throw an error when anyone but the RESOLUTION calls afterRemoveContributor", async () => {
+    it("should throw an error when anyone but the RESOLUTION calls beforeRemoveContributor", async () => {
       let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${resolutionRole.toLowerCase()}`;
       await expect(
-        voting.connect(noDelegate).afterRemoveContributor(delegator1.address)
+        voting.connect(noDelegate).beforeRemoveContributor(delegator1.address)
       ).revertedWith(errorMessage);
 
       voting.grantRole(resolutionRole, noDelegate.address);
-      voting.connect(noDelegate).afterRemoveContributor(delegator1.address);
+      voting.connect(noDelegate).beforeRemoveContributor(delegator1.address);
     });
   });
 
@@ -226,7 +226,7 @@ describe("Voting", () => {
       await token.mint(delegator1.address, 10);
       let votingPowerBefore = await voting.getTotalVotingPower();
       await shareholderRegistry.setNonContributor(delegator1.address);
-      await voting.afterRemoveContributor(delegator1.address);
+      await voting.beforeRemoveContributor(delegator1.address);
 
       let votingPowerAfter = await voting.getTotalVotingPower();
 
@@ -246,7 +246,7 @@ describe("Voting", () => {
     it("should throw an error when first delegate is not the account itself", async () => {
       await expect(
         voting.connect(noDelegate).delegate(delegated1.address)
-      ).revertedWith("Voting: first delegate yourself");
+      ).revertedWith("Voting: first delegate should be self");
     });
 
     it("should set account's delegate when delegating another account", async () => {
@@ -271,7 +271,7 @@ describe("Voting", () => {
 
       await expect(
         voting.connect(delegator1).delegate(delegated1.address)
-      ).revertedWith("Voting: the proposed delegate is already your delegate.");
+      ).revertedWith("Voting: new delegate equal to old delegate");
     });
 
     it("should throw an error when delegating an account that already has delegates (no sub-delegation allowed)", async () => {
@@ -279,9 +279,7 @@ describe("Voting", () => {
 
       await expect(
         voting.connect(delegator2).delegate(delegator1.address)
-      ).revertedWith(
-        "Voting: the proposed delegatee already has a delegate. No sub-delegations allowed."
-      );
+      ).revertedWith("Voting: new delegate is not self delegated");
     });
 
     it("should throw an error when an already delegated account tries to delegate (no sub-delegation allowed)", async () => {
@@ -289,9 +287,7 @@ describe("Voting", () => {
 
       await expect(
         voting.connect(delegated1).delegate(delegated2.address)
-      ).revertedWith(
-        "Voting: the delegator is delegated. No sub-delegations allowed."
-      );
+      ).revertedWith("Voting: delegator is already delegated");
     });
 
     it("should throw an error when a non contributor tries to delegate", async () => {
@@ -309,13 +305,11 @@ describe("Voting", () => {
     it("should throw an error when delegating a contributor that has not delegated itself first", async () => {
       await expect(
         voting.connect(delegator1).delegate(noDelegate.address)
-      ).revertedWith(
-        "Voting: the proposed delegate should delegate itself first."
-      );
+      ).revertedWith("Voting: new delegate is not self delegated");
     });
 
     it("should return address 0x0 for an self-delegated account whose contributor status has been removed", async () => {
-      await voting.afterRemoveContributor(delegator1.address);
+      await voting.beforeRemoveContributor(delegator1.address);
 
       expect(await voting.getDelegate(delegator1.address)).equal(AddressZero);
     });
@@ -422,8 +416,8 @@ describe("Voting", () => {
 
     it("should decrease to 0 the voting power of an account when it's removed from contributors", async () => {
       await token.mint(delegator1.address, 10);
+      await voting.beforeRemoveContributor(delegator1.address);
       await shareholderRegistry.setNonContributor(delegator1.address);
-      await voting.afterRemoveContributor(delegator1.address);
 
       let votingPowerAfter = await voting.getVotingPower(delegator1.address);
 
@@ -434,8 +428,8 @@ describe("Voting", () => {
       await token.mint(delegator1.address, 10);
       await voting.connect(delegator1).delegate(delegated1.address);
       let votingPowerBefore = await voting.getVotingPower(delegated1.address);
+      await voting.beforeRemoveContributor(delegator1.address);
       await shareholderRegistry.setNonContributor(delegator1.address);
-      await voting.afterRemoveContributor(delegator1.address);
 
       let votingPowerAfter = await voting.getVotingPower(delegated1.address);
 
@@ -459,7 +453,7 @@ describe("Voting", () => {
     });
 
     it("should not allow voting when contributor removed", async () => {
-      await voting.afterRemoveContributor(delegator1.address);
+      await voting.beforeRemoveContributor(delegator1.address);
 
       const result = await voting.canVote(delegator1.address);
 
@@ -472,15 +466,13 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       await expect(
         voting.connect(delegated1).delegate(delegated2.address)
-      ).revertedWith(
-        "Voting: the delegator is delegated. No sub-delegations allowed."
-      );
+      ).revertedWith("Voting: delegator is already delegated");
       expect(await voting.getDelegate(delegated1.address)).equals(
         delegated1.address
       );
 
+      await voting.beforeRemoveContributor(delegator1.address);
       await shareholderRegistry.setNonContributor(delegator1.address);
-      await voting.afterRemoveContributor(delegator1.address);
 
       await voting.connect(delegated1).delegate(delegated2.address);
 
@@ -505,9 +497,7 @@ describe("Voting", () => {
 
       await expect(
         voting.connect(delegated1).delegate(delegated2.address)
-      ).revertedWith(
-        "Voting: the delegator is delegated. No sub-delegations allowed."
-      );
+      ).revertedWith("Voting: delegator is already delegated");
       expect(await voting.getDelegate(delegated1.address)).equals(
         delegated1.address
       );
@@ -516,9 +506,7 @@ describe("Voting", () => {
 
       await expect(
         voting.connect(delegated1).delegate(delegated2.address)
-      ).revertedWith(
-        "Voting: the delegator is delegated. No sub-delegations allowed."
-      );
+      ).revertedWith("Voting: delegator is already delegated");
       expect(await voting.getDelegate(delegated1.address)).equals(
         delegated1.address
       );
@@ -530,9 +518,7 @@ describe("Voting", () => {
 
       await expect(
         voting.connect(delegated1).delegate(delegated2.address)
-      ).revertedWith(
-        "Voting: the delegator is delegated. No sub-delegations allowed."
-      );
+      ).revertedWith("Voting: delegator is already delegated");
       expect(await voting.getDelegate(delegated1.address)).equals(
         delegated1.address
       );
@@ -552,7 +538,7 @@ describe("Voting", () => {
       expect(await voting.getVotingPower(delegator1.address)).equal(0);
 
       await shareholderRegistry.setNonContributor(delegated1.address);
-      await voting.afterRemoveContributor(delegated1.address);
+      await voting.beforeRemoveContributor(delegated1.address);
 
       await voting.connect(delegator1).delegate(delegator1.address);
       expect(await voting.getDelegate(delegator1.address)).equal(
@@ -568,8 +554,8 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       await voting.connect(delegator2).delegate(delegated1.address);
 
+      await voting.beforeRemoveContributor(delegated1.address);
       await shareholderRegistry.setNonContributor(delegated1.address);
-      await voting.afterRemoveContributor(delegated1.address);
       await voting.connect(delegator1).delegate(delegator1.address);
 
       await shareholderRegistry.setNonContributor(nonContributor.address);
@@ -583,8 +569,8 @@ describe("Voting", () => {
       await token.mint(delegated1.address, 8);
       await voting.connect(delegator1).delegate(delegated1.address);
 
+      await voting.beforeRemoveContributor(delegated1.address);
       await shareholderRegistry.setNonContributor(delegated1.address);
-      await voting.afterRemoveContributor(delegated1.address);
 
       await token.connect(delegated1).transfer(nonContributor.address, 8);
 
@@ -599,8 +585,8 @@ describe("Voting", () => {
       await token.mint(delegated1.address, 8);
       await voting.connect(delegator1).delegate(delegated1.address);
 
+      await voting.beforeRemoveContributor(delegated1.address);
       await shareholderRegistry.setNonContributor(delegated1.address);
-      await voting.afterRemoveContributor(delegated1.address);
 
       await token.connect(delegated1).transfer(delegator1.address, 8);
       expect(await voting.getVotingPower(delegator1.address)).equal(0);
@@ -618,8 +604,8 @@ describe("Voting", () => {
       expect(await voting.getVotingPower(delegator1.address)).equal(0);
       expect(await voting.getVotingPower(delegated1.address)).equal(18);
 
+      await voting.beforeRemoveContributor(delegator1.address);
       await shareholderRegistry.setNonContributor(delegator1.address);
-      await voting.afterRemoveContributor(delegator1.address);
 
       await shareholderRegistry.setNonContributor(nonContributor.address);
       await voting.connect(delegator1).delegate(delegator1.address);
@@ -634,8 +620,8 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       expect(await voting.getTotalVotingPower()).equal(18);
 
+      await voting.beforeRemoveContributor(delegated1.address);
       await shareholderRegistry.setNonContributor(delegated1.address);
-      await voting.afterRemoveContributor(delegated1.address);
       expect(await voting.getTotalVotingPower()).equal(10);
 
       await token.mint(delegator1.address, 2);

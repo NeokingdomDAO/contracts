@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 
 import "./ShareholderRegistrySnapshot.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import { Roles } from "../extensions/Roles.sol";
 
 contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
     // Benjamin takes all the decisions in first months, assuming the role of
     // the "Resolution", to then delegate to the resolution contract what comes
     // next.
     // This is what zodiac calls "incremental decentralization".
-    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     constructor(string memory name, string memory symbol)
         ShareholderRegistrySnapshot(name, symbol)
@@ -21,7 +21,7 @@ contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
     function snapshot()
         public
         override
-        onlyRole(MANAGER_ROLE)
+        onlyRole(Roles.MANAGER_ROLE)
         returns (uint256)
     {
         return _snapshot();
@@ -29,14 +29,14 @@ contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
 
     function setStatus(bytes32 status, address account)
         public
-        onlyRole(MANAGER_ROLE)
+        onlyRole(Roles.MANAGER_ROLE)
     {
         _setStatus(status, account);
     }
 
     function mint(address account, uint256 amount)
         public
-        onlyRole(MANAGER_ROLE)
+        onlyRole(Roles.MANAGER_ROLE)
     {
         _mint(account, amount);
     }

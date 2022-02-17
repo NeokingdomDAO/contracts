@@ -85,7 +85,7 @@ describe("Resolution", () => {
   });
 
   describe("reading logic", async () => {
-    it.only("returns all resolution types", async () => {
+    it("returns all resolution types", async () => {
       const resolutionTypes = await resolution.getResolutionTypes();
 
       expect(resolutionTypes.length).equal(7);

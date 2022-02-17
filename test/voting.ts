@@ -11,6 +11,7 @@ import {
   ShareholderRegistryMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { roles } from "./utils/roles";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -62,8 +63,9 @@ describe("Voting", () => {
     shareholderRegistry = await ShareholderRegistryFactory.deploy();
 
     await voting.deployed();
-    managerRole = await voting.MANAGER_ROLE();
-    resolutionRole = await voting.RESOLUTION_ROLE();
+
+    managerRole = await roles.MANAGER_ROLE();
+    resolutionRole = await roles.RESOLUTION_ROLE();
     voting.grantRole(managerRole, deployer.address);
     voting.grantRole(resolutionRole, deployer.address);
 

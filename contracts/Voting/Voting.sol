@@ -5,11 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
+import { Roles } from "../extensions/Roles.sol";
 
 contract Voting is AccessControl {
-    bytes32 public MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 public RESOLUTION_ROLE = keccak256("RESOLUTION_ROLE");
-
     IShareholderRegistry _shareholderRegistry;
     IERC20 _token;
 
@@ -49,13 +47,13 @@ contract Voting is AccessControl {
         return getDelegate(account) != address(0);
     }
 
-    function setToken(IERC20 token) external onlyRole(MANAGER_ROLE) {
+    function setToken(IERC20 token) external onlyRole(Roles.MANAGER_ROLE) {
         _token = token;
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
-        onlyRole(MANAGER_ROLE)
+        onlyRole(Roles.MANAGER_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -63,7 +61,7 @@ contract Voting is AccessControl {
 
     function beforeRemoveContributor(address account)
         external
-        onlyRole(RESOLUTION_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         address delegated = getDelegate(account);
         if (delegated != address(0)) {

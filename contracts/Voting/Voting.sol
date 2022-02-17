@@ -61,7 +61,7 @@ contract Voting is AccessControl {
 
     function beforeRemoveContributor(address account)
         external
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE)
     {
         address delegated = getDelegate(account);
         if (delegated != address(0)) {

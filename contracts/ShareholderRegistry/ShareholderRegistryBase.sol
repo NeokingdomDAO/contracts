@@ -6,12 +6,15 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../Voting/IVoting.sol";
 
 contract ShareholderRegistryBase is ERC20 {
     bytes32 public SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
     bytes32 public INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
     bytes32 public CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
     bytes32 public FOUNDER_STATUS = keccak256("FOUNDER_STATUS");
+
+    IVoting _voting;
 
     event StatusChanged(
         address indexed account,
@@ -22,6 +25,10 @@ contract ShareholderRegistryBase is ERC20 {
     mapping(address => bytes32) private _statuses;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+
+    function _setVoting(IVoting voting) internal {
+        _voting = voting;
+    }
 
     function _setStatus(bytes32 status, address account) internal virtual {
         require(
@@ -65,7 +72,11 @@ contract ShareholderRegistryBase is ERC20 {
     function _beforeSetStatus(address account, bytes32 status)
         internal
         virtual
-    {}
+    {
+        if (status != CONTRIBUTOR_STATUS || status != FOUNDER_STATUS) {
+            _voting.beforeRemoveContributor(account);
+        }
+    }
 
     function _afterSetStatus(address account, bytes32 status)
         internal

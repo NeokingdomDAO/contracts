@@ -22,6 +22,7 @@ const AddressZero = ethers.constants.AddressZero;
 describe("Voting", () => {
   let managerRole: string;
   let resolutionRole: string;
+  let shareholderRegistryRole: string;
   let voting: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -66,8 +67,10 @@ describe("Voting", () => {
 
     managerRole = await roles.MANAGER_ROLE();
     resolutionRole = await roles.RESOLUTION_ROLE();
-    voting.grantRole(managerRole, deployer.address);
-    voting.grantRole(resolutionRole, deployer.address);
+    shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
+    await voting.grantRole(managerRole, deployer.address);
+    await voting.grantRole(resolutionRole, deployer.address);
+    await voting.grantRole(shareholderRegistryRole, deployer.address);
 
     await token.deployed();
     await shareholderRegistry.deployed();
@@ -77,9 +80,9 @@ describe("Voting", () => {
 
     await shareholderRegistry.setNonContributor(nonContributor.address);
 
-    [delegator1, delegator2, delegated1, delegated2].forEach((voter) => {
-      voting.connect(voter).delegate(voter.address);
-    });
+    Promise.all([delegator1, delegator2, delegated1, delegated2].map(async (voter) => {
+      await voting.connect(voter).delegate(voter.address);
+    }));
   });
 
   describe("access logic", async () => {
@@ -95,8 +98,8 @@ describe("Voting", () => {
         voting.connect(noDelegate).setToken(token.address)
       ).revertedWith(errorMessage);
 
-      voting.grantRole(managerRole, noDelegate.address);
-      voting.connect(noDelegate).setToken(shareholderRegistry.address);
+      await voting.grantRole(managerRole, noDelegate.address);
+      await voting.connect(noDelegate).setToken(shareholderRegistry.address);
     });
 
     it("should throw an error when anyone but the MANAGER calls setShareholderRegistry", async () => {
@@ -107,20 +110,22 @@ describe("Voting", () => {
           .setShareholderRegistry(shareholderRegistry.address)
       ).revertedWith(errorMessage);
 
-      voting.grantRole(managerRole, noDelegate.address);
-      voting
+      await voting.grantRole(managerRole, noDelegate.address);
+      await voting
         .connect(noDelegate)
         .setShareholderRegistry(shareholderRegistry.address);
     });
 
-    it("should throw an error when anyone but the RESOLUTION calls beforeRemoveContributor", async () => {
-      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${resolutionRole.toLowerCase()}`;
+    it("should throw an error when anyone but the SHAREHOLDER REGISTRY calls beforeRemoveContributor", async () => {
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${shareholderRegistryRole.toLowerCase()}`;
       await expect(
         voting.connect(noDelegate).beforeRemoveContributor(delegator1.address)
       ).revertedWith(errorMessage);
 
-      voting.grantRole(resolutionRole, noDelegate.address);
-      voting.connect(noDelegate).beforeRemoveContributor(delegator1.address);
+      await voting.grantRole(shareholderRegistryRole, noDelegate.address);
+      await voting
+        .connect(noDelegate)
+        .beforeRemoveContributor(delegator1.address);
     });
   });
 

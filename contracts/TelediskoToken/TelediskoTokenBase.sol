@@ -12,6 +12,7 @@ contract TelediskoTokenBase is ERC20 {
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
+    // FIXME: remove?
     function setVoting(IVoting voting) external virtual {
         _setVoting(voting);
     }

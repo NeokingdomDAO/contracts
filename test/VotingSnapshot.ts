@@ -21,6 +21,7 @@ const AddressZero = ethers.constants.AddressZero;
 
 describe("VotingSnapshot", () => {
   let managerRole: string;
+  let shareholderRegistryRole: string;
   let votingSnapshot: VotingSnapshot;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -59,7 +60,9 @@ describe("VotingSnapshot", () => {
 
     votingSnapshot = await VotingSnapshotFactory.deploy();
     managerRole = await roles.MANAGER_ROLE();
+    shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
     votingSnapshot.grantRole(managerRole, deployer.address);
+    votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 
     token = await ERC20MockFactory.deploy(votingSnapshot.address);
     shareholderRegistry = await ShareholderRegistryFactory.deploy();

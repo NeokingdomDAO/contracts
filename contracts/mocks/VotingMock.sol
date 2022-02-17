@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 contract VotingMock {
     event AfterTokenTransferCalled(address from, address to, uint256 amount);
+    event BeforeRemoveContributor(address account);
 
     function afterTokenTransfer(
         address from,
@@ -11,6 +12,10 @@ contract VotingMock {
         uint256 amount
     ) external {
         emit AfterTokenTransferCalled(from, to, amount);
+    }
+
+    function beforeRemoveContributor(address account) external {
+        emit BeforeRemoveContributor(account);
     }
 
     mapping(address => address) mockResult_getDelegateAt;
@@ -43,11 +48,7 @@ contract VotingMock {
         return mockResult_getDelegateAt[account];
     }
 
-    function canVoteAt(address account, uint256)
-        public
-        view
-        returns (bool)
-    {
+    function canVoteAt(address account, uint256) public view returns (bool) {
         return mockResult_canVoteAt[account];
     }
 

@@ -5,9 +5,11 @@ import { solidity } from "ethereum-waffle";
 import {
   ShareholderRegistry,
   ShareholderRegistry__factory,
+  VotingMock,
+  VotingMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { parseEther, RLP } from "ethers/lib/utils";
+import { parseEther } from "ethers/lib/utils";
 import { roles } from "./utils/roles";
 
 chai.use(solidity);
@@ -26,6 +28,7 @@ describe("Shareholder Registry", () => {
     FOUNDER_STATUS: string;
   let shareCapital = parseEther("10");
   let registry: ShareholderRegistry;
+  let voting: VotingMock;
   let manager: SignerWithAddress,
     founder: SignerWithAddress,
     alice: SignerWithAddress,
@@ -38,9 +41,15 @@ describe("Shareholder Registry", () => {
       "ShareholderRegistry",
       manager
     )) as ShareholderRegistry__factory;
+    const VotingMockFactory = (await ethers.getContractFactory(
+      "VotingMock"
+    )) as VotingMock__factory;
 
     registry = await ShareholderRegistryFactory.deploy("TS", "Teledisko Share");
     await registry.deployed();
+
+    voting = await VotingMockFactory.deploy();
+    await voting.deployed();
 
     MANAGER_ROLE = await roles.MANAGER_ROLE();
 
@@ -50,6 +59,7 @@ describe("Shareholder Registry", () => {
     FOUNDER_STATUS = await registry.FOUNDER_STATUS();
 
     await registry.grantRole(MANAGER_ROLE, manager.address);
+    await registry.setVoting(voting.address);
     await registry.mint(founder.address, shareCapital);
     await registry.connect(founder).approve(manager.address, shareCapital);
   });
@@ -130,8 +140,32 @@ describe("Shareholder Registry", () => {
         true
       );
     });
-
-    it("should cleanup the status when a shareholder transfer all their shares", async () => {
+    it("should notify the Voting contract when a shareholder transfers all their shares", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+      await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+      expect(await registry.getStatus(alice.address)).equal(CONTRIBUTOR_STATUS);
+      await expect(
+        registry.connect(alice).transfer(founder.address, parseEther("1"))
+      )
+        .to.emit(voting, "BeforeRemoveContributor")
+        .withArgs(alice.address);
+    });
+    it("should notify the Voting contract when status updated to investor", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+      await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+      await expect(registry.setStatus(INVESTOR_STATUS, alice.address))
+        .to.emit(voting, "BeforeRemoveContributor")
+        .withArgs(alice.address);
+    });
+    it("should cleanup the status when a shareholder transfers all their shares", async () => {
       await registry.transferFrom(
         founder.address,
         alice.address,

@@ -1,6 +1,7 @@
 {
   "4": {
     "ResolutionManager": "0xE84aCBE831EE9A435a9864F53DF3C8beb84ce0f6",
-    "TelediskoToken": "0xEb25F8C8a4b5338880CdC607DbBF0eD475Dd0dc1"
+    "TelediskoToken": "0xEb25F8C8a4b5338880CdC607DbBF0eD475Dd0dc1",
+    "ResolutionMock": "0x3E3fCa9Da850E22495590b7482043ad61e24CE09"
   }
 }

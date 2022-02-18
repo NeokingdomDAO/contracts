@@ -29,6 +29,10 @@ task("deploy", "Deploy contracts", async (_, hre) => {
   const { chainId } = await hre.ethers.provider.getNetwork();
 
   if (hre.network.name !== "localhost") {
-    await exportAddress(chainId, "ResolutionMock", contractResolution.address);
+    await exportAddress(
+      chainId,
+      "ResolutionManager",
+      contractResolution.address
+    );
   }
 });

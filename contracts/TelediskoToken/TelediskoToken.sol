@@ -9,7 +9,9 @@ import { Roles } from "../extensions/Roles.sol";
 contract TelediskoToken is TelediskoTokenSnapshot, AccessControl {
     constructor(string memory name, string memory symbol)
         TelediskoTokenSnapshot(name, symbol)
-    {}
+    {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
 
     function setVoting(IVoting voting)
         external

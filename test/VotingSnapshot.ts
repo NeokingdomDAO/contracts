@@ -3,8 +3,8 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import {
-  VotingSnapshot,
-  VotingSnapshot__factory,
+  Voting,
+  Voting__factory,
   ERC20Mock,
   ERC20Mock__factory,
   ShareholderRegistryMock,
@@ -22,7 +22,8 @@ const AddressZero = ethers.constants.AddressZero;
 describe("VotingSnapshot", () => {
   let managerRole: string;
   let shareholderRegistryRole: string;
-  let votingSnapshot: VotingSnapshot;
+  let resolutionRole: string;
+  let votingSnapshot: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
   let deployer: SignerWithAddress,
@@ -44,9 +45,9 @@ describe("VotingSnapshot", () => {
       nonContributor,
     ] = await ethers.getSigners();
     const VotingSnapshotFactory = (await ethers.getContractFactory(
-      "VotingSnapshot",
+      "Voting",
       deployer
-    )) as VotingSnapshot__factory;
+    )) as Voting__factory;
 
     const ERC20MockFactory = (await ethers.getContractFactory(
       "ERC20Mock",
@@ -59,9 +60,11 @@ describe("VotingSnapshot", () => {
     )) as ShareholderRegistryMock__factory;
 
     votingSnapshot = await VotingSnapshotFactory.deploy();
+    resolutionRole = await roles.RESOLUTION_ROLE();
     managerRole = await roles.MANAGER_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
     votingSnapshot.grantRole(managerRole, deployer.address);
+    votingSnapshot.grantRole(resolutionRole, deployer.address);
     votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 
     token = await ERC20MockFactory.deploy(votingSnapshot.address);

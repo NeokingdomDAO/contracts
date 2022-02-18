@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../TelediskoToken/ITelediskoToken.sol";
 import "../Voting/IVoting.sol";
+import "hardhat/console.sol";
 
 // TODO: add indices for resolution types
 // TODO: test new logic
@@ -265,8 +266,10 @@ contract ResolutionManager {
         uint256 totalVotingPower = _voting.getTotalVotingPowerAt(
             resolution.snapshotId
         );
-        bool hasQuorum = resolution.yesVotesTotal >=
+
+        bool hasQuorum = resolution.yesVotesTotal * 100 >=
             resolutionType.quorum * totalVotingPower;
+
         return resolution.isNegative ? !hasQuorum : hasQuorum;
     }
 

@@ -21,7 +21,7 @@ contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
     function snapshot()
         public
         override
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
         returns (uint256)
     {
         return _snapshot();

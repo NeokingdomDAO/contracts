@@ -21,7 +21,8 @@ const Bytes32Zero =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 describe("Shareholder Registry", () => {
-  let MANAGER_ROLE: string,
+  let RESOLUTION_ROLE: string,
+    MANAGER_ROLE: string,
     SHAREHOLDER_STATUS: string,
     INVESTOR_STATUS: string,
     CONTRIBUTOR_STATUS: string,
@@ -52,12 +53,14 @@ describe("Shareholder Registry", () => {
     await voting.deployed();
 
     MANAGER_ROLE = await roles.MANAGER_ROLE();
+    RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
 
     SHAREHOLDER_STATUS = await registry.SHAREHOLDER_STATUS();
     INVESTOR_STATUS = await registry.INVESTOR_STATUS();
     CONTRIBUTOR_STATUS = await registry.CONTRIBUTOR_STATUS();
     FOUNDER_STATUS = await registry.FOUNDER_STATUS();
 
+    await registry.grantRole(RESOLUTION_ROLE, manager.address);
     await registry.grantRole(MANAGER_ROLE, manager.address);
     await registry.setVoting(voting.address);
     await registry.mint(founder.address, shareCapital);
@@ -180,12 +183,12 @@ describe("Shareholder Registry", () => {
 
   describe("Status management snapshot", () => {
     describe("snapshot", () => {
-      it("allows MANAGER_ROLE to create a snapshot", async () => {
+      it("allows RESOLUTION_ROLE to create a snapshot", async () => {
         await expect(registry.snapshot()).to.emit(registry, "Snapshot");
       });
-      it("can only be called by MANAGER_ROLE", async () => {
+      it("can only be called by RESOLUTION_ROLE", async () => {
         await expect(registry.connect(alice).snapshot()).revertedWith(
-          `AccessControl: account ${alice.address.toLowerCase()} is missing role ${MANAGER_ROLE}`
+          `AccessControl: account ${alice.address.toLowerCase()} is missing role ${RESOLUTION_ROLE}`
         );
       });
     });

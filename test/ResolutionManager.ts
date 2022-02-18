@@ -14,6 +14,8 @@ import {
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ContractReceipt } from "ethers";
+import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
+import { getEventListeners } from "events";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -183,13 +185,10 @@ describe("Resolution", () => {
     it("should not allow to vote on a resolution when voting ended", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
-      let approvalTimestamp = (await ethers.provider.getBlock("latest"))
-        .timestamp;
+      let approvalTimestamp = await getEVMTimestamp();
 
       let votingTimestamp = approvalTimestamp + DAY * 21;
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        votingTimestamp,
-      ]);
+      await setEVMTimestamp(votingTimestamp);
 
       await expect(
         resolution.connect(user1).vote(resolutionId, false)
@@ -199,15 +198,12 @@ describe("Resolution", () => {
     it("should allow to vote on an approved resolution when voting started", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
-      let approvalTimestamp = (await ethers.provider.getBlock("latest"))
-        .timestamp;
+      let approvalTimestamp = await getEVMTimestamp();
 
       let votingTimestamp = approvalTimestamp + DAY * 15;
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        votingTimestamp,
-      ]);
+      await setEVMTimestamp(votingTimestamp);
 
-      resolution.connect(user1).vote(resolutionId, false);
+      await resolution.connect(user1).vote(resolutionId, false);
     });
   });
 
@@ -215,12 +211,9 @@ describe("Resolution", () => {
     beforeEach(async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
       await resolution.approveResolution(resolutionId);
-      let approvalTimestamp = (await ethers.provider.getBlock("latest"))
-        .timestamp;
+      let approvalTimestamp = await getEVMTimestamp();
 
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        approvalTimestamp + DAY * 15,
-      ]);
+      await setEVMTimestamp(approvalTimestamp + DAY * 15);
     });
 
     it("should emit a specific event when there is a new YES vote", async () => {
@@ -723,6 +716,117 @@ describe("Resolution", () => {
         const total = await _totalYesVotes();
         expect(total).equal(0);
       });
+    });
+  });
+
+  describe("resolution outcome", async () => {
+    async function setupUser(user: SignerWithAddress, votingPower: number) {
+      await voting.mock_getDelegateAt(user.address, user.address);
+      await voting.mock_getVotingPowerAt(user.address, votingPower);
+    }
+
+    async function setupResolution(
+      totalVotingPower: number,
+      negative: boolean = false
+    ) {
+      await voting.mock_getTotalVotingPowerAt(totalVotingPower);
+
+      await resolution.createResolution("test", 6, negative);
+      await resolution.approveResolution(1);
+      const approveTimestamp = await getEVMTimestamp();
+      await setEVMTimestamp(approveTimestamp + 3 * DAY);
+    }
+
+    it("should return true when minimum quorum is achieved - 1 user", async () => {
+      await setupUser(user1, 51);
+      await setupResolution(100);
+
+      await resolution.connect(user1).vote(1, true);
+      await mineEVMBlock();
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).true;
+    });
+
+    it("should return true when minimum quorum is achieved - 2 users", async () => {
+      await setupUser(user1, 25);
+      await setupUser(user2, 26);
+
+      await setupResolution(100);
+
+      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user2).vote(1, true);
+      await mineEVMBlock();
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).true;
+    });
+
+    it("should return false when minimum quorum is not achieved - 1 user", async () => {
+      await setupUser(user1, 50);
+      await setupResolution(100);
+
+      await resolution.connect(user1).vote(1, true);
+      await mineEVMBlock();
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).false;
+    });
+
+    it("should return true when minimum quorum is not achieved - 2 users", async () => {
+      await setupUser(user1, 50);
+      await setupUser(user2, 1);
+
+      await setupResolution(100);
+
+      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user2).vote(1, false);
+      await mineEVMBlock();
+
+      const result = await resolution.getResolutionResult(1);
+
+      expect(result).false;
+    });
+
+    it("should return false when minimum quorum is achieved - 1 user, negative resolution", async () => {
+      await setupUser(user1, 51);
+      await setupResolution(100, true);
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).true;
+    });
+
+    it("should return false when minimum quorum is not achieved - 1 user, negative resolution", async () => {
+      await setupUser(user1, 51);
+      await setupResolution(100, true);
+
+      await resolution.connect(user1).vote(1, true);
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).false;
+    });
+
+    it("should return false when minimum quorum is achieved - 2 users, negative resolution", async () => {
+      await setupUser(user1, 50);
+      await setupUser(user2, 1);
+      await setupResolution(100, true);
+
+      await resolution.connect(user1).vote(1, true);
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).true;
+    });
+
+    it("should return false when minimum quorum is not achieved - 2 users, negative resolution", async () => {
+      await setupUser(user1, 50);
+      await setupUser(user2, 1);
+      await setupResolution(100, true);
+
+      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user2).vote(1, true);
+
+      const result = await resolution.getResolutionResult(1);
+      expect(result).false;
     });
   });
 });

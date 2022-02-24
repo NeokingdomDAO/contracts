@@ -217,42 +217,6 @@ contract ResolutionManager {
         }
     }
 
-    /*
-    function getResolution(uint256 resolutionId)
-        public
-        view
-        returns (
-            Resolution memory resolution,
-            uint256 votingStart,
-            uint256 votingEnd,
-            string memory status
-        )
-    {
-        resolution = resolutions[resolutionId];
-        ResolutionType storage resolutionType = resolutionTypes[
-            resolution.resolutionTypeId
-        ];
-
-        if (resolution.approveTimestamp > 0) {
-            votingStart =
-                resolution.approveTimestamp +
-                resolutionType.noticePeriod;
-            votingEnd = votingStart + resolutionType.votingPeriod;
-        }
-
-        if (resolution.approveTimestamp == 0) {
-            status = "not approved";
-        } else if (block.timestamp < votingStart) {
-            status = "notice";
-        } else if (block.timestamp < votingEnd) {
-            status = "voting";
-        } else {
-            // Should be yes/no
-            status = "resolved";
-        }
-    }
-    */
-
     function getResolutionResult(uint256 resolutionId)
         public
         view

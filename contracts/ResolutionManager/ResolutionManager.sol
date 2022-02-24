@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../TelediskoToken/ITelediskoToken.sol";
 import "../Voting/IVoting.sol";
-import "hardhat/console.sol";
 
 // TODO: add indices for resolution types
 // TODO: test new logic

@@ -1,4 +1,4 @@
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -15,7 +15,6 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ContractReceipt } from "ethers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
-import { getEventListeners } from "events";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -143,7 +142,7 @@ describe("Resolution", () => {
       ).revertedWith("Resolution: does not exist");
     });
 
-    it("should allow to approve an existing resolution", async () => {
+    it("should allow the founder to approve an existing resolution", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
 
       await expect(resolution.connect(user1).approveResolution(resolutionId))

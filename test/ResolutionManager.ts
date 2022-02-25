@@ -180,6 +180,61 @@ describe("Resolution", () => {
     });
   });
 
+  describe("update logic", async () => {
+    let resolutionId: number;
+    beforeEach(async () => {
+      function getResolutionId(receipt: ContractReceipt) {
+        const filter = resolution.filters.ResolutionCreated(resolution.address);
+        for (const e of receipt.events || []) {
+          if (
+            e.address === filter.address &&
+            // `filter.topics` is set
+            e.topics[0] === filter.topics![0]
+          ) {
+            return e.args!["resolutionId"] as BigNumber;
+          }
+        }
+        throw new Error("resolutionId not found");
+      }
+      const tx = await resolution
+        .connect(user1)
+        .createResolution("test", 0, false);
+      const receipt = await tx.wait();
+      resolutionId = getResolutionId(receipt).toNumber();
+    });
+
+    it("allows founder to update a resolution", async () => {
+      await expect(
+        resolution
+          .connect(founder)
+          .updateResolution(resolutionId, "updated test", 6, true)
+      )
+        .to.emit(resolution, "ResolutionUpdated")
+        .withArgs(founder.address, resolutionId);
+      const resolutionData = await resolution.resolutions(resolutionId);
+      expect(resolutionData.dataURI).equal("updated test");
+      expect(resolutionData.resolutionTypeId).equal(6);
+      expect(resolutionData.isNegative).equal(true);
+    });
+
+    it("doesn't allow the founder to update an approved resolution", async () => {
+      await resolution.connect(founder).approveResolution(resolutionId);
+      await expect(
+        resolution
+          .connect(founder)
+          .updateResolution(resolutionId, "updated test", 6, true)
+      ).revertedWith("Resolution: already approved");
+    });
+
+    it("doesn't allow anyone else to update a resolution", async () => {
+      await expect(
+        resolution
+          .connect(user1)
+          .updateResolution(resolutionId, "updated test", 6, true)
+      ).revertedWith("Resolution: only founder can update");
+    });
+  });
+
   describe("approval logic", async () => {
     it("should not allow to approve a non existing resolution", async () => {
       await expect(

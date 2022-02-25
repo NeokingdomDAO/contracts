@@ -185,6 +185,13 @@ contract ResolutionManager {
             resolution.approveTimestamp == 0,
             "Resolution: already approved"
         );
+        require(
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.FOUNDER_STATUS(),
+                msg.sender
+            ),
+            "Resolution: only founder can update"
+        );
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;

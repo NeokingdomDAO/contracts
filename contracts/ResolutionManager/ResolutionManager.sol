@@ -138,6 +138,13 @@ contract ResolutionManager {
             resolutionTypeId
         ];
         require(
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                msg.sender
+            ),
+            "Resolution: only contributor can create"
+        );
+        require(
             !isNegative || resolutionType.canBeNegative,
             "Resolution: cannot be negative"
         );

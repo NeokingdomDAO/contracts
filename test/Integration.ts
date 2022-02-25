@@ -134,7 +134,7 @@ describe("Resolution", () => {
 
     async function _prepareResolution() {
       currentResolution++;
-      await resolution.createResolution("Qxtest", 0, false);
+      await resolution.connect(user1).createResolution("Qxtest", 0, false);
       await resolution.connect(founder).approveResolution(currentResolution);
 
       return currentResolution;

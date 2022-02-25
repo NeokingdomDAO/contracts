@@ -80,9 +80,11 @@ describe("Voting", () => {
 
     await shareholderRegistry.setNonContributor(nonContributor.address);
 
-    Promise.all([delegator1, delegator2, delegated1, delegated2].map(async (voter) => {
-      await voting.connect(voter).delegate(voter.address);
-    }));
+    Promise.all(
+      [delegator1, delegator2, delegated1, delegated2].map(async (voter) => {
+        await voting.connect(voter).delegate(voter.address);
+      })
+    );
   });
 
   describe("access logic", async () => {
@@ -125,6 +127,14 @@ describe("Voting", () => {
       await voting.grantRole(shareholderRegistryRole, noDelegate.address);
       await voting
         .connect(noDelegate)
+        .beforeRemoveContributor(delegator1.address);
+    });
+
+    it("should not fail if an address calling 'beforeRemoveContributor' on an address with delegate is not a contributor", async () => {
+      await voting.grantRole(shareholderRegistryRole, nonContributor.address);
+      await voting.connect(delegator1).delegate(delegated1.address);
+      await voting
+        .connect(nonContributor)
         .beforeRemoveContributor(delegator1.address);
     });
   });

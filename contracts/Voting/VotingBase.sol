@@ -125,7 +125,7 @@ contract VotingBase {
         // pre conditions
         // - participants are contributors
         require(
-            _shareholderRegistry.isAtLeast(_contributorRole, msg.sender),
+            _shareholderRegistry.isAtLeast(_contributorRole, delegator),
             "Voting: only contributors can delegate."
         );
         require(

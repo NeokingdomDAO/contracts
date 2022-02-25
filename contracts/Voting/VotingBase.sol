@@ -57,10 +57,10 @@ contract VotingBase {
     function _beforeRemoveContributor(address account) internal {
         address delegated = getDelegate(account);
         if (delegated != address(0)) {
-            if (delegated != account) {
-                _delegate(account, account);
-            } else {
+            if (delegated == account) {
                 _beforeDelegate(account);
+            } else {
+                _delegate(account, account);
             }
 
             delete _delegates[account];

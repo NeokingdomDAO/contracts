@@ -8,19 +8,21 @@ import "../ShareholderRegistry/IShareholderRegistry.sol";
 // access some functionalities. Its logic has therefore be kept at the bare
 // minimum to allow the testing script to provide this behaviour.
 contract ShareholderRegistryMock is IShareholderRegistry {
-    bytes32 public override CONTRIBUTOR_STATUS = "test";
-    bytes32 public override SHAREHOLDER_STATUS;
-    bytes32 public override INVESTOR_STATUS;
-    bytes32 public override FOUNDER_STATUS;
+    bytes32 public SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
+    bytes32 public INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
+    bytes32 public CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
+    bytes32 public FOUNDER_STATUS = keccak256("FOUNDER_STATUS");
 
-    address _nonContributor;
+    mapping(bytes32 => mapping(address => bool)) mockResult_isAtLeast;
 
-    function snapshot() public override returns (uint256) {
-        
-    }
+    function snapshot() public override returns (uint256) {}
 
-    function setNonContributor(address account) public {
-        _nonContributor = account;
+    function mock_isAtLeast(
+        bytes32 status,
+        address account,
+        bool value
+    ) public {
+        mockResult_isAtLeast[status][account] = value;
     }
 
     function isAtLeast(bytes32 status, address account)
@@ -29,7 +31,7 @@ contract ShareholderRegistryMock is IShareholderRegistry {
         override
         returns (bool)
     {
-        return status == CONTRIBUTOR_STATUS && _nonContributor != account;
+        return mockResult_isAtLeast[status][account];
     }
 
     // Unneeded for testing

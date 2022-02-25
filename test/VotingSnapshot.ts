@@ -20,9 +20,14 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("VotingSnapshot", () => {
+  let contributorStatus: string;
+  let shareholderStatus: string;
+  let investorStatus: string;
+
   let managerRole: string;
   let shareholderRegistryRole: string;
   let resolutionRole: string;
+
   let votingSnapshot: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -63,12 +68,17 @@ describe("VotingSnapshot", () => {
     resolutionRole = await roles.RESOLUTION_ROLE();
     managerRole = await roles.MANAGER_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
+
     votingSnapshot.grantRole(managerRole, deployer.address);
     votingSnapshot.grantRole(resolutionRole, deployer.address);
     votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 
     token = await ERC20MockFactory.deploy(votingSnapshot.address);
     shareholderRegistry = await ShareholderRegistryFactory.deploy();
+
+    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
+    shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
+    investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
     await votingSnapshot.deployed();
     await token.deployed();
@@ -77,12 +87,39 @@ describe("VotingSnapshot", () => {
     await votingSnapshot.setToken(token.address);
     await votingSnapshot.setShareholderRegistry(shareholderRegistry.address);
 
-    await shareholderRegistry.setNonContributor(nonContributor.address);
+    // Set contributors' status to:
+    // - contributor
+    // - shareholder
+    // - investor
+    // The mock is dumb so we need to set everything manually
+    await Promise.all(
+      [delegator1, delegator2, delegated1, delegated2, noDelegate].map((user) =>
+        setContributor(user, true)
+      )
+    );
 
     [delegator1, delegator2, delegated1, delegated2].forEach((voter) => {
       votingSnapshot.connect(voter).delegate(voter.address);
     });
   });
+
+  async function setContributor(user: SignerWithAddress, flag: boolean) {
+    await shareholderRegistry.mock_isAtLeast(
+      contributorStatus,
+      user.address,
+      flag
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      shareholderStatus,
+      user.address,
+      flag
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      investorStatus,
+      user.address,
+      flag
+    );
+  }
 
   describe("snapshot logic", async () => {
     it("should increase snapshot id", async () => {

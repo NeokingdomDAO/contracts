@@ -54,8 +54,6 @@ describe("TelediskoToken", () => {
 
     await telediskoToken.setVoting(voting.address);
     await telediskoToken.setShareholderRegistry(shareholderRegistry.address);
-
-    await shareholderRegistry.setNonContributor(nonContributor.address);
   });
 
   describe("token transfer logic", async () => {

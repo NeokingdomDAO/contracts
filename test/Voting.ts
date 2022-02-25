@@ -20,9 +20,14 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("Voting", () => {
+  let contributorStatus: string;
+  let shareholderStatus: string;
+  let investorStatus: string;
+
   let managerRole: string;
   let resolutionRole: string;
   let shareholderRegistryRole: string;
+
   let voting: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -68,6 +73,11 @@ describe("Voting", () => {
     managerRole = await roles.MANAGER_ROLE();
     resolutionRole = await roles.RESOLUTION_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
+
+    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
+    shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
+    investorStatus = await shareholderRegistry.INVESTOR_STATUS();
+
     await voting.grantRole(managerRole, deployer.address);
     await voting.grantRole(resolutionRole, deployer.address);
     await voting.grantRole(shareholderRegistryRole, deployer.address);
@@ -78,14 +88,42 @@ describe("Voting", () => {
     await voting.setToken(token.address);
     await voting.setShareholderRegistry(shareholderRegistry.address);
 
-    await shareholderRegistry.setNonContributor(nonContributor.address);
+    // Set contributors' status to:
+    // - contributor
+    // - shareholder
+    // - investor
+    // The mock is dumb so we need to set everything manually
+    await Promise.all(
+      [delegator1, delegator2, delegated1, delegated2, noDelegate].map((user) =>
+        setContributor(user, true)
+      )
+    );
 
-    Promise.all(
-      [delegator1, delegator2, delegated1, delegated2].map(async (voter) => {
-        await voting.connect(voter).delegate(voter.address);
+    // Each contributor delegates to themselves.
+    await Promise.all(
+      [delegator1, delegator2, delegated1, delegated2].map((voter) => {
+        voting.connect(voter).delegate(voter.address);
       })
     );
   });
+
+  async function setContributor(user: SignerWithAddress, flag: boolean) {
+    await shareholderRegistry.mock_isAtLeast(
+      contributorStatus,
+      user.address,
+      flag
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      shareholderStatus,
+      user.address,
+      flag
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      investorStatus,
+      user.address,
+      flag
+    );
+  }
 
   describe("access logic", async () => {
     it("should throw an error when anyone but the Token contract calls afterTokenTransfer", async () => {
@@ -242,7 +280,8 @@ describe("Voting", () => {
     it("should decrease voting power when a contributor is removed", async () => {
       await token.mint(delegator1.address, 10);
       let votingPowerBefore = await voting.getTotalVotingPower();
-      await shareholderRegistry.setNonContributor(delegator1.address);
+
+      await setContributor(delegator1, false);
       await voting.beforeRemoveContributor(delegator1.address);
 
       let votingPowerAfter = await voting.getTotalVotingPower();
@@ -325,7 +364,7 @@ describe("Voting", () => {
       ).revertedWith("Voting: new delegate is not self delegated");
     });
 
-    it("should return address 0x0 for an self-delegated account whose contributor status has been removed", async () => {
+    it("should return address 0x0 for a self-delegated account whose contributor status has been removed", async () => {
       await voting.beforeRemoveContributor(delegator1.address);
 
       expect(await voting.getDelegate(delegator1.address)).equal(AddressZero);
@@ -434,7 +473,8 @@ describe("Voting", () => {
     it("should decrease to 0 the voting power of an account when it's removed from contributors", async () => {
       await token.mint(delegator1.address, 10);
       await voting.beforeRemoveContributor(delegator1.address);
-      await shareholderRegistry.setNonContributor(delegator1.address);
+
+      await setContributor(delegator1, false);
 
       let votingPowerAfter = await voting.getVotingPower(delegator1.address);
 
@@ -446,7 +486,8 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       let votingPowerBefore = await voting.getVotingPower(delegated1.address);
       await voting.beforeRemoveContributor(delegator1.address);
-      await shareholderRegistry.setNonContributor(delegator1.address);
+
+      await setContributor(delegator1, false);
 
       let votingPowerAfter = await voting.getVotingPower(delegated1.address);
 
@@ -489,7 +530,8 @@ describe("Voting", () => {
       );
 
       await voting.beforeRemoveContributor(delegator1.address);
-      await shareholderRegistry.setNonContributor(delegator1.address);
+
+      await setContributor(delegator1, false);
 
       await voting.connect(delegated1).delegate(delegated2.address);
 
@@ -554,7 +596,7 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
       expect(await voting.getVotingPower(delegator1.address)).equal(0);
 
-      await shareholderRegistry.setNonContributor(delegated1.address);
+      await setContributor(delegated1, false);
       await voting.beforeRemoveContributor(delegated1.address);
 
       await voting.connect(delegator1).delegate(delegator1.address);
@@ -572,10 +614,11 @@ describe("Voting", () => {
       await voting.connect(delegator2).delegate(delegated1.address);
 
       await voting.beforeRemoveContributor(delegated1.address);
-      await shareholderRegistry.setNonContributor(delegated1.address);
+
+      await setContributor(delegated1, false);
       await voting.connect(delegator1).delegate(delegator1.address);
 
-      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await setContributor(delegated1, true);
       await voting.connect(delegated1).delegate(delegated1.address);
 
       expect(await voting.getVotingPower(delegated1.address)).equal(13);
@@ -587,11 +630,12 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
 
       await voting.beforeRemoveContributor(delegated1.address);
-      await shareholderRegistry.setNonContributor(delegated1.address);
+
+      await setContributor(delegated1, false);
 
       await token.connect(delegated1).transfer(nonContributor.address, 8);
 
-      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await setContributor(delegated1, true);
       await voting.connect(delegated1).delegate(delegated1.address);
 
       expect(await voting.getVotingPower(delegated1.address)).equal(10);
@@ -603,12 +647,13 @@ describe("Voting", () => {
       await voting.connect(delegator1).delegate(delegated1.address);
 
       await voting.beforeRemoveContributor(delegated1.address);
-      await shareholderRegistry.setNonContributor(delegated1.address);
+
+      await setContributor(delegated1, false);
 
       await token.connect(delegated1).transfer(delegator1.address, 8);
       expect(await voting.getVotingPower(delegator1.address)).equal(0);
 
-      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await setContributor(delegated1, true);
       await voting.connect(delegated1).delegate(delegated1.address);
 
       expect(await voting.getVotingPower(delegated1.address)).equal(18);
@@ -622,9 +667,10 @@ describe("Voting", () => {
       expect(await voting.getVotingPower(delegated1.address)).equal(18);
 
       await voting.beforeRemoveContributor(delegator1.address);
-      await shareholderRegistry.setNonContributor(delegator1.address);
 
-      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await setContributor(delegator1, false);
+
+      await setContributor(delegator1, true);
       await voting.connect(delegator1).delegate(delegator1.address);
 
       expect(await voting.getVotingPower(delegator1.address)).equal(10);
@@ -638,13 +684,14 @@ describe("Voting", () => {
       expect(await voting.getTotalVotingPower()).equal(18);
 
       await voting.beforeRemoveContributor(delegated1.address);
-      await shareholderRegistry.setNonContributor(delegated1.address);
+
+      await setContributor(delegated1, false);
       expect(await voting.getTotalVotingPower()).equal(10);
 
       await token.mint(delegator1.address, 2);
       expect(await voting.getTotalVotingPower()).equal(12);
 
-      await shareholderRegistry.setNonContributor(nonContributor.address);
+      await setContributor(delegated1, true);
       await voting.connect(delegated1).delegate(delegated1.address);
       expect(await voting.getTotalVotingPower()).equal(20);
     });

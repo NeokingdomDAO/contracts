@@ -25,18 +25,24 @@ const DAY = 60 * 60 * 24;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("Resolution", () => {
+  let founderStatus: string;
+  let contributorStatus: string;
+  let shareholderStatus: string;
+  let investorStatus: string;
+
   let voting: VotingMock;
   let token: TelediskoTokenMock;
   let resolution: ResolutionManager;
   let shareholderRegistry: ShareholderRegistryMock;
   let deployer: SignerWithAddress,
+    founder: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
     delegate1: SignerWithAddress,
     nonContributor: SignerWithAddress;
 
   beforeEach(async () => {
-    [deployer, user1, user2, delegate1, nonContributor] =
+    [deployer, founder, user1, user2, delegate1, nonContributor] =
       await ethers.getSigners();
     const VotingMockFactory = (await ethers.getContractFactory(
       "VotingMock",
@@ -67,6 +73,11 @@ describe("Resolution", () => {
     await token.deployed();
     await shareholderRegistry.deployed();
 
+    founderStatus = await shareholderRegistry.FOUNDER_STATUS();
+    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
+    shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
+    investorStatus = await shareholderRegistry.INVESTOR_STATUS();
+
     resolution = await ResolutionFactory.deploy(
       shareholderRegistry.address,
       token.address,
@@ -75,10 +86,44 @@ describe("Resolution", () => {
 
     voting.mock_getDelegateAt(user1.address, user1.address);
 
-    [user1, user2, delegate1].forEach((voter) => {
+    // Set contributors' status to:
+    // - contributor
+    // - shareholder
+    // - investor
+    // The mock is dumb so we need to set everything manually
+    await Promise.all(
+      [founder, user1, user2, delegate1].map((user) =>
+        setContributor(user, true)
+      )
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      founderStatus,
+      founder.address,
+      true
+    );
+
+    [founder, user1, user2, delegate1].forEach((voter) => {
       voting.mock_canVoteAt(voter.address, true);
     });
   });
+
+  async function setContributor(user: SignerWithAddress, flag: boolean) {
+    await shareholderRegistry.mock_isAtLeast(
+      contributorStatus,
+      user.address,
+      flag
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      shareholderStatus,
+      user.address,
+      flag
+    );
+    await shareholderRegistry.mock_isAtLeast(
+      investorStatus,
+      user.address,
+      flag
+    );
+  }
 
   let resolutionId: number;
   beforeEach(async () => {
@@ -138,20 +183,28 @@ describe("Resolution", () => {
   describe("approval logic", async () => {
     it("should not allow to approve a non existing resolution", async () => {
       await expect(
-        resolution.connect(user1).approveResolution(resolutionId)
+        resolution.connect(founder).approveResolution(resolutionId)
       ).revertedWith("Resolution: does not exist");
     });
 
     it("should allow the founder to approve an existing resolution", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
 
-      await expect(resolution.connect(user1).approveResolution(resolutionId))
+      await expect(resolution.connect(founder).approveResolution(resolutionId))
         .to.emit(resolution, "ResolutionApproved")
-        .withArgs(user1.address, resolutionId);
+        .withArgs(founder.address, resolutionId);
       const [, , approveTimestamp] = await resolution.resolutions(resolutionId);
 
       let blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
       expect(approveTimestamp.toNumber()).equal(blockTimestamp);
+    });
+
+    it("should not allow non-founders to approve an existing resolution", async () => {
+      await resolution.connect(user1).createResolution("test", 0, false);
+
+      await expect(
+        resolution.connect(user1).approveResolution(resolutionId)
+      ).revertedWith("Resolution: only founder can approve");
     });
   });
 
@@ -174,7 +227,7 @@ describe("Resolution", () => {
 
     it("should not allow to vote on a resolution when voting didn't start", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
-      await resolution.approveResolution(resolutionId);
+      await resolution.connect(founder).approveResolution(resolutionId);
 
       await expect(resolution.connect(user1).vote(1, false)).revertedWith(
         "Resolution: not votable"
@@ -183,7 +236,7 @@ describe("Resolution", () => {
 
     it("should not allow to vote on a resolution when voting ended", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
-      await resolution.approveResolution(resolutionId);
+      await resolution.connect(founder).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
       let votingTimestamp = approvalTimestamp + DAY * 21;
@@ -196,7 +249,7 @@ describe("Resolution", () => {
 
     it("should allow to vote on an approved resolution when voting started", async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
-      await resolution.approveResolution(resolutionId);
+      await resolution.connect(founder).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
       let votingTimestamp = approvalTimestamp + DAY * 15;
@@ -209,7 +262,7 @@ describe("Resolution", () => {
   describe("voting logic", async () => {
     beforeEach(async () => {
       await resolution.connect(user1).createResolution("test", 0, false);
-      await resolution.approveResolution(resolutionId);
+      await resolution.connect(founder).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
       await setEVMTimestamp(approvalTimestamp + DAY * 15);
@@ -731,7 +784,7 @@ describe("Resolution", () => {
       await voting.mock_getTotalVotingPowerAt(totalVotingPower);
 
       await resolution.createResolution("test", 6, negative);
-      await resolution.approveResolution(1);
+      await resolution.connect(founder).approveResolution(1);
       const approveTimestamp = await getEVMTimestamp();
       await setEVMTimestamp(approveTimestamp + 3 * DAY);
     }

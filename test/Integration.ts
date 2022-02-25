@@ -27,16 +27,18 @@ describe("Resolution", () => {
   let voting: Voting;
   let token: TelediskoToken;
   let resolution: ResolutionManager;
+  let founderStatus: string;
   let contributorStatus: string;
   let investorStatus: string;
   let shareholderRegistry: ShareholderRegistry;
   let deployer: SignerWithAddress,
+    founder: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
     user3: SignerWithAddress;
 
   beforeEach(async () => {
-    [deployer, user1, user2, user3] = await ethers.getSigners();
+    [deployer, founder, user1, user2, user3] = await ethers.getSigners();
     const VotingFactory = (await ethers.getContractFactory(
       "Voting",
       deployer
@@ -98,8 +100,12 @@ describe("Resolution", () => {
     await shareholderRegistry.grantRole(resolutionRole, resolution.address);
     await voting.grantRole(resolutionRole, resolution.address);
 
+    founderStatus = await shareholderRegistry.FOUNDER_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
+
+    await shareholderRegistry.mint(founder.address, 1);
+    await shareholderRegistry.setStatus(founderStatus, founder.address);
   });
 
   describe("integration", async () => {
@@ -129,7 +135,7 @@ describe("Resolution", () => {
     async function _prepareResolution() {
       currentResolution++;
       await resolution.createResolution("Qxtest", 0, false);
-      await resolution.approveResolution(currentResolution);
+      await resolution.connect(founder).approveResolution(currentResolution);
 
       return currentResolution;
     }

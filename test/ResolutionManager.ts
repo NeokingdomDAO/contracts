@@ -15,6 +15,7 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ContractReceipt } from "ethers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
+import { roles } from "./utils/roles";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -83,6 +84,8 @@ describe("Resolution", () => {
       token.address,
       voting.address
     );
+
+    resolution.grantRole(await roles.MANAGER_ROLE(), deployer.address);
 
     voting.mock_getDelegateAt(user1.address, user1.address);
 
@@ -237,6 +240,40 @@ describe("Resolution", () => {
           .connect(user1)
           .updateResolution(resolutionId, "updated test", 6, true)
       ).revertedWith("Resolution: only founder can update");
+    });
+  });
+
+  describe("resolution type addition", async () => {
+    it("should allow a manager to add a resolution type", async () => {
+      await resolution
+        .connect(deployer)
+        .addResolutionType("test", 42, 43, 44, false);
+
+      const result = await resolution.resolutionTypes(7);
+
+      expect(result.name).equal("test");
+      expect(result.quorum).equal(42);
+      expect(result.noticePeriod).equal(43);
+      expect(result.votingPeriod).equal(44);
+      expect(result.canBeNegative).equal(false);
+    });
+
+    it("should emit an event with all resolution info including index", async () => {
+      await expect(
+        resolution
+          .connect(deployer)
+          .addResolutionType("test", 42, 43, 44, false)
+      )
+        .to.emit(resolution, "ResolutionTypeCreated")
+        .withArgs(deployer.address, 7);
+    });
+
+    it("should allow a non manager to add a resolution type", async () => {
+      await expect(
+        resolution.connect(user1).addResolutionType("test", 42, 43, 44, false)
+      ).revertedWith(
+        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.MANAGER_ROLE()}`
+      );
     });
   });
 

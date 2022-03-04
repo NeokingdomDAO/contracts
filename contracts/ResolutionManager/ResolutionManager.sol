@@ -3,12 +3,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../TelediskoToken/ITelediskoToken.sol";
 import "../Voting/IVoting.sol";
 import "../extensions/Roles.sol";
 
-contract ResolutionManager is AccessControl {
+contract ResolutionManager is Context, AccessControl {
     uint256 private _currentResolutionId = 1;
 
     event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
@@ -130,7 +131,7 @@ contract ResolutionManager is AccessControl {
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
-                msg.sender
+                _msgSender()
             ),
             "Resolution: only contributor can create"
         );
@@ -144,7 +145,7 @@ contract ResolutionManager is AccessControl {
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;
-        emit ResolutionCreated(msg.sender, resolutionId);
+        emit ResolutionCreated(_msgSender(), resolutionId);
         return resolutionId;
     }
 
@@ -152,7 +153,7 @@ contract ResolutionManager is AccessControl {
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.FOUNDER_STATUS(),
-                msg.sender
+                _msgSender()
             ),
             "Resolution: only founder can approve"
         );
@@ -168,7 +169,7 @@ contract ResolutionManager is AccessControl {
         );
         resolution.approveTimestamp = block.timestamp;
         resolution.snapshotId = snapshotAll();
-        emit ResolutionApproved(msg.sender, resolutionId);
+        emit ResolutionApproved(_msgSender(), resolutionId);
     }
 
     function updateResolution(
@@ -185,14 +186,14 @@ contract ResolutionManager is AccessControl {
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.FOUNDER_STATUS(),
-                msg.sender
+                _msgSender()
             ),
             "Resolution: only founder can update"
         );
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;
-        emit ResolutionUpdated(msg.sender, resolutionId);
+        emit ResolutionUpdated(_msgSender(), resolutionId);
     }
 
     function getVoterVote(uint256 resolutionId, address voter)
@@ -250,7 +251,7 @@ contract ResolutionManager is AccessControl {
     function vote(uint256 resolutionId, bool isYes) public {
         Resolution storage resolution = resolutions[resolutionId];
         require(
-            _voting.canVoteAt(msg.sender, resolution.snapshotId),
+            _voting.canVoteAt(_msgSender(), resolution.snapshotId),
             "Resolution: account cannot vote"
         );
 
@@ -258,8 +259,8 @@ contract ResolutionManager is AccessControl {
             resolution.resolutionTypeId
         ];
         require(
-            isYes != resolution.hasVotedYes[msg.sender] ||
-                !resolution.hasVoted[msg.sender],
+            isYes != resolution.hasVotedYes[_msgSender()] ||
+                !resolution.hasVoted[_msgSender()],
             "Resolution: can't repeat same vote"
         );
         require(resolution.approveTimestamp > 0, "Resolution: not approved");
@@ -274,22 +275,22 @@ contract ResolutionManager is AccessControl {
         );
 
         uint256 votingPower = _voting.getVotingPowerAt(
-            msg.sender,
+            _msgSender(),
             resolution.snapshotId
         );
         address delegate = _voting.getDelegateAt(
-            msg.sender,
+            _msgSender(),
             resolution.snapshotId
         );
 
         // If sender has a delegate load voting power from TelediskoToken
-        if (delegate != msg.sender) {
+        if (delegate != _msgSender()) {
             votingPower = _telediskoToken.balanceOfAt(
-                msg.sender,
+                _msgSender(),
                 resolution.snapshotId
             );
             // If sender didn't vote before and has a delegate
-            //if (!resolution.hasVoted[msg.sender]) {
+            //if (!resolution.hasVoted[_msgSender()]) {
             // Did sender's delegate vote?
             if (
                 resolution.hasVoted[delegate] &&
@@ -304,20 +305,20 @@ contract ResolutionManager is AccessControl {
 
         // votingPower is set
         // delegate vote has been cleared
-        votingPower -= resolution.lostVotingPower[msg.sender];
+        votingPower -= resolution.lostVotingPower[_msgSender()];
 
-        if (isYes && !resolution.hasVotedYes[msg.sender]) {
+        if (isYes && !resolution.hasVotedYes[_msgSender()]) {
             // If sender votes yes and hasn't voted yes before
             resolution.yesVotesTotal += votingPower;
-        } else if (resolution.hasVotedYes[msg.sender]) {
+        } else if (resolution.hasVotedYes[_msgSender()]) {
             // If sender votes no and voted yes before
             resolution.yesVotesTotal -= votingPower;
         }
 
-        emit ResolutionVoted(msg.sender, resolutionId, votingPower, isYes);
+        emit ResolutionVoted(_msgSender(), resolutionId, votingPower, isYes);
 
-        resolution.hasVoted[msg.sender] = true;
-        resolution.hasVotedYes[msg.sender] = isYes;
+        resolution.hasVoted[_msgSender()] = true;
+        resolution.hasVotedYes[_msgSender()] = isYes;
     }
 
     function _addResolutionType(

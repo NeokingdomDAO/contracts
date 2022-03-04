@@ -5,16 +5,17 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 
-abstract contract TokenLogic {
+abstract contract TokenLogic is Context {
     bool offersHalted = false;
-    
+
     uint256 public totalVotingTokens;
     uint256 constant OFFER_DURATION = 2 weeks;
     address constant DAI_ADDRESS = 0x1111111111111111111111111111111111111111;
     address TT_ADDRESS = 0x1111111111111111111111111111111111111111;
 
-    IERC20 telediskoToken = IERC20(TT_ADDRESS); 
+    IERC20 telediskoToken = IERC20(TT_ADDRESS);
     IERC20 dai = IERC20(DAI_ADDRESS);
 
     //mapping(address => mapping(uint256 => uint256)) offers;
@@ -28,7 +29,7 @@ abstract contract TokenLogic {
     }
 
     modifier onlyContributor() {
-        require(isContributor(msg.sender), "TT: not a contributor");
+        require(isContributor(_msgSender()), "TT: not a contributor");
         _;
     }
 
@@ -45,11 +46,12 @@ abstract contract TokenLogic {
     function offer(uint256 amount) public onlyContributor {
         require(!offersHalted);
         require(
-            telediskoToken.balanceOf(msg.sender) - offered[msg.sender] >= amount,
+            telediskoToken.balanceOf(_msgSender()) - offered[_msgSender()] >=
+                amount,
             "TT: not enough balance"
         );
         // Create offer
-        offered[msg.sender] += amount;
+        offered[_msgSender()] += amount;
         // offers[_msgSender()][block.timestamp] = amount;
         // Add offers to various mappings
     }
@@ -60,17 +62,14 @@ abstract contract TokenLogic {
         uint256 amount
     ) public payable onlyContributor {
         // Contributor needs to call `approve` on the DAI contract
-        
+
         Offer memory o = offers[from][id];
-        dai.transferFrom(msg.sender, from, amount);
+        dai.transferFrom(_msgSender(), from, amount);
         // remove offer from array
-        telediskoToken.transferFrom(from, msg.sender, amount);
+        telediskoToken.transferFrom(from, _msgSender(), amount);
     }
 
-    function updateAllowance(address contributor)
-        public
-        returns (uint256)
-    {
+    function updateAllowance(address contributor) public returns (uint256) {
         uint256 total;
         Offer[] storage contributorOffers = offers[contributor];
         for (uint256 i = 0; i < contributorOffers.length; i++) {
@@ -88,11 +87,11 @@ abstract contract TokenLogic {
         address,
         uint256 amount
     ) external {
-        if (isContributor(msg.sender)) {
-            updateAllowance(msg.sender);
+        if (isContributor(_msgSender())) {
+            updateAllowance(_msgSender());
         }
         require(
-            !isContributor(msg.sender) || allowance[from] <= amount,
+            !isContributor(_msgSender()) || allowance[from] <= amount,
             "TelediskoToken: not enough allowance"
         );
     }
@@ -102,19 +101,18 @@ abstract contract TokenLogic {
         address,
         uint256 amount
     ) external {
-        if (isContributor(msg.sender)) {
+        if (isContributor(_msgSender())) {
             allowance[from] -= amount;
-            offered[msg.sender] -= amount;
+            offered[_msgSender()] -= amount;
         }
     }
 }
 
-
 abstract contract TelediskoToken is ERC20Snapshot, AccessControl {
-    
     bytes32 public constant TOKEN_CONTROLLER = keccak256("TOKEN_CONTROLLER");
 
-    TokenLogic tokenLogic = TokenLogic(0x1111111111111111111111111111111111111111);
+    TokenLogic tokenLogic =
+        TokenLogic(0x1111111111111111111111111111111111111111);
 
     modifier onlyAdmin() {
         _;
@@ -124,11 +122,14 @@ abstract contract TelediskoToken is ERC20Snapshot, AccessControl {
 
     function mint(address, uint256) public onlyAdmin {}
 
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool){
-        if(hasRole(TOKEN_CONTROLLER, _msgSender())) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
+        if (hasRole(TOKEN_CONTROLLER, _msgSender())) {
             _transfer(from, to, amount);
-        }
-        else {
+        } else {
             super.transferFrom(from, to, amount);
         }
     }

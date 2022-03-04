@@ -8,7 +8,6 @@ interface IERC20Mintable is IERC20 {
     function mint(address, uint256) external;
 }
 
-
 contract ShareholdersRegistry {
     mapping(address => bool) public shareholders;
 }
@@ -155,11 +154,17 @@ contract Resolution {
 
         ResolutionContent storage resolution = resolutions[resolutionId];
 
-        uint256 votingPower = delegation.getVotingPowerAt(msg.sender, snapshotId);
+        uint256 votingPower = delegation.getVotingPowerAt(
+            _msgSender(),
+            snapshotId
+        );
 
         // getDelegators return only delegators that haven't voted in the meantime
         // TODO: if you delegated someone and this someone already voted, we also have to remove the vote that that someone already put for us
-        address[] memory voters = delegation.getDelegatorsAt(msg.sender, snapshotId);
+        address[] memory voters = delegation.getDelegatorsAt(
+            _msgSender(),
+            snapshotId
+        );
 
         if (votingPower > 0) {
             // if inside yesVoters, remove all delegators in yesVoters
@@ -168,7 +173,7 @@ contract Resolution {
             resolution.totalVotingTokens += votingPower;
         }
 
-        for(uint i = 0; i < voters.length; i++) {
+        for (uint256 i = 0; i < voters.length; i++) {
             if (yes) {
                 resolution.yesVoters.push(voters[i]);
             } else {
@@ -176,21 +181,24 @@ contract Resolution {
             }
         }
 
-        resolution.preference[msg.sender] = votingPower;
+        resolution.preference[_msgSender()] = votingPower;
     }
 
     function executeResolution(uint256 resolutionId) public onlyAdmin {
         // for each receiver in the resolution, send the specified amount of tokens to them
         Payout storage payout = resolutions[resolutionId].payout;
         // test
-        if(payout.mint) {
+        if (payout.mint) {
             for (uint256 i = 0; i < payout.receivers.length; i++) {
                 payout.token.mint(payout.receivers[i], payout.amounts[i]);
             }
-        }
-        else {
+        } else {
             for (uint256 i = 0; i < payout.receivers.length; i++) {
-                payout.token.transferFrom(dao, payout.receivers[i], payout.amounts[i]);
+                payout.token.transferFrom(
+                    dao,
+                    payout.receivers[i],
+                    payout.amounts[i]
+                );
             }
         }
     }

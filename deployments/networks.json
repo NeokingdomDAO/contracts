@@ -1,6 +1,8 @@
 {
   "4": {
-    "TelediskoToken": "0xEb25F8C8a4b5338880CdC607DbBF0eD475Dd0dc1",
-    "ResolutionManager": "0x3E3fCa9Da850E22495590b7482043ad61e24CE09"
+    "TelediskoToken": "0x57d5e127246cf30313351C3a3373049511B6587d",
+    "ResolutionManager": "0xB34e09BFe0A861bC7C60133f47246c24A1bdb759",
+    "ShareholderRegistry": "0x31de14D265e8F1E67C8b2dD9991a109376C93cb4",
+    "Voting": "0x698B17b48dCcfE5D82aa287B0b87bfFBD796CAE2"
   }
 }

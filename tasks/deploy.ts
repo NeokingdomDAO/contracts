@@ -6,15 +6,7 @@ import {
   TelediskoToken__factory,
   Voting__factory,
 } from "../typechain";
-import { exportAddress } from "./config";
-
-const ROLES = {
-  MANAGER_ROLE: keccak256(toUtf8Bytes("MANAGER_ROLE")),
-  RESOLUTION_ROLE: keccak256(toUtf8Bytes("RESOLUTION_ROLE")),
-  SHAREHOLDER_REGISTRY_ROLE: keccak256(
-    toUtf8Bytes("SHAREHOLDER_REGISTRY_ROLE")
-  ),
-};
+import { exportAddress, ROLES } from "./config";
 
 task("deploy", "Deploy DAO", async (_, hre) => {
   const [deployer] = await hre.ethers.getSigners();

@@ -1,10 +1,15 @@
 import { Contract } from "ethers";
+import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
+  ResolutionManager,
   ResolutionManager__factory,
+  ShareholderRegistry,
   ShareholderRegistry__factory,
+  TelediskoToken,
   TelediskoToken__factory,
+  Voting,
   Voting__factory,
 } from "../typechain";
 
@@ -18,10 +23,24 @@ export type ContractName =
   | "ShareholderRegistry"
   | "Voting";
 
+export type DAOContract =
+  | TelediskoToken
+  | ResolutionManager
+  | ShareholderRegistry
+  | Voting;
+
 export type NetworkConfig = {
   [key: number]: {
     [key in ContractName]?: string;
   };
+};
+
+export const ROLES = {
+  MANAGER_ROLE: keccak256(toUtf8Bytes("MANAGER_ROLE")),
+  RESOLUTION_ROLE: keccak256(toUtf8Bytes("RESOLUTION_ROLE")),
+  SHAREHOLDER_REGISTRY_ROLE: keccak256(
+    toUtf8Bytes("SHAREHOLDER_REGISTRY_ROLE")
+  ),
 };
 
 function getDefaultConfigPath(
@@ -82,6 +101,30 @@ export async function loadContract<T extends ContractFactory>(
     await readFile(configPath, "utf8")
   );
   const [deployer] = await hre.ethers.getSigners();
+  const { chainId, name: networkName } = await hre.ethers.provider.getNetwork();
+  const addresses = networks[chainId];
+
+  if (!addresses || !addresses[name]) {
+    console.error(`Cannot find address for ${name} in network ${networkName}.`);
+    process.exit(1);
+  }
+
+  // FIXME: I thought `address[name]` type would be `string` because of the previous `if`.
+  const address = addresses[name]!;
+
+  return contractFactory.connect(address, deployer) as ReturnType<T["connect"]>;
+}
+
+export async function loadContractByName(
+  hre: HardhatRuntimeEnvironment,
+  name: ContractName,
+  configPath?: string
+): Promise<DAOContract> {
+  configPath = getDefaultConfigPath(hre, configPath);
+  const networks: NetworkConfig = JSON.parse(
+    await readFile(configPath, "utf8")
+  );
+  const [deployer] = await hre.ethers.getSigners();
   const { chainId } = await hre.ethers.provider.getNetwork();
   const addresses = networks[chainId];
 
@@ -93,5 +136,17 @@ export async function loadContract<T extends ContractFactory>(
   // FIXME: I thought `address[name]` type would be `string` because of the previous `if`.
   const address = addresses[name]!;
 
-  return contractFactory.connect(address, deployer) as ReturnType<T["connect"]>;
+  switch (name) {
+    case "ResolutionManager":
+      return ResolutionManager__factory.connect(address, deployer);
+    case "ShareholderRegistry":
+      return ShareholderRegistry__factory.connect(address, deployer);
+    case "TelediskoToken":
+      return TelediskoToken__factory.connect(address, deployer);
+    case "Voting":
+      return Voting__factory.connect(address, deployer);
+    default:
+      console.error(`Cannot find contract with name ${name}.`);
+      process.exit(1);
+  }
 }

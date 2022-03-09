@@ -57,20 +57,22 @@ contract VotingBase is Context {
 
     function _beforeRemoveContributor(address account) internal {
         address delegated = getDelegate(account);
-        if (delegated != address(0)) {
-            if (delegated == account) {
-                _beforeDelegate(account);
-            } else {
-                _delegate(account, account);
-            }
-
-            delete _delegates[account];
-
-            uint256 individualVotingPower = _token.balanceOf(account);
-            if (individualVotingPower > 0) {
-                _moveVotingPower(account, address(0), individualVotingPower);
-            }
+        if (delegated == account) {
+            _beforeDelegate(account);
+        } else {
+            _delegate(account, account);
         }
+
+        delete _delegates[account];
+
+        uint256 individualVotingPower = _token.balanceOf(account);
+        if (individualVotingPower > 0) {
+            _moveVotingPower(account, address(0), individualVotingPower);
+        }
+    }
+
+    function _afterAddContributor(address account) internal {
+        _delegate(account, account);
     }
 
     /// @dev Hook to be called by the companion token upon token transfer

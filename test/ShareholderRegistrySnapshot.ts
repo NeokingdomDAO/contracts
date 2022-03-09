@@ -157,7 +157,7 @@ describe("Shareholder Registry", () => {
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
     });
-    it.only("should notify the Voting contract when status updated to investor", async () => {
+    it("should notify the Voting contract when status updated to investor", async () => {
       await registry.transferFrom(
         founder.address,
         alice.address,
@@ -168,7 +168,7 @@ describe("Shareholder Registry", () => {
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
     });
-    it.only("should not notify the Voting contract when status updated to founder", async () => {
+    it("should not notify the Voting contract when status updated to founder", async () => {
       await registry.transferFrom(
         founder.address,
         alice.address,
@@ -179,6 +179,41 @@ describe("Shareholder Registry", () => {
         registry.setStatus(FOUNDER_STATUS, alice.address)
       ).to.not.emit(voting, "BeforeRemoveContributor");
     });
+    it("should call afterAddContributor when status updated for the first time to contributor", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+      await expect(
+        registry.setStatus(CONTRIBUTOR_STATUS, alice.address)
+      ).to.emit(voting, "AfterAddContributor");
+    });
+
+    it("should not call afterAddContributor when status is already at least contributor", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+      await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+      await expect(
+        registry.setStatus(FOUNDER_STATUS, alice.address)
+      ).to.not.emit(voting, "AfterAddContributor");
+    });
+
+    it("should not notify the Voting contract when adding an investor", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+
+      await expect(
+        registry.setStatus(INVESTOR_STATUS, alice.address)
+      ).to.not.emit(voting, "AfterAddContributor");
+    });
+
     it("should cleanup the status when a shareholder transfers all their shares", async () => {
       await registry.transferFrom(
         founder.address,

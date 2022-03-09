@@ -152,11 +152,12 @@ abstract contract ShareholderRegistrySnapshot is
         }
     }
 
-    function _beforeSetStatus(address account, bytes32 status)
-        internal
-        override
-    {
-        super._beforeSetStatus(account, status);
+    function _beforeSetStatus(
+        address account,
+        bytes32 statusBefore,
+        bytes32 statusAfter
+    ) internal override {
+        super._beforeSetStatus(account, statusBefore, statusAfter);
         _updateAccountSnapshot(account);
     }
 }

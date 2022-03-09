@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 contract VotingMock {
     event AfterTokenTransferCalled(address from, address to, uint256 amount);
+    event AfterAddContributor(address account);
     event BeforeRemoveContributor(address account);
 
     function afterTokenTransfer(
@@ -16,6 +17,10 @@ contract VotingMock {
 
     function beforeRemoveContributor(address account) external {
         emit BeforeRemoveContributor(account);
+    }
+
+    function afterAddContributor(address account) external {
+        emit AfterAddContributor(account);
     }
 
     mapping(address => address) mockResult_getDelegateAt;

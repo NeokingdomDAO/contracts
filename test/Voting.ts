@@ -168,6 +168,16 @@ describe("Voting", () => {
         .beforeRemoveContributor(delegator1.address);
     });
 
+    it("should throw an error when anyone but the SHAREHOLDER REGISTRY calls beforeRemoveContributor", async () => {
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${shareholderRegistryRole.toLowerCase()}`;
+      await expect(
+        voting.connect(noDelegate).afterAddContributor(delegator1.address)
+      ).revertedWith(errorMessage);
+
+      await voting.grantRole(shareholderRegistryRole, noDelegate.address);
+      await voting.connect(noDelegate).afterAddContributor(noDelegate.address);
+    });
+
     it("should not fail if an address calling 'beforeRemoveContributor' on an address with delegate is not a contributor", async () => {
       await voting.grantRole(shareholderRegistryRole, nonContributor.address);
       await voting.connect(delegator1).delegate(delegated1.address);

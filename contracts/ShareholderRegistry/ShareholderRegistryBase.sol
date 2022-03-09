@@ -36,9 +36,9 @@ contract ShareholderRegistryBase is ERC20 {
             "Shareholder: address has no tokens"
         );
         bytes32 previous = _statuses[account];
-        _beforeSetStatus(account, status);
+        _beforeSetStatus(account, previous, status);
         _statuses[account] = status;
-        _afterSetStatus(account, status);
+        _afterSetStatus(account, previous, status);
         emit StatusChanged(account, previous, status);
     }
 
@@ -69,19 +69,31 @@ contract ShareholderRegistryBase is ERC20 {
                     accountStatus == FOUNDER_STATUS));
     }
 
-    function _beforeSetStatus(address account, bytes32 status)
-        internal
-        virtual
-    {
-        if (!_isAtLeast(1, status, CONTRIBUTOR_STATUS)) {
+    function _beforeSetStatus(
+        address account,
+        bytes32 statusBefore,
+        bytes32 statusAfter
+    ) internal virtual {
+        if (
+            _isAtLeast(1, statusBefore, CONTRIBUTOR_STATUS) &&
+            !_isAtLeast(1, statusAfter, CONTRIBUTOR_STATUS)
+        ) {
             _voting.beforeRemoveContributor(account);
         }
     }
 
-    function _afterSetStatus(address account, bytes32 status)
-        internal
-        virtual
-    {}
+    function _afterSetStatus(
+        address account,
+        bytes32 statusBefore,
+        bytes32 statusAfter
+    ) internal virtual {
+        if (
+            !_isAtLeast(1, statusBefore, CONTRIBUTOR_STATUS) &&
+            _isAtLeast(1, statusAfter, CONTRIBUTOR_STATUS)
+        ) {
+            _voting.afterAddContributor(account);
+        }
+    }
 
     function _afterTokenTransfer(
         address from,

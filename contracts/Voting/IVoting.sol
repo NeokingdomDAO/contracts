@@ -7,6 +7,8 @@ import "../extensions/ISnapshot.sol";
 interface IVoting is ISnapshot {
     function beforeRemoveContributor(address account) external;
 
+    function afterAddContributor(address account) external;
+
     function afterTokenTransfer(
         address from,
         address to,

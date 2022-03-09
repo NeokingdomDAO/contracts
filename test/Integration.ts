@@ -121,7 +121,6 @@ describe("Resolution", () => {
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
       await shareholderRegistry.mint(user.address, 1);
       await shareholderRegistry.setStatus(contributorStatus, user.address);
-      await voting.connect(user).delegate(user.address);
       await _mintTokens(user, tokens);
     }
 
@@ -351,7 +350,6 @@ describe("Resolution", () => {
       const resolutionId3 = await _prepareResolution();
 
       await shareholderRegistry.setStatus(contributorStatus, user3.address);
-      await voting.connect(user3).delegate(user3.address);
       // -> user 1 voting power == 60
       // -> user 2 voting power == 0 (130)
       // -> user 3 voting power == 190

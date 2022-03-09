@@ -34,6 +34,13 @@ contract Voting is VotingSnapshot, AccessControl {
         super._beforeRemoveContributor(account);
     }
 
+    function afterAddContributor(address account)
+        external
+        onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE)
+    {
+        super._afterAddContributor(account);
+    }
+
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
         onlyRole(Roles.MANAGER_ROLE)

@@ -85,9 +85,9 @@ describe("Resolution", () => {
       voting.address
     );
 
-    resolution.grantRole(await roles.MANAGER_ROLE(), deployer.address);
+    await resolution.grantRole(await roles.MANAGER_ROLE(), deployer.address);
 
-    voting.mock_getDelegateAt(user1.address, user1.address);
+    await voting.mock_getDelegateAt(user1.address, user1.address);
 
     // Set contributors' status to:
     // - contributor
@@ -105,9 +105,11 @@ describe("Resolution", () => {
       true
     );
 
-    [founder, user1, user2, delegate1].forEach((voter) => {
-      voting.mock_canVoteAt(voter.address, true);
-    });
+    await Promise.all(
+      [founder, user1, user2, delegate1].map((voter) => {
+        voting.mock_canVoteAt(voter.address, true);
+      })
+    );
   });
 
   async function setContributor(user: SignerWithAddress, flag: boolean) {
@@ -219,6 +221,49 @@ describe("Resolution", () => {
           .connect(user1)
           .updateResolution(resolutionId, "updated test", 6, true)
       ).revertedWith("Resolution: only founder can update");
+    });
+  });
+
+  describe("dependency injection", async () => {
+    it("allows the MANAGER_ROLE to setVoting", async () => {
+      await resolution.grantRole(await roles.MANAGER_ROLE(), user1.address);
+      await resolution.connect(user1).setVoting(founder.address);
+    });
+
+    it("allow the MANAGER_ROLE to setShareholderRegistry", async () => {
+      await resolution.grantRole(await roles.MANAGER_ROLE(), user1.address);
+      await resolution.connect(user1).setShareholderRegistry(founder.address);
+    });
+
+    it("allow the MANAGER_ROLE to setTelediskoToken", async () => {
+      await resolution.grantRole(await roles.MANAGER_ROLE(), user1.address);
+      await resolution.connect(user1).setTelediskoToken(founder.address);
+    });
+
+    it("doesn't allow anyone not with MANAGER_ROLE to setVoting", async () => {
+      await expect(
+        resolution.connect(founder).setVoting(founder.address)
+      ).revertedWith(
+        `AccessControl: account ${founder.address.toLowerCase()} ` +
+          `is missing role ${await roles.MANAGER_ROLE()}`
+      );
+    });
+
+    it("doesn't allow anyone not with MANAGER_ROLE to setShareholderRegistry", async () => {
+      await expect(
+        resolution.connect(founder).setShareholderRegistry(founder.address)
+      ).revertedWith(
+        `AccessControl: account ${founder.address.toLowerCase()} ` +
+          `is missing role ${await roles.MANAGER_ROLE()}`
+      );
+    });
+    it("doesn't allow anyone not with MANAGER_ROLE to setTelediskoToken", async () => {
+      await expect(
+        resolution.connect(founder).setTelediskoToken(founder.address)
+      ).revertedWith(
+        `AccessControl: account ${founder.address.toLowerCase()} ` +
+          `is missing role ${await roles.MANAGER_ROLE()}`
+      );
     });
   });
 

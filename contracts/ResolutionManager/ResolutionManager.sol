@@ -101,20 +101,24 @@ contract ResolutionManager is Context, AccessControl {
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
-        public
+        external
+        onlyRole(Roles.MANAGER_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
     }
 
-    function setTelediskoToken(ITelediskoToken telediskoToken) public {
+    function setTelediskoToken(ITelediskoToken telediskoToken)
+        external
+        onlyRole(Roles.MANAGER_ROLE)
+    {
         _telediskoToken = telediskoToken;
     }
 
-    function setVoting(IVoting voting) public {
+    function setVoting(IVoting voting) external onlyRole(Roles.MANAGER_ROLE) {
         _voting = voting;
     }
 
-    function snapshotAll() internal returns (uint256) {
+    function _snapshotAll() internal returns (uint256) {
         _shareholderRegistry.snapshot();
         _telediskoToken.snapshot();
         return _voting.snapshot();
@@ -168,7 +172,7 @@ contract ResolutionManager is Context, AccessControl {
             "Resolution: already approved"
         );
         resolution.approveTimestamp = block.timestamp;
-        resolution.snapshotId = snapshotAll();
+        resolution.snapshotId = _snapshotAll();
         emit ResolutionApproved(_msgSender(), resolutionId);
     }
 

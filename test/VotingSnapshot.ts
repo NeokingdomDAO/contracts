@@ -69,9 +69,9 @@ describe("VotingSnapshot", () => {
     managerRole = await roles.MANAGER_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
 
-    votingSnapshot.grantRole(managerRole, deployer.address);
-    votingSnapshot.grantRole(resolutionRole, deployer.address);
-    votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
+    await votingSnapshot.grantRole(managerRole, deployer.address);
+    await votingSnapshot.grantRole(resolutionRole, deployer.address);
+    await votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 
     token = await ERC20MockFactory.deploy(votingSnapshot.address);
     shareholderRegistry = await ShareholderRegistryFactory.deploy();
@@ -98,9 +98,11 @@ describe("VotingSnapshot", () => {
       )
     );
 
-    [delegator1, delegator2, delegated1, delegated2].forEach((voter) => {
-      votingSnapshot.connect(voter).delegate(voter.address);
-    });
+    await Promise.all(
+      [delegator1, delegator2, delegated1, delegated2].map((voter) => {
+        votingSnapshot.connect(voter).delegate(voter.address);
+      })
+    );
   });
 
   async function setContributor(user: SignerWithAddress, flag: boolean) {

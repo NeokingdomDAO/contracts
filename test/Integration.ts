@@ -99,6 +99,7 @@ describe("Resolution", () => {
 
     await shareholderRegistry.grantRole(resolutionRole, resolution.address);
     await voting.grantRole(resolutionRole, resolution.address);
+    await token.grantRole(resolutionRole, resolution.address);
 
     founderStatus = await shareholderRegistry.FOUNDER_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();

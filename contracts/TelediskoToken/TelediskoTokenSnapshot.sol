@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Arrays.sol";
 import "./TelediskoTokenBase.sol";
 import "../extensions/Snapshottable.sol";
 
-contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
+abstract contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
     using Arrays for uint256[];
 
     struct Snapshots {
@@ -20,10 +20,6 @@ contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
     constructor(string memory name, string memory symbol)
         TelediskoTokenBase(name, symbol)
     {}
-
-    function snapshot() public override returns (uint256) {
-        return _snapshot();
-    }
 
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.

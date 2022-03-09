@@ -187,6 +187,7 @@ contract ResolutionManager is Context, AccessControl {
             resolution.approveTimestamp == 0,
             "Resolution: already approved"
         );
+
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.FOUNDER_STATUS(),
@@ -194,6 +195,15 @@ contract ResolutionManager is Context, AccessControl {
             ),
             "Resolution: only founder can update"
         );
+
+        ResolutionType storage resolutionType = resolutionTypes[
+            resolutionTypeId
+        ];
+        require(
+            !isNegative || resolutionType.canBeNegative,
+            "Resolution: cannot be negative"
+        );
+
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;

@@ -16,7 +16,6 @@ chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const AddressZero = ethers.constants.AddressZero;
 const Bytes32Zero =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -143,6 +142,7 @@ describe("Shareholder Registry", () => {
         true
       );
     });
+
     it("should notify the Voting contract when a shareholder transfers all their shares", async () => {
       await registry.transferFrom(
         founder.address,
@@ -157,6 +157,7 @@ describe("Shareholder Registry", () => {
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
     });
+
     it("should notify the Voting contract when status updated to investor", async () => {
       await registry.transferFrom(
         founder.address,
@@ -168,6 +169,7 @@ describe("Shareholder Registry", () => {
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
     });
+
     it("should not notify the Voting contract when status updated to founder", async () => {
       await registry.transferFrom(
         founder.address,
@@ -179,6 +181,7 @@ describe("Shareholder Registry", () => {
         registry.setStatus(FOUNDER_STATUS, alice.address)
       ).to.not.emit(voting, "BeforeRemoveContributor");
     });
+
     it("should call afterAddContributor when status updated for the first time to contributor", async () => {
       await registry.transferFrom(
         founder.address,
@@ -232,6 +235,7 @@ describe("Shareholder Registry", () => {
       it("allows RESOLUTION_ROLE to create a snapshot", async () => {
         await expect(registry.snapshot()).to.emit(registry, "Snapshot");
       });
+
       it("can only be called by RESOLUTION_ROLE", async () => {
         await expect(registry.connect(alice).snapshot()).revertedWith(
           `AccessControl: account ${alice.address.toLowerCase()} is missing role ${RESOLUTION_ROLE}`
@@ -245,12 +249,14 @@ describe("Shareholder Registry", () => {
           "Snapshottable: id is 0"
         );
       });
+
       it("reverts with nonexistent id ", async () => {
         const futureTs = Math.trunc(Date.now() / 1000) + 1000;
         await expect(
           registry.balanceOfAt(alice.address, futureTs)
         ).revertedWith("Snapshottable: nonexistent id");
       });
+
       it("returns the correct value per snapshot", async () => {
         expect(await registry.balanceOf(alice.address)).equal(0);
         await registry.snapshot();
@@ -281,6 +287,7 @@ describe("Shareholder Registry", () => {
           "Snapshottable: id is 0"
         );
       });
+
       it("reverts with nonexistent id ", async () => {
         await registry.snapshot();
         const snapshotId = await registry.getCurrentSnapshotId();
@@ -288,6 +295,7 @@ describe("Shareholder Registry", () => {
           "Snapshottable: nonexistent id"
         );
       });
+
       it("returns the correct value per snapshot", async () => {
         expect(await registry.totalSupply()).equal(shareCapital);
         await registry.snapshot();
@@ -310,18 +318,109 @@ describe("Shareholder Registry", () => {
       });
     });
 
+    describe("burn", () => {
+      it("allows a resolution to burn shares of an account", async () => {
+        await expect(() =>
+          registry.burn(founder.address, 4)
+        ).changeTokenBalance(registry, founder, -4);
+      });
+
+      it("updates total supply", async () => {
+        const totalSupplyBefore = await registry.totalSupply();
+        await registry.burn(founder.address, 1);
+
+        const totalSupplyAfter = await registry.totalSupply();
+        expect(totalSupplyAfter).equal(totalSupplyBefore.sub(1));
+      });
+
+      it("does not allows anyone not RESOLUTION_ROLE to not be able to burn shares", async () => {
+        await expect(
+          registry.connect(bob).burn(founder.address, 4)
+        ).revertedWith(
+          `AccessControl: account ${bob.address.toLowerCase()} ` +
+            `is missing role ${RESOLUTION_ROLE}`
+        );
+      });
+
+      it("should cleanup the account status when its share is burnt", async () => {
+        await registry.transferFrom(
+          founder.address,
+          alice.address,
+          parseEther("1")
+        );
+        await registry.burn(alice.address, parseEther("1"));
+
+        expect(await registry.getStatus(alice.address)).equal(Bytes32Zero);
+      });
+
+      it("updates the snapshots", async () => {
+        await registry.snapshot();
+        const snapshotIdBefore = await registry.getCurrentSnapshotId();
+        await registry.burn(founder.address, 1);
+
+        await registry.snapshot();
+        const snapshotIdAfter = await registry.getCurrentSnapshotId();
+
+        const totalSupplyBefore = await registry.totalSupplyAt(
+          snapshotIdBefore
+        );
+        const totalSupplyAfter = await registry.totalSupplyAt(snapshotIdAfter);
+        expect(totalSupplyAfter).equal(totalSupplyBefore.sub(1));
+      });
+    });
+
+    describe("getStatusAt", () => {
+      it("reverts with snapshot id of 0", async () => {
+        await expect(registry.getStatusAt(alice.address, 0)).revertedWith(
+          "Snapshottable: id is 0"
+        );
+      });
+
+      it("reverts with nonexistent id ", async () => {
+        const futureTs = Math.trunc(Date.now() / 1000) + 1000;
+        await expect(
+          registry.getStatusAt(alice.address, futureTs)
+        ).revertedWith("Snapshottable: nonexistent id");
+      });
+
+      it("returns the correct status per snapshot", async () => {
+        await registry.snapshot();
+        const snapshotIdBefore = await registry.getCurrentSnapshotId();
+
+        await registry.transferFrom(
+          founder.address,
+          alice.address,
+          parseEther("1")
+        );
+        await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+
+        await registry.snapshot();
+        const snapshotIdAfter = await registry.getCurrentSnapshotId();
+
+        expect(
+          await registry.getStatusAt(alice.address, snapshotIdBefore)
+        ).equal(Bytes32Zero);
+
+        expect(
+          await registry.getStatusAt(alice.address, snapshotIdAfter)
+        ).equal(CONTRIBUTOR_STATUS);
+      });
+    });
+
     describe("isAtLeastAt", () => {
       it("reverts with snapshot id of 0", async () => {
         await expect(
           registry.isAtLeastAt(CONTRIBUTOR_STATUS, alice.address, 0)
         ).revertedWith("Snapshottable: id is 0");
       });
+
       it("reverts with nonexistent id ", async () => {
         const futureTs = Math.trunc(Date.now() / 1000) + 1000;
         await expect(
           registry.isAtLeastAt(CONTRIBUTOR_STATUS, alice.address, futureTs)
         ).revertedWith("Snapshottable: nonexistent id");
       });
+
       it("returns the correct status per snapshot", async () => {
         expect(
           await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)

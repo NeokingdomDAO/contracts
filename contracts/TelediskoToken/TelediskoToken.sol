@@ -13,6 +13,15 @@ contract TelediskoToken is TelediskoTokenSnapshot, AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
+    function snapshot()
+        public
+        override
+        onlyRole(Roles.RESOLUTION_ROLE)
+        returns (uint256)
+    {
+        return _snapshot();
+    }
+
     function setVoting(IVoting voting)
         external
         override

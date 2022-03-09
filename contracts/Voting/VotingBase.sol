@@ -127,6 +127,7 @@ contract VotingBase is Context {
 
         // pre conditions
         // - participants are contributors
+        // (this automatically enforces also that the address is not 0)
         require(
             _shareholderRegistry.isAtLeast(_contributorRole, delegator),
             "Voting: only contributors can delegate."
@@ -151,9 +152,6 @@ contract VotingBase is Context {
                 currentDelegate != address(0),
             "Voting: first delegate should be self"
         );
-
-        // - cannot delegate 0
-        require(newDelegate != address(0), "Voting: cannot delegate address 0");
 
         // - no double delegation
         require(

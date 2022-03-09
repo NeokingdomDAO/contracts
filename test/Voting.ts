@@ -374,6 +374,12 @@ describe("Voting", () => {
       ).revertedWith("Voting: new delegate is not self delegated");
     });
 
+    it("should throw an error when delegating address 0x0", async () => {
+      await expect(
+        voting.connect(delegator1).delegate(AddressZero)
+      ).revertedWith("Voting: only contributors can be delegated.");
+    });
+
     it("should return address 0x0 for a self-delegated account whose contributor status has been removed", async () => {
       await voting.beforeRemoveContributor(delegator1.address);
 

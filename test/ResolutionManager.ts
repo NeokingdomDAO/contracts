@@ -167,6 +167,12 @@ describe("Resolution", () => {
       const receipt = await tx.wait();
       expect(getResolutionId(receipt).toNumber()).equal(resolutionId);
     });
+
+    it("doesn't allow to create a negative resolution if type is non-negative", async () => {
+      await expect(
+        resolution.connect(user1).createResolution("test", 0, true)
+      ).revertedWith("Resolution: cannot be negative");
+    });
   });
 
   describe("update logic", async () => {
@@ -204,6 +210,13 @@ describe("Resolution", () => {
       expect(resolutionData.dataURI).equal("updated test");
       expect(resolutionData.resolutionTypeId).equal(6);
       expect(resolutionData.isNegative).equal(true);
+    });
+
+    it("doesn't allow the founder to update to a negative resolution if type is non-negative", async () => {
+      await resolution.connect(user1).createResolution("test", 0, false);
+      await expect(
+        resolution.connect(founder).updateResolution(1, "test", 0, true)
+      ).revertedWith("Resolution: cannot be negative");
     });
 
     it("doesn't allow the founder to update an approved resolution", async () => {
@@ -327,6 +340,16 @@ describe("Resolution", () => {
         resolution.connect(user1).approveResolution(resolutionId)
       ).revertedWith("Resolution: only founder can approve");
     });
+
+    it("should fail if already approved", async () => {
+      await resolution.connect(user1).createResolution("test", 0, false);
+
+      await resolution.connect(founder).approveResolution(resolutionId);
+
+      await expect(
+        resolution.connect(founder).approveResolution(resolutionId)
+      ).revertedWith("Resolution: already approved");
+    });
   });
 
   describe("voting prevention logic", async () => {
@@ -438,6 +461,221 @@ describe("Resolution", () => {
       ).revertedWith("Resolution: can't repeat same vote");
     });
 
+    describe("getVoterVote", async () => {
+      describe("without delegation", async () => {
+        beforeEach(async () => {
+          await voting.mock_getVotingPowerAt(user1.address, 42);
+        });
+
+        it("should return the right stats on a NO vote", async () => {
+          await resolution.connect(user1).vote(resolutionId, false);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+          expect(isYes).equal(false);
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(42)).true;
+        });
+
+        it("should return the right stats on a YES vote", async () => {
+          await resolution.connect(user1).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+          expect(isYes).equal(true);
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(42)).true;
+        });
+
+        it("should return right stats when updating from yes to no", async () => {
+          await resolution.connect(user1).vote(resolutionId, true);
+          await resolution.connect(user1).vote(resolutionId, false);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+
+          expect(isYes).equal(false);
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(42)).true;
+        });
+
+        it("should fail when asking stats for a user who could not vote", async () => {
+          await voting.mock_canVoteAt(user1.address, false);
+
+          await expect(
+            resolution.getVoterVote(resolutionId, user1.address)
+          ).revertedWith("Resolution: account could not vote resolution");
+        });
+
+        it("should return right stats when updating from no to yes", async () => {
+          await resolution.connect(user1).vote(resolutionId, false);
+          await resolution.connect(user1).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+
+          expect(isYes).equal(true);
+          expect(hasVoted).equal(true);
+          expect(votingPower).equal(42);
+        });
+      });
+
+      describe("with delegation, delegator votes", async () => {
+        beforeEach(async () => {
+          await voting.mock_getDelegateAt(user1.address, user2.address);
+          await voting.mock_getDelegateAt(user2.address, user2.address);
+          await token.mock_balanceOfAt(user1.address, 42);
+          await token.mock_balanceOfAt(user2.address, 1);
+          await voting.mock_getVotingPowerAt(user2.address, 43);
+        });
+
+        it("should return the right stats on a NO vote", async () => {
+          await resolution.connect(user1).vote(resolutionId, false);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+          expect(isYes).equal(false);
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(42)).true;
+        });
+
+        it("should return the right stats on a YES vote", async () => {
+          await resolution.connect(user1).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+          expect(isYes).equal(true);
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(42)).true;
+        });
+
+        it("should return right stats when updating from yes to no", async () => {
+          await resolution.connect(user1).vote(resolutionId, true);
+          await resolution.connect(user1).vote(resolutionId, false);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+
+          expect(isYes).equal(false);
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(42)).true;
+        });
+
+        it("should return right stats when updating from no to yes", async () => {
+          await resolution.connect(user1).vote(resolutionId, false);
+          await resolution.connect(user1).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+
+          expect(isYes).equal(true);
+          expect(hasVoted).equal(true);
+          expect(votingPower).equal(42);
+        });
+
+        it("should return the right stats for a delegator that didn't vote", async () => {
+          await resolution.connect(user1).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user2.address
+          );
+          expect(isYes).equal(false);
+          expect(hasVoted).equal(false);
+          expect(votingPower).eq(1);
+        });
+      });
+
+      describe("with delegation, delegated votes", async () => {
+        beforeEach(async () => {
+          await voting.mock_getDelegateAt(user1.address, user2.address);
+          await voting.mock_getDelegateAt(user2.address, user2.address);
+          await token.mock_balanceOfAt(user1.address, 42);
+          await token.mock_balanceOfAt(user2.address, 1);
+          await voting.mock_getVotingPowerAt(user2.address, 43);
+        });
+
+        it("should return the right delegator stats on a NO vote", async () => {
+          await resolution.connect(user2).vote(resolutionId, false);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+          expect(isYes).equal(false); // default value
+          expect(hasVoted).equal(false);
+          expect(votingPower.eq(0)).true;
+        });
+
+        it("should return the right delegator stats on a YES vote", async () => {
+          await resolution.connect(user2).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+          expect(isYes).equal(false); // default value
+          expect(hasVoted).equal(false);
+          expect(votingPower.eq(0)).true;
+        });
+
+        it("should return right delegator stats when updating from yes to no", async () => {
+          await resolution.connect(user2).vote(resolutionId, true);
+          await resolution.connect(user2).vote(resolutionId, false);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+
+          expect(isYes).equal(false); // default value
+          expect(hasVoted).equal(false);
+          expect(votingPower.eq(0)).true;
+        });
+
+        it("should return right delegator stats when updating from no to yes", async () => {
+          await resolution.connect(user2).vote(resolutionId, false);
+          await resolution.connect(user2).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user1.address
+          );
+
+          expect(isYes).equal(false); // default value
+          expect(hasVoted).equal(false);
+          expect(votingPower.eq(0)).true;
+        });
+
+        it("should return the right delegated stats", async () => {
+          await resolution.connect(user2).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user2.address
+          );
+
+          expect(isYes).equal(true); // default value
+          expect(hasVoted).equal(true);
+          expect(votingPower.eq(43)).true;
+        });
+
+        it("should return the right delegated stats when delegated votes as well", async () => {
+          await resolution.connect(user1).vote(resolutionId, false);
+          await resolution.connect(user2).vote(resolutionId, true);
+          const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
+            resolutionId,
+            user2.address
+          );
+          expect(isYes).equal(true);
+          expect(hasVoted).equal(true);
+          expect(votingPower).eq(1);
+        });
+      });
+    });
+
     describe("single voting without delegation", async () => {
       beforeEach(async () => {
         await voting.mock_getVotingPowerAt(user1.address, 42);
@@ -454,17 +692,6 @@ describe("Resolution", () => {
         expect(yesVotesTotal.sub(prevYesVotesTotal).eq(42)).true;
       });
 
-      it("should return the right stats on a YES vote", async () => {
-        await resolution.connect(user1).vote(resolutionId, true);
-        const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
-          resolutionId,
-          user1.address
-        );
-        expect(isYes).equal(true);
-        expect(hasVoted).equal(true);
-        expect(votingPower.eq(42)).true;
-      });
-
       it("should not change yesVotesTotal on a NO vote", async () => {
         const prevYesVotesTotal = (
           await resolution.resolutions(resolutionId)
@@ -474,17 +701,6 @@ describe("Resolution", () => {
         const yesVotesTotal = (await resolution.resolutions(resolutionId))[4];
 
         expect(yesVotesTotal.eq(prevYesVotesTotal)).true;
-      });
-
-      it("should return the right stats on a NO vote", async () => {
-        await resolution.connect(user1).vote(resolutionId, false);
-        const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
-          resolutionId,
-          user1.address
-        );
-        expect(isYes).equal(false);
-        expect(hasVoted).equal(true);
-        expect(votingPower.eq(42)).true;
       });
 
       it("should decrement total yes when updating from yes to no", async () => {
@@ -499,27 +715,6 @@ describe("Resolution", () => {
         expect(newYesVotes.sub(previousYesVotes).eq(42)).true;
       });
 
-      it("should return right stats when updating from yes to no", async () => {
-        await resolution.connect(user1).vote(resolutionId, true);
-        await resolution.connect(user1).vote(resolutionId, false);
-        const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
-          resolutionId,
-          user1.address
-        );
-
-        expect(isYes).equal(false);
-        expect(hasVoted).equal(true);
-        expect(votingPower.eq(42)).true;
-      });
-
-      it("should fail when asking stats for a user who could not vote", async () => {
-        await voting.mock_canVoteAt(user1.address, false);
-
-        await expect(
-          resolution.getVoterVote(resolutionId, user1.address)
-        ).revertedWith("Resolution: account could not vote resolution");
-      });
-
       it("should increment total yes when updating from no to yes", async () => {
         await resolution.connect(user1).vote(resolutionId, false);
         let previousYes = (await resolution.resolutions(resolutionId))[4];
@@ -528,19 +723,6 @@ describe("Resolution", () => {
         let newYes = (await resolution.resolutions(resolutionId))[4];
 
         expect(newYes.sub(previousYes).eq(42)).true;
-      });
-
-      it("should return right stats when updating from no to yes", async () => {
-        await resolution.connect(user1).vote(resolutionId, false);
-        await resolution.connect(user1).vote(resolutionId, true);
-        const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
-          resolutionId,
-          user1.address
-        );
-
-        expect(isYes).equal(true);
-        expect(hasVoted).equal(true);
-        expect(votingPower).equal(42);
       });
     });
     /*

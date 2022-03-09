@@ -157,7 +157,7 @@ describe("Shareholder Registry", () => {
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
     });
-    it("should notify the Voting contract when status updated to investor", async () => {
+    it.only("should notify the Voting contract when status updated to investor", async () => {
       await registry.transferFrom(
         founder.address,
         alice.address,
@@ -167,6 +167,17 @@ describe("Shareholder Registry", () => {
       await expect(registry.setStatus(INVESTOR_STATUS, alice.address))
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
+    });
+    it.only("should not notify the Voting contract when status updated to founder", async () => {
+      await registry.transferFrom(
+        founder.address,
+        alice.address,
+        parseEther("1")
+      );
+      await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
+      await expect(
+        registry.setStatus(FOUNDER_STATUS, alice.address)
+      ).to.not.emit(voting, "BeforeRemoveContributor");
     });
     it("should cleanup the status when a shareholder transfers all their shares", async () => {
       await registry.transferFrom(

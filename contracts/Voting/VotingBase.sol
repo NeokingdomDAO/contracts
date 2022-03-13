@@ -2,11 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
-contract VotingBase is Context {
+contract VotingBase {
     IShareholderRegistry _shareholderRegistry;
     IERC20 _token;
 
@@ -30,11 +29,9 @@ contract VotingBase is Context {
         uint256 newVotingPower
     );
 
-    constructor() {}
-
     modifier onlyToken() {
         require(
-            _msgSender() == address(_token),
+            msg.sender == address(_token),
             "Voting: only Token contract can call this method."
         );
         _;
@@ -117,7 +114,7 @@ contract VotingBase is Context {
     /// @notice Sub-delegation is not allowed
     /// @param newDelegate Destination address of module transaction.
     function delegate(address newDelegate) public {
-        _delegate(_msgSender(), newDelegate);
+        _delegate(msg.sender, newDelegate);
     }
 
     function _delegate(address delegator, address newDelegate) internal {

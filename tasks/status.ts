@@ -1,7 +1,10 @@
 import { task } from "hardhat/config";
 import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
 import { loadContract } from "./config";
-import { ShareholderRegistry__factory } from "../typechain";
+import {
+  ShareholderRegistry__factory,
+  TelediskoToken__factory,
+} from "../typechain";
 
 task("mint-share", "Mint a share to an address")
   .addPositionalParam("account", "The address")
@@ -55,8 +58,8 @@ task("mint", "Mint teledisko tokens to an address")
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        ShareholderRegistry__factory,
-        "ShareholderRegistry"
+        TelediskoToken__factory,
+        "TelediskoToken"
       );
       const tx = await contract.mint(account, parseEther(amount));
       console.log("Submitted tx", tx.hash);

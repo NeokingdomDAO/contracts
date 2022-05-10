@@ -21,7 +21,7 @@ const Bytes32Zero =
 
 describe("Shareholder Registry", () => {
   let RESOLUTION_ROLE: string,
-    MANAGER_ROLE: string,
+    OPERATOR_ROLE: string,
     SHAREHOLDER_STATUS: string,
     INVESTOR_STATUS: string,
     CONTRIBUTOR_STATUS: string,
@@ -29,17 +29,17 @@ describe("Shareholder Registry", () => {
   let shareCapital = parseEther("10");
   let registry: ShareholderRegistry;
   let voting: VotingMock;
-  let manager: SignerWithAddress,
+  let operator: SignerWithAddress,
     founder: SignerWithAddress,
     alice: SignerWithAddress,
     bob: SignerWithAddress,
     carol: SignerWithAddress;
 
   beforeEach(async () => {
-    [manager, founder, alice, bob, carol] = await ethers.getSigners();
+    [operator, founder, alice, bob, carol] = await ethers.getSigners();
     const ShareholderRegistryFactory = (await ethers.getContractFactory(
       "ShareholderRegistry",
-      manager
+      operator
     )) as ShareholderRegistry__factory;
     const VotingMockFactory = (await ethers.getContractFactory(
       "VotingMock"
@@ -51,7 +51,7 @@ describe("Shareholder Registry", () => {
     voting = await VotingMockFactory.deploy();
     await voting.deployed();
 
-    MANAGER_ROLE = await roles.MANAGER_ROLE();
+    OPERATOR_ROLE = await roles.OPERATOR_ROLE();
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
 
     SHAREHOLDER_STATUS = await registry.SHAREHOLDER_STATUS();
@@ -59,11 +59,11 @@ describe("Shareholder Registry", () => {
     CONTRIBUTOR_STATUS = await registry.CONTRIBUTOR_STATUS();
     FOUNDER_STATUS = await registry.FOUNDER_STATUS();
 
-    await registry.grantRole(RESOLUTION_ROLE, manager.address);
-    await registry.grantRole(MANAGER_ROLE, manager.address);
+    await registry.grantRole(RESOLUTION_ROLE, operator.address);
+    await registry.grantRole(OPERATOR_ROLE, operator.address);
     await registry.setVoting(voting.address);
     await registry.mint(founder.address, shareCapital);
-    await registry.connect(founder).approve(manager.address, shareCapital);
+    await registry.connect(founder).approve(operator.address, shareCapital);
   });
 
   describe("Status management", () => {
@@ -73,11 +73,11 @@ describe("Shareholder Registry", () => {
       ).revertedWith("Shareholder: address has no tokens");
     });
 
-    it("should be callable only by a manager", async () => {
+    it("should be callable only by a operator", async () => {
       await expect(
         registry.connect(alice).setStatus(CONTRIBUTOR_STATUS, alice.address)
       ).revertedWith(
-        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${MANAGER_ROLE}`
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${OPERATOR_ROLE}`
       );
     });
 

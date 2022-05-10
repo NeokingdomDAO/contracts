@@ -85,7 +85,7 @@ describe("Resolution", () => {
       voting.address
     );
 
-    await resolution.grantRole(await roles.MANAGER_ROLE(), deployer.address);
+    await resolution.grantRole(await roles.OPERATOR_ROLE(), deployer.address);
 
     await voting.mock_getDelegateAt(user1.address, user1.address);
 
@@ -238,50 +238,50 @@ describe("Resolution", () => {
   });
 
   describe("dependency injection", async () => {
-    it("allows the MANAGER_ROLE to setVoting", async () => {
-      await resolution.grantRole(await roles.MANAGER_ROLE(), user1.address);
+    it("allows the OPERATOR_ROLE to setVoting", async () => {
+      await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
       await resolution.connect(user1).setVoting(founder.address);
     });
 
-    it("allow the MANAGER_ROLE to setShareholderRegistry", async () => {
-      await resolution.grantRole(await roles.MANAGER_ROLE(), user1.address);
+    it("allow the OPERATOR_ROLE to setShareholderRegistry", async () => {
+      await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
       await resolution.connect(user1).setShareholderRegistry(founder.address);
     });
 
-    it("allow the MANAGER_ROLE to setTelediskoToken", async () => {
-      await resolution.grantRole(await roles.MANAGER_ROLE(), user1.address);
+    it("allow the OPERATOR_ROLE to setTelediskoToken", async () => {
+      await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
       await resolution.connect(user1).setTelediskoToken(founder.address);
     });
 
-    it("doesn't allow anyone not with MANAGER_ROLE to setVoting", async () => {
+    it("doesn't allow anyone not with OPERATOR_ROLE to setVoting", async () => {
       await expect(
         resolution.connect(founder).setVoting(founder.address)
       ).revertedWith(
         `AccessControl: account ${founder.address.toLowerCase()} ` +
-          `is missing role ${await roles.MANAGER_ROLE()}`
+          `is missing role ${await roles.OPERATOR_ROLE()}`
       );
     });
 
-    it("doesn't allow anyone not with MANAGER_ROLE to setShareholderRegistry", async () => {
+    it("doesn't allow anyone not with OPERATOR_ROLE to setShareholderRegistry", async () => {
       await expect(
         resolution.connect(founder).setShareholderRegistry(founder.address)
       ).revertedWith(
         `AccessControl: account ${founder.address.toLowerCase()} ` +
-          `is missing role ${await roles.MANAGER_ROLE()}`
+          `is missing role ${await roles.OPERATOR_ROLE()}`
       );
     });
-    it("doesn't allow anyone not with MANAGER_ROLE to setTelediskoToken", async () => {
+    it("doesn't allow anyone not with OPERATOR_ROLE to setTelediskoToken", async () => {
       await expect(
         resolution.connect(founder).setTelediskoToken(founder.address)
       ).revertedWith(
         `AccessControl: account ${founder.address.toLowerCase()} ` +
-          `is missing role ${await roles.MANAGER_ROLE()}`
+          `is missing role ${await roles.OPERATOR_ROLE()}`
       );
     });
   });
 
   describe("resolution type addition", async () => {
-    it("should allow a manager to add a resolution type", async () => {
+    it("should allow a operator to add a resolution type", async () => {
       await resolution
         .connect(deployer)
         .addResolutionType("test", 42, 43, 44, false);
@@ -305,11 +305,11 @@ describe("Resolution", () => {
         .withArgs(deployer.address, 7);
     });
 
-    it("should allow a non manager to add a resolution type", async () => {
+    it("should allow a non operator to add a resolution type", async () => {
       await expect(
         resolution.connect(user1).addResolutionType("test", 42, 43, 44, false)
       ).revertedWith(
-        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.MANAGER_ROLE()}`
+        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.OPERATOR_ROLE()}`
       );
     });
   });

@@ -25,7 +25,7 @@ contract TelediskoToken is TelediskoTokenSnapshot, AccessControl {
     function setVoting(IVoting voting)
         external
         override
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _setVoting(voting);
     }
@@ -33,7 +33,7 @@ contract TelediskoToken is TelediskoTokenSnapshot, AccessControl {
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
         override
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _setShareholderRegistry(shareholderRegistry);
     }

@@ -24,7 +24,7 @@ describe("Voting", () => {
   let shareholderStatus: string;
   let investorStatus: string;
 
-  let managerRole: string;
+  let operatorRole: string;
   let resolutionRole: string;
   let shareholderRegistryRole: string;
 
@@ -70,7 +70,7 @@ describe("Voting", () => {
 
     await voting.deployed();
 
-    managerRole = await roles.MANAGER_ROLE();
+    operatorRole = await roles.OPERATOR_ROLE();
     resolutionRole = await roles.RESOLUTION_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
 
@@ -78,7 +78,7 @@ describe("Voting", () => {
     shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
-    await voting.grantRole(managerRole, deployer.address);
+    await voting.grantRole(operatorRole, deployer.address);
     await voting.grantRole(resolutionRole, deployer.address);
     await voting.grantRole(shareholderRegistryRole, deployer.address);
 
@@ -133,24 +133,24 @@ describe("Voting", () => {
     });
 
     it("should throw an error when anyone but the MANAGER calls setToken", async () => {
-      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${operatorRole.toLowerCase()}`;
       await expect(
         voting.connect(noDelegate).setToken(token.address)
       ).revertedWith(errorMessage);
 
-      await voting.grantRole(managerRole, noDelegate.address);
+      await voting.grantRole(operatorRole, noDelegate.address);
       await voting.connect(noDelegate).setToken(shareholderRegistry.address);
     });
 
     it("should throw an error when anyone but the MANAGER calls setShareholderRegistry", async () => {
-      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${managerRole.toLowerCase()}`;
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${operatorRole.toLowerCase()}`;
       await expect(
         voting
           .connect(noDelegate)
           .setShareholderRegistry(shareholderRegistry.address)
       ).revertedWith(errorMessage);
 
-      await voting.grantRole(managerRole, noDelegate.address);
+      await voting.grantRole(operatorRole, noDelegate.address);
       await voting
         .connect(noDelegate)
         .setShareholderRegistry(shareholderRegistry.address);

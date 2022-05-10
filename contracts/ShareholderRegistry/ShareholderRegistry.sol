@@ -29,18 +29,18 @@ contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
 
     function setStatus(bytes32 status, address account)
         public
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _setStatus(status, account);
     }
 
-    function setVoting(IVoting voting) external onlyRole(Roles.MANAGER_ROLE) {
+    function setVoting(IVoting voting) external onlyRole(Roles.OPERATOR_ROLE) {
         _setVoting(voting);
     }
 
     function mint(address account, uint256 amount)
         public
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _mint(account, amount);
     }

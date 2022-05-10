@@ -23,7 +23,7 @@ contract Voting is VotingSnapshot, AccessControl {
         return _snapshot();
     }
 
-    function setToken(IERC20 token) external onlyRole(Roles.MANAGER_ROLE) {
+    function setToken(IERC20 token) external onlyRole(Roles.OPERATOR_ROLE) {
         super._setToken(token);
     }
 
@@ -43,7 +43,7 @@ contract Voting is VotingSnapshot, AccessControl {
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         super._setShareholderRegistry(shareholderRegistry);
     }

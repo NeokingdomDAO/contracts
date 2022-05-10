@@ -70,17 +70,17 @@ describe("Resolution", () => {
     await token.deployed();
     await shareholderRegistry.deployed();
 
-    var managerRole = await roles.MANAGER_ROLE();
+    var operatorRole = await roles.OPERATOR_ROLE();
     var resolutionRole = await roles.RESOLUTION_ROLE();
     var shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
 
-    await shareholderRegistry.grantRole(managerRole, deployer.address);
+    await shareholderRegistry.grantRole(operatorRole, deployer.address);
     await voting.grantRole(
       shareholderRegistryRole,
       shareholderRegistry.address
     );
-    await voting.grantRole(managerRole, deployer.address);
-    await token.grantRole(managerRole, deployer.address);
+    await voting.grantRole(operatorRole, deployer.address);
+    await token.grantRole(operatorRole, deployer.address);
     await token.grantRole(resolutionRole, deployer.address);
 
     await voting.setShareholderRegistry(shareholderRegistry.address);

@@ -90,7 +90,7 @@ contract ResolutionManager is Context, AccessControl {
         uint256 noticePeriod,
         uint256 votingPeriod,
         bool canBeNegative
-    ) public onlyRole(Roles.MANAGER_ROLE) {
+    ) public onlyRole(Roles.OPERATOR_ROLE) {
         _addResolutionType(
             name,
             quorum,
@@ -102,19 +102,19 @@ contract ResolutionManager is Context, AccessControl {
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
     }
 
     function setTelediskoToken(ITelediskoToken telediskoToken)
         external
-        onlyRole(Roles.MANAGER_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _telediskoToken = telediskoToken;
     }
 
-    function setVoting(IVoting voting) external onlyRole(Roles.MANAGER_ROLE) {
+    function setVoting(IVoting voting) external onlyRole(Roles.OPERATOR_ROLE) {
         _voting = voting;
     }
 

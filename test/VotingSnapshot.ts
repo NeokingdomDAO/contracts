@@ -24,7 +24,7 @@ describe("VotingSnapshot", () => {
   let shareholderStatus: string;
   let investorStatus: string;
 
-  let managerRole: string;
+  let operatorRole: string;
   let shareholderRegistryRole: string;
   let resolutionRole: string;
 
@@ -66,10 +66,10 @@ describe("VotingSnapshot", () => {
 
     votingSnapshot = await VotingSnapshotFactory.deploy();
     resolutionRole = await roles.RESOLUTION_ROLE();
-    managerRole = await roles.MANAGER_ROLE();
+    operatorRole = await roles.OPERATOR_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
 
-    await votingSnapshot.grantRole(managerRole, deployer.address);
+    await votingSnapshot.grantRole(operatorRole, deployer.address);
     await votingSnapshot.grantRole(resolutionRole, deployer.address);
     await votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 

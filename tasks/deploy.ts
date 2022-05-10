@@ -67,11 +67,11 @@ task("deploy", "Deploy DAO", async (_, hre) => {
     ROLES.SHAREHOLDER_REGISTRY_ROLE,
     shareholderRegistryContract.address
   );
-  await votingContract.grantRole(ROLES.MANAGER_ROLE, deployer.address);
+  await votingContract.grantRole(ROLES.OPERATOR_ROLE, deployer.address);
 
   console.log("    🏅 Grant roles for ShareholderRegistry");
   await shareholderRegistryContract.grantRole(
-    ROLES.MANAGER_ROLE,
+    ROLES.OPERATOR_ROLE,
     deployer.address
   );
   await shareholderRegistryContract.grantRole(
@@ -80,7 +80,7 @@ task("deploy", "Deploy DAO", async (_, hre) => {
   );
 
   console.log("    🏅 Grant roles for TelediskoToken");
-  await telediskoTokenContract.grantRole(ROLES.MANAGER_ROLE, deployer.address);
+  await telediskoTokenContract.grantRole(ROLES.OPERATOR_ROLE, deployer.address);
   await telediskoTokenContract.grantRole(
     ROLES.RESOLUTION_ROLE,
     deployer.address

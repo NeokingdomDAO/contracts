@@ -25,18 +25,18 @@ describe("Shareholder Registry", () => {
     SHAREHOLDER_STATUS: string,
     INVESTOR_STATUS: string,
     CONTRIBUTOR_STATUS: string,
-    FOUNDER_STATUS: string;
+    MANAGING_BOARD_STATUS: string;
   let shareCapital = parseEther("10");
   let registry: ShareholderRegistry;
   let voting: VotingMock;
   let operator: SignerWithAddress,
-    founder: SignerWithAddress,
+    managingBoard: SignerWithAddress,
     alice: SignerWithAddress,
     bob: SignerWithAddress,
     carol: SignerWithAddress;
 
   beforeEach(async () => {
-    [operator, founder, alice, bob, carol] = await ethers.getSigners();
+    [operator, managingBoard, alice, bob, carol] = await ethers.getSigners();
     const ShareholderRegistryFactory = (await ethers.getContractFactory(
       "ShareholderRegistry",
       operator
@@ -57,13 +57,15 @@ describe("Shareholder Registry", () => {
     SHAREHOLDER_STATUS = await registry.SHAREHOLDER_STATUS();
     INVESTOR_STATUS = await registry.INVESTOR_STATUS();
     CONTRIBUTOR_STATUS = await registry.CONTRIBUTOR_STATUS();
-    FOUNDER_STATUS = await registry.FOUNDER_STATUS();
+    MANAGING_BOARD_STATUS = await registry.MANAGING_BOARD_STATUS();
 
     await registry.grantRole(RESOLUTION_ROLE, operator.address);
     await registry.grantRole(OPERATOR_ROLE, operator.address);
     await registry.setVoting(voting.address);
-    await registry.mint(founder.address, shareCapital);
-    await registry.connect(founder).approve(operator.address, shareCapital);
+    await registry.mint(managingBoard.address, shareCapital);
+    await registry
+      .connect(managingBoard)
+      .approve(operator.address, shareCapital);
   });
 
   describe("Status management", () => {
@@ -91,9 +93,9 @@ describe("Shareholder Registry", () => {
       expect(await registry.isAtLeast(CONTRIBUTOR_STATUS, alice.address)).equal(
         false
       );
-      expect(await registry.isAtLeast(FOUNDER_STATUS, alice.address)).equal(
-        false
-      );
+      expect(
+        await registry.isAtLeast(MANAGING_BOARD_STATUS, alice.address)
+      ).equal(false);
     });
 
     it("should make Alice a shareholder and investor after a share transfer", async () => {
@@ -104,7 +106,7 @@ describe("Shareholder Registry", () => {
         false
       );
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
@@ -127,7 +129,7 @@ describe("Shareholder Registry", () => {
         false
       );
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
@@ -145,14 +147,14 @@ describe("Shareholder Registry", () => {
 
     it("should notify the Voting contract when a shareholder transfers all their shares", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       expect(await registry.getStatus(alice.address)).equal(CONTRIBUTOR_STATUS);
       await expect(
-        registry.connect(alice).transfer(founder.address, parseEther("1"))
+        registry.connect(alice).transfer(managingBoard.address, parseEther("1"))
       )
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
@@ -160,7 +162,7 @@ describe("Shareholder Registry", () => {
 
     it("should notify the Voting contract when status updated to investor", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
@@ -170,21 +172,21 @@ describe("Shareholder Registry", () => {
         .withArgs(alice.address);
     });
 
-    it("should not notify the Voting contract when status updated to founder", async () => {
+    it("should not notify the Voting contract when status updated to managingBoard", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       await expect(
-        registry.setStatus(FOUNDER_STATUS, alice.address)
+        registry.setStatus(MANAGING_BOARD_STATUS, alice.address)
       ).to.not.emit(voting, "BeforeRemoveContributor");
     });
 
     it("should call afterAddContributor when status updated for the first time to contributor", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
@@ -195,19 +197,19 @@ describe("Shareholder Registry", () => {
 
     it("should not call afterAddContributor when status is already at least contributor", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       await expect(
-        registry.setStatus(FOUNDER_STATUS, alice.address)
+        registry.setStatus(MANAGING_BOARD_STATUS, alice.address)
       ).to.not.emit(voting, "AfterAddContributor");
     });
 
     it("should not notify the Voting contract when adding an investor", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
@@ -219,13 +221,15 @@ describe("Shareholder Registry", () => {
 
     it("should cleanup the status when a shareholder transfers all their shares", async () => {
       await registry.transferFrom(
-        founder.address,
+        managingBoard.address,
         alice.address,
         parseEther("1")
       );
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       expect(await registry.getStatus(alice.address)).equal(CONTRIBUTOR_STATUS);
-      await registry.connect(alice).transfer(founder.address, parseEther("1"));
+      await registry
+        .connect(alice)
+        .transfer(managingBoard.address, parseEther("1"));
       expect(await registry.getStatus(alice.address)).equal(Bytes32Zero);
     });
   });
@@ -262,7 +266,7 @@ describe("Shareholder Registry", () => {
         await registry.snapshot();
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
         await registry.transferFrom(
-          founder.address,
+          managingBoard.address,
           alice.address,
           parseEther("1")
         );
@@ -303,7 +307,7 @@ describe("Shareholder Registry", () => {
         expect(await registry.totalSupplyAt(snapshotIdBefore)).equal(
           shareCapital
         );
-        await registry.mint(founder.address, parseEther("5"));
+        await registry.mint(managingBoard.address, parseEther("5"));
         expect(await registry.totalSupply()).equal(
           shareCapital.add(parseEther("5"))
         );
@@ -321,13 +325,13 @@ describe("Shareholder Registry", () => {
     describe("burn", () => {
       it("allows a resolution to burn shares of an account", async () => {
         await expect(() =>
-          registry.burn(founder.address, 4)
-        ).changeTokenBalance(registry, founder, -4);
+          registry.burn(managingBoard.address, 4)
+        ).changeTokenBalance(registry, managingBoard, -4);
       });
 
       it("updates total supply", async () => {
         const totalSupplyBefore = await registry.totalSupply();
-        await registry.burn(founder.address, 1);
+        await registry.burn(managingBoard.address, 1);
 
         const totalSupplyAfter = await registry.totalSupply();
         expect(totalSupplyAfter).equal(totalSupplyBefore.sub(1));
@@ -335,7 +339,7 @@ describe("Shareholder Registry", () => {
 
       it("does not allows anyone not RESOLUTION_ROLE to not be able to burn shares", async () => {
         await expect(
-          registry.connect(bob).burn(founder.address, 4)
+          registry.connect(bob).burn(managingBoard.address, 4)
         ).revertedWith(
           `AccessControl: account ${bob.address.toLowerCase()} ` +
             `is missing role ${RESOLUTION_ROLE}`
@@ -344,7 +348,7 @@ describe("Shareholder Registry", () => {
 
       it("should cleanup the account status when its share is burnt", async () => {
         await registry.transferFrom(
-          founder.address,
+          managingBoard.address,
           alice.address,
           parseEther("1")
         );
@@ -356,7 +360,7 @@ describe("Shareholder Registry", () => {
       it("updates the snapshots", async () => {
         await registry.snapshot();
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
-        await registry.burn(founder.address, 1);
+        await registry.burn(managingBoard.address, 1);
 
         await registry.snapshot();
         const snapshotIdAfter = await registry.getCurrentSnapshotId();
@@ -388,7 +392,7 @@ describe("Shareholder Registry", () => {
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
 
         await registry.transferFrom(
-          founder.address,
+          managingBoard.address,
           alice.address,
           parseEther("1")
         );
@@ -430,7 +434,7 @@ describe("Shareholder Registry", () => {
         const snapshotId0 = await registry.getCurrentSnapshotId();
 
         await registry.transferFrom(
-          founder.address,
+          managingBoard.address,
           alice.address,
           parseEther("1")
         );

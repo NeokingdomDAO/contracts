@@ -22,7 +22,7 @@ task("mint-share", "Mint a share to an address")
   });
 
 task("set", "Set the status of an address")
-  .addParam("status", "shareholder, investor, contributor, founder")
+  .addParam("status", "shareholder, investor, contributor, managingBoard")
   .addParam("account", "The account address")
   .setAction(
     async (
@@ -30,7 +30,7 @@ task("set", "Set the status of an address")
         status,
         account,
       }: {
-        status: "shareholder" | "investor" | "contributor" | "founder";
+        status: "shareholder" | "investor" | "contributor" | "managingBoard";
         account: string;
       },
       hre

@@ -12,7 +12,7 @@ contract ShareholderRegistryBase is ERC20 {
     bytes32 public SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
     bytes32 public INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
     bytes32 public CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
-    bytes32 public FOUNDER_STATUS = keccak256("FOUNDER_STATUS");
+    bytes32 public MANAGING_BOARD_STATUS = keccak256("MANAGING_BOARD_STATUS");
 
     IVoting _voting;
 
@@ -61,12 +61,12 @@ contract ShareholderRegistryBase is ERC20 {
     ) internal view returns (bool) {
         return
             balance > 0 &&
-            // shareholder < investor < contributor < founder
+            // shareholder < investor < contributor < managing board
             (status == INVESTOR_STATUS ||
                 status == SHAREHOLDER_STATUS ||
                 status == accountStatus ||
                 (status == CONTRIBUTOR_STATUS &&
-                    accountStatus == FOUNDER_STATUS));
+                    accountStatus == MANAGING_BOARD_STATUS));
     }
 
     function _beforeSetStatus(

@@ -11,7 +11,7 @@ contract ShareholderRegistryMock is IShareholderRegistry {
     bytes32 public SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
     bytes32 public INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
     bytes32 public CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
-    bytes32 public FOUNDER_STATUS = keccak256("FOUNDER_STATUS");
+    bytes32 public MANAGING_BOARD_STATUS = keccak256("MANAGING_BOARD_STATUS");
 
     mapping(bytes32 => mapping(address => bool)) mockResult_isAtLeast;
 

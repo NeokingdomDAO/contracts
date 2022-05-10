@@ -156,10 +156,10 @@ contract ResolutionManager is Context, AccessControl {
     function approveResolution(uint256 resolutionId) public {
         require(
             _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.FOUNDER_STATUS(),
+                _shareholderRegistry.MANAGING_BOARD_STATUS(),
                 _msgSender()
             ),
-            "Resolution: only founder can approve"
+            "Resolution: only managing board can approve"
         );
         require(
             resolutionId < _currentResolutionId,
@@ -190,10 +190,10 @@ contract ResolutionManager is Context, AccessControl {
 
         require(
             _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.FOUNDER_STATUS(),
+                _shareholderRegistry.MANAGING_BOARD_STATUS(),
                 _msgSender()
             ),
-            "Resolution: only founder can update"
+            "Resolution: only managing board can update"
         );
 
         ResolutionType storage resolutionType = resolutionTypes[

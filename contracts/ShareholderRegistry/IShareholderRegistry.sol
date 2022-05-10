@@ -11,7 +11,7 @@ interface IShareholderRegistry is ISnapshot {
 
     function CONTRIBUTOR_STATUS() external returns (bytes32);
 
-    function FOUNDER_STATUS() external returns (bytes32);
+    function MANAGING_BOARD_STATUS() external returns (bytes32);
 
     function getStatus(address account) external returns (bytes32);
 

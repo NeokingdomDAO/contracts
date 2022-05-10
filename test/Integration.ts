@@ -27,18 +27,18 @@ describe("Resolution", () => {
   let voting: Voting;
   let token: TelediskoToken;
   let resolution: ResolutionManager;
-  let founderStatus: string;
+  let managingBoardStatus: string;
   let contributorStatus: string;
   let investorStatus: string;
   let shareholderRegistry: ShareholderRegistry;
   let deployer: SignerWithAddress,
-    founder: SignerWithAddress,
+    managingBoard: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
     user3: SignerWithAddress;
 
   beforeEach(async () => {
-    [deployer, founder, user1, user2, user3] = await ethers.getSigners();
+    [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
     const VotingFactory = (await ethers.getContractFactory(
       "Voting",
       deployer
@@ -101,12 +101,15 @@ describe("Resolution", () => {
     await voting.grantRole(resolutionRole, resolution.address);
     await token.grantRole(resolutionRole, resolution.address);
 
-    founderStatus = await shareholderRegistry.FOUNDER_STATUS();
+    managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
-    await shareholderRegistry.mint(founder.address, 1);
-    await shareholderRegistry.setStatus(founderStatus, founder.address);
+    await shareholderRegistry.mint(managingBoard.address, 1);
+    await shareholderRegistry.setStatus(
+      managingBoardStatus,
+      managingBoard.address
+    );
   });
 
   describe("integration", async () => {
@@ -135,7 +138,9 @@ describe("Resolution", () => {
     async function _prepareResolution() {
       currentResolution++;
       await resolution.connect(user1).createResolution("Qxtest", 0, false);
-      await resolution.connect(founder).approveResolution(currentResolution);
+      await resolution
+        .connect(managingBoard)
+        .approveResolution(currentResolution);
 
       return currentResolution;
     }
@@ -327,7 +332,9 @@ describe("Resolution", () => {
       // votes given before approval
       await expect(_vote(user1, true, resolutionId)).reverted;
 
-      await resolution.connect(founder).approveResolution(currentResolution);
+      await resolution
+        .connect(managingBoard)
+        .approveResolution(currentResolution);
       // votes given during notice
       await expect(_vote(user1, true, resolutionId)).reverted;
 

@@ -13,7 +13,11 @@ import "@nomiclabs/hardhat-etherscan";
 import("./tasks").catch((e) => console.log("Cannot load tasks", e.toString()));
 
 const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
+const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || "";
 const RINKEBY_PRIVATE_KEY =
+  process.env.RINKEBY_PRIVATE_KEY! ||
+  "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
+const MUMBAI_PRIVATE_KEY =
   process.env.RINKEBY_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const KOVAN_PRIVATE_KEY =
@@ -37,6 +41,10 @@ const config: HardhatUserConfig = {
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [RINKEBY_PRIVATE_KEY],
+    },
+    mumbai: {
+      url: `https://polygon-mumbai.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      accounts: [MUMBAI_PRIVATE_KEY],
     },
   },
   etherscan: {

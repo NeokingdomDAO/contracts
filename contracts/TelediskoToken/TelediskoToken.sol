@@ -22,17 +22,12 @@ contract TelediskoToken is TelediskoTokenSnapshot, AccessControl {
         return _snapshot();
     }
 
-    function setVoting(IVoting voting)
-        external
-        override
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setVoting(IVoting voting) external onlyRole(Roles.OPERATOR_ROLE) {
         _setVoting(voting);
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
-        override
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _setShareholderRegistry(shareholderRegistry);
@@ -40,9 +35,30 @@ contract TelediskoToken is TelediskoTokenSnapshot, AccessControl {
 
     function mint(address to, uint256 amount)
         public
-        override
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _mint(to, amount);
+    }
+
+    function mintVesting(address to, uint256 amount)
+        public
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
+        _mintVesting(to, amount);
+    }
+
+    function matchOffer(
+        address from,
+        address to,
+        uint256 amount
+    ) public onlyRole(Roles.OPERATOR_ROLE) {
+        _matchOffer(from, to, amount);
+    }
+
+    function setVesting(address to, uint256 amount)
+        public
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
+        _setVesting(to, amount);
     }
 }

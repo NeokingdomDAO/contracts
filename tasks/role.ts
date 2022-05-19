@@ -3,7 +3,7 @@ import { ContractName, loadContractByName, ROLES } from "./config";
 
 task(
   "grant-role",
-  "Grant a role to an address. Can be called only by ADMIN_ROLE"
+  "Grant a role to an address. Can be called only by OPERATOR_ROLE"
 )
   .addParam("contract", "The name of the contract")
   .addParam(

@@ -16,13 +16,13 @@ task("mint-share", "Mint a share to an address")
     );
 
     const tx = await contract.mint(account, parseEther("1"));
-    console.log("Submitted tx", tx.hash);
+    console.log("  Submitted tx", tx.hash);
     const receipt = await tx.wait();
-    console.log("Transaction included in block", receipt.blockNumber);
+    console.log("  Transaction included in block", receipt.blockNumber);
   });
 
 task("set", "Set the status of an address")
-  .addParam("status", "shareholder, investor, contributor, managingBoard")
+  .addParam("status", "shareholder, investor, contributor, managing_board")
   .addParam("account", "The account address")
   .setAction(
     async (
@@ -30,7 +30,7 @@ task("set", "Set the status of an address")
         status,
         account,
       }: {
-        status: "shareholder" | "investor" | "contributor" | "managingBoard";
+        status: "shareholder" | "investor" | "contributor" | "managing_board";
         account: string;
       },
       hre
@@ -45,9 +45,9 @@ task("set", "Set the status of an address")
         keccak256(toUtf8Bytes(role)),
         account
       );
-      console.log("Submitted tx", tx.hash);
+      console.log("  Submitted tx", tx.hash);
       const receipt = await tx.wait();
-      console.log("Transaction included in block", receipt.blockNumber);
+      console.log("  Transaction included in block", receipt.blockNumber);
     }
   );
 
@@ -62,8 +62,8 @@ task("mint", "Mint teledisko tokens to an address")
         "TelediskoToken"
       );
       const tx = await contract.mint(account, parseEther(amount));
-      console.log("Submitted tx", tx.hash);
+      console.log("  Submitted tx", tx.hash);
       const receipt = await tx.wait();
-      console.log("Transaction included in block", receipt.blockNumber);
+      console.log("  Transaction included in block", receipt.blockNumber);
     }
   );

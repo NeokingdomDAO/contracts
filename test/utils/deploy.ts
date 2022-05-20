@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, upgrades } from "hardhat";
 import { ShareholderRegistry, TelediskoToken, Voting } from "../../typechain";
-import { ResolutionManager } from "../../typechain/ResolutionManager";
+import { ResolutionManager } from "../../typechain";
 import {
   Voting__factory,
   TelediskoToken__factory,

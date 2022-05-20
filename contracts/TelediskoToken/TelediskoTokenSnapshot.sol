@@ -17,10 +17,6 @@ abstract contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
     mapping(address => Snapshots) private _accountBalanceSnapshots;
     Snapshots private _totalSupplySnapshots;
 
-    constructor(string memory name, string memory symbol)
-        TelediskoTokenBase(name, symbol)
-    {}
-
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.
      */

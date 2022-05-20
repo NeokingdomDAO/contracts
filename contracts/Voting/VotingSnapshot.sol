@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Arrays.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../extensions/Snapshottable.sol";
 import "./VotingBase.sol";
 

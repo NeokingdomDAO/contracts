@@ -2,21 +2,33 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "./ShareholderRegistrySnapshot.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import { Roles } from "../extensions/Roles.sol";
 
-contract ShareholderRegistry is ShareholderRegistrySnapshot, AccessControl {
+contract ShareholderRegistry is
+    Initializable,
+    ShareholderRegistrySnapshot,
+    AccessControlUpgradeable
+{
     // Benjamin takes all the decisions in first months, assuming the role of
     // the "Resolution", to then delegate to the resolution contract what comes
     // next.
     // This is what zodiac calls "incremental decentralization".
 
-    constructor(string memory name, string memory symbol)
-        ShareholderRegistrySnapshot(name, symbol)
+    function initialize(string memory name, string memory symbol)
+        public
+        override
+        initializer
     {
+        super.initialize(name, symbol);
+        __AccessControl_init();
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
 
     function snapshot()
         public

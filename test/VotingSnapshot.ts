@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -9,6 +9,7 @@ import {
   ERC20Mock__factory,
   ShareholderRegistryMock,
   ShareholderRegistryMock__factory,
+  VotingSnapshot,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { roles } from "./utils/roles";
@@ -59,12 +60,15 @@ describe("VotingSnapshot", () => {
       deployer
     )) as ERC20Mock__factory;
 
-    const ShareholderRegistryFactory = (await ethers.getContractFactory(
+    const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
       "ShareholderRegistryMock",
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    votingSnapshot = await VotingSnapshotFactory.deploy();
+    votingSnapshot = (await upgrades.deployProxy(VotingSnapshotFactory, {
+      initializer: "initialize",
+    })) as Voting;
+    await votingSnapshot.deployed();
     resolutionRole = await roles.RESOLUTION_ROLE();
     operatorRole = await roles.OPERATOR_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
@@ -73,16 +77,25 @@ describe("VotingSnapshot", () => {
     await votingSnapshot.grantRole(resolutionRole, deployer.address);
     await votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 
-    token = await ERC20MockFactory.deploy(votingSnapshot.address);
-    shareholderRegistry = await ShareholderRegistryFactory.deploy();
+    token = (await upgrades.deployProxy(
+      ERC20MockFactory,
+      [votingSnapshot.address],
+      {
+        initializer: "initialize",
+      }
+    )) as ERC20Mock;
+    await token.deployed();
+    shareholderRegistry = (await upgrades.deployProxy(
+      ShareholderRegistryMockFactory,
+      {
+        initializer: "initialize",
+      }
+    )) as ShareholderRegistryMock;
+    await shareholderRegistry.deployed();
 
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
-
-    await votingSnapshot.deployed();
-    await token.deployed();
-    await shareholderRegistry.deployed();
 
     await votingSnapshot.setToken(token.address);
     await votingSnapshot.setShareholderRegistry(shareholderRegistry.address);
@@ -93,14 +106,14 @@ describe("VotingSnapshot", () => {
     // - investor
     // The mock is dumb so we need to set everything manually
     await Promise.all(
-      [delegator1, delegator2, delegated1, delegated2, noDelegate].map((user) =>
-        setContributor(user, true)
+      [delegator1, delegator2, delegated1, delegated2, noDelegate].map(
+        async (user) => await setContributor(user, true)
       )
     );
 
     await Promise.all(
-      [delegator1, delegator2, delegated1, delegated2].map((voter) => {
-        votingSnapshot.connect(voter).delegate(voter.address);
+      [delegator1, delegator2, delegated1, delegated2].map(async (voter) => {
+        await votingSnapshot.connect(voter).delegate(voter.address);
       })
     );
   });

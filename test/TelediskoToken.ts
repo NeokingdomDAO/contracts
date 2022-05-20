@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -21,6 +21,7 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("TelediskoToken", () => {
+  let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
   let telediskoToken: TelediskoToken;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -49,16 +50,28 @@ describe("TelediskoToken", () => {
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    telediskoToken = await TelediskoTokenFactory.deploy("Test", "TEST");
-    await telediskoToken.grantRole(
-      await roles.OPERATOR_ROLE(),
-      deployer.address
-    );
-    voting = await VotingMockFactory.deploy();
-    shareholderRegistry = await ShareholderRegistryMockFactory.deploy();
-
+    telediskoToken = (await upgrades.deployProxy(
+      TelediskoTokenFactory,
+      ["Test", "TEST"],
+      { initializer: "initialize" }
+    )) as TelediskoToken;
     await telediskoToken.deployed();
+
+    voting = (await upgrades.deployProxy(VotingMockFactory)) as VotingMock;
     await voting.deployed();
+
+    RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
+    await telediskoToken.grantRole(RESOLUTION_ROLE, deployer.address);
+
+    OPERATOR_ROLE = await roles.OPERATOR_ROLE();
+    await telediskoToken.grantRole(OPERATOR_ROLE, deployer.address);
+
+    shareholderRegistry = (await upgrades.deployProxy(
+      ShareholderRegistryMockFactory,
+      {
+        initializer: "initialize",
+      }
+    )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
 
     await telediskoToken.setVoting(voting.address);

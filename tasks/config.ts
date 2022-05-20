@@ -21,7 +21,8 @@ export type ContractName =
   | "TelediskoToken"
   | "ResolutionManager"
   | "ShareholderRegistry"
-  | "Voting";
+  | "Voting"
+  | "VotingV2";
 
 export type DAOContract =
   | TelediskoToken

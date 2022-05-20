@@ -2,13 +2,20 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../Voting/IVoting.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 
-contract TelediskoTokenBase is ERC20 {
+contract TelediskoTokenBase is ERC20Upgradeable {
     IVoting _voting;
     IShareholderRegistry _shareholderRegistry;
+
+    function initialize(string memory name, string memory symbol)
+        public
+        virtual
+    {
+        __ERC20_init(name, symbol);
+    }
 
     struct Offer {
         uint256 ts;
@@ -37,8 +44,6 @@ contract TelediskoTokenBase is ERC20 {
     mapping(address => uint256) internal _vestingBalance;
     mapping(address => uint256) internal _unlockedBalance;
     mapping(address => Offers) internal _offers;
-
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function _setVoting(IVoting voting) internal {
         _voting = voting;

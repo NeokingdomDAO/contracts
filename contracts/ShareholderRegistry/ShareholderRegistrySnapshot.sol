@@ -3,7 +3,6 @@
 
 pragma solidity ^0.8.0;
 
-//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./ShareholderRegistryBase.sol";
 import "../extensions/Snapshottable.sol";
 
@@ -30,10 +29,6 @@ abstract contract ShareholderRegistrySnapshot is
 
     mapping(address => StatusAndBalanceSnapshots)
         private _accountStatusAndBalanceSnapshots;
-
-    constructor(string memory name, string memory symbol)
-        ShareholderRegistryBase(name, symbol)
-    {}
 
     /**
      * @dev Retrieves the total supply at the time `snapshotId` was created.

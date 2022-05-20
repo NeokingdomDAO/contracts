@@ -5,14 +5,14 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../Voting/IVoting.sol";
 
-contract ShareholderRegistryBase is ERC20 {
-    bytes32 public SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
-    bytes32 public INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
-    bytes32 public CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
-    bytes32 public MANAGING_BOARD_STATUS = keccak256("MANAGING_BOARD_STATUS");
+contract ShareholderRegistryBase is ERC20Upgradeable {
+    bytes32 public SHAREHOLDER_STATUS;
+    bytes32 public INVESTOR_STATUS;
+    bytes32 public CONTRIBUTOR_STATUS;
+    bytes32 public MANAGING_BOARD_STATUS;
 
     IVoting _voting;
 
@@ -24,7 +24,16 @@ contract ShareholderRegistryBase is ERC20 {
 
     mapping(address => bytes32) private _statuses;
 
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    function initialize(string memory name, string memory symbol)
+        public
+        virtual
+    {
+        __ERC20_init(name, symbol);
+        SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
+        INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
+        CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
+        MANAGING_BOARD_STATUS = keccak256("MANAGING_BOARD_STATUS");
+    }
 
     function _setVoting(IVoting voting) internal {
         _voting = voting;

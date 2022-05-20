@@ -2,14 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../Voting/Voting.sol";
 
-contract ERC20Mock is ERC20 {
+contract ERC20Mock is Initializable, ERC20Upgradeable {
     Voting _voting;
 
-    constructor(Voting voting) ERC20("Mock", "MOCK") {
+    
+    function initialize(Voting voting) public initializer {
         _voting = voting;
+        __ERC20_init("Mock", "MOCK");
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {
     }
 
     function mint(address account, uint256 amount) public {

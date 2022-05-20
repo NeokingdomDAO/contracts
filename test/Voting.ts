@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { upgrades } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -59,16 +60,26 @@ describe("Voting", () => {
       deployer
     )) as ERC20Mock__factory;
 
-    const ShareholderRegistryFactory = (await ethers.getContractFactory(
+    const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
       "ShareholderRegistryMock",
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    voting = await VotingFactory.deploy();
-    token = await ERC20MockFactory.deploy(voting.address);
-    shareholderRegistry = await ShareholderRegistryFactory.deploy();
-
+    voting = (await upgrades.deployProxy(VotingFactory, {
+      initializer: "initialize",
+    })) as Voting;
     await voting.deployed();
+    token = (await upgrades.deployProxy(ERC20MockFactory, [voting.address], {
+      initializer: "initialize",
+    })) as ERC20Mock;
+    await token.deployed();
+    shareholderRegistry = (await upgrades.deployProxy(
+      ShareholderRegistryMockFactory,
+      {
+        initializer: "initialize",
+      }
+    )) as ShareholderRegistryMock;
+    await shareholderRegistry.deployed();
 
     operatorRole = await roles.OPERATOR_ROLE();
     resolutionRole = await roles.RESOLUTION_ROLE();
@@ -82,9 +93,6 @@ describe("Voting", () => {
     await voting.grantRole(resolutionRole, deployer.address);
     await voting.grantRole(shareholderRegistryRole, deployer.address);
 
-    await token.deployed();
-    await shareholderRegistry.deployed();
-
     await voting.setToken(token.address);
     await voting.setShareholderRegistry(shareholderRegistry.address);
 
@@ -94,15 +102,15 @@ describe("Voting", () => {
     // - investor
     // The mock is dumb so we need to set everything manually
     await Promise.all(
-      [delegator1, delegator2, delegated1, delegated2, noDelegate].map((user) =>
-        setContributor(user, true)
+      [delegator1, delegator2, delegated1, delegated2, noDelegate].map(
+        async (user) => await setContributor(user, true)
       )
     );
 
     // Each contributor delegates to themselves.
     await Promise.all(
-      [delegator1, delegator2, delegated1, delegated2].map((voter) => {
-        voting.connect(voter).delegate(voter.address);
+      [delegator1, delegator2, delegated1, delegated2].map(async (voter) => {
+        await voting.connect(voter).delegate(voter.address);
       })
     );
   });

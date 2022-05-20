@@ -5,13 +5,13 @@ pragma solidity ^0.8.0;
 import "../extensions/ISnapshot.sol";
 
 interface IShareholderRegistry is ISnapshot {
-    function SHAREHOLDER_STATUS() external pure returns (bytes32);
+    function SHAREHOLDER_STATUS() external view returns (bytes32);
 
-    function INVESTOR_STATUS() external pure returns (bytes32);
+    function INVESTOR_STATUS() external view returns (bytes32);
 
-    function CONTRIBUTOR_STATUS() external pure returns (bytes32);
+    function CONTRIBUTOR_STATUS() external view returns (bytes32);
 
-    function MANAGING_BOARD_STATUS() external pure returns (bytes32);
+    function MANAGING_BOARD_STATUS() external view returns (bytes32);
 
     function getStatus(address account) external view returns (bytes32);
 
@@ -20,7 +20,10 @@ interface IShareholderRegistry is ISnapshot {
         view
         returns (bytes32);
 
-    function isAtLeast(bytes32 status, address account) external view returns (bool);
+    function isAtLeast(bytes32 status, address account)
+        external
+        view
+        returns (bool);
 
     function isAtLeastAt(
         bytes32 status,
@@ -29,7 +32,8 @@ interface IShareholderRegistry is ISnapshot {
     ) external view returns (bool);
 
     function balanceOfAt(address account, uint256 snapshotId)
-        external view
+        external
+        view
         returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);

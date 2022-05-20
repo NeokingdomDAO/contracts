@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
 contract VotingBase {
     IShareholderRegistry _shareholderRegistry;
-    IERC20 _token;
+    IERC20Upgradeable _token;
 
     bytes32 private _contributorRole;
 
@@ -41,7 +41,7 @@ contract VotingBase {
         return getDelegate(account) != address(0);
     }
 
-    function _setToken(IERC20 token) internal {
+    function _setToken(IERC20Upgradeable token) internal {
         _token = token;
     }
 

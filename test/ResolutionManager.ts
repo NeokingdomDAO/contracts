@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -55,7 +55,7 @@ describe("Resolution", () => {
       deployer
     )) as TelediskoTokenMock__factory;
 
-    const ShareholderRegistryFactory = (await ethers.getContractFactory(
+    const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
       "ShareholderRegistryMock",
       deployer
     )) as ShareholderRegistryMock__factory;
@@ -65,13 +65,20 @@ describe("Resolution", () => {
       deployer
     )) as ResolutionManager__factory;
 
-    voting = await VotingMockFactory.deploy();
-
-    token = await TelediskoTokenMockFactory.deploy();
-    shareholderRegistry = await ShareholderRegistryFactory.deploy();
-
+    voting = (await upgrades.deployProxy(VotingMockFactory)) as VotingMock;
     await voting.deployed();
+
+    token = (await upgrades.deployProxy(
+      TelediskoTokenMockFactory
+    )) as TelediskoTokenMock;
     await token.deployed();
+
+    shareholderRegistry = (await upgrades.deployProxy(
+      ShareholderRegistryMockFactory,
+      {
+        initializer: "initialize",
+      }
+    )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
@@ -79,11 +86,14 @@ describe("Resolution", () => {
     shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
-    resolution = await ResolutionFactory.deploy(
-      shareholderRegistry.address,
-      token.address,
-      voting.address
-    );
+    resolution = (await upgrades.deployProxy(
+      ResolutionFactory,
+      [shareholderRegistry.address, token.address, voting.address],
+      {
+        initializer: "initialize",
+      }
+    )) as ResolutionManager;
+    await resolution.deployed();
 
     await resolution.grantRole(await roles.OPERATOR_ROLE(), deployer.address);
 
@@ -95,8 +105,8 @@ describe("Resolution", () => {
     // - investor
     // The mock is dumb so we need to set everything manually
     await Promise.all(
-      [managingBoard, user1, user2, delegate1].map((user) =>
-        setContributor(user, true)
+      [managingBoard, user1, user2, delegate1].map(
+        async (user) => await setContributor(user, true)
       )
     );
     await shareholderRegistry.mock_isAtLeast(
@@ -106,8 +116,8 @@ describe("Resolution", () => {
     );
 
     await Promise.all(
-      [managingBoard, user1, user2, delegate1].map((voter) => {
-        voting.mock_canVoteAt(voter.address, true);
+      [managingBoard, user1, user2, delegate1].map(async (voter) => {
+        await voting.mock_canVoteAt(voter.address, true);
       })
     );
   });

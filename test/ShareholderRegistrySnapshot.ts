@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -45,10 +45,16 @@ describe("Shareholder Registry", () => {
       "VotingMock"
     )) as VotingMock__factory;
 
-    registry = await ShareholderRegistryFactory.deploy("TS", "Teledisko Share");
+    registry = (await upgrades.deployProxy(
+      ShareholderRegistryFactory,
+      ["TS", "Teledisko Share"],
+      {
+        initializer: "initialize",
+      }
+    )) as ShareholderRegistry;
     await registry.deployed();
 
-    voting = await VotingMockFactory.deploy();
+    voting = (await upgrades.deployProxy(VotingMockFactory)) as VotingMock;
     await voting.deployed();
 
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();

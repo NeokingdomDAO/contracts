@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "../extensions/ISnapshot.sol";
 
-interface ITelediskoToken is IERC20, ISnapshot {
+interface ITelediskoToken is IERC20Upgradeable, ISnapshot {
     function balanceOfAt(address account, uint256 snapshotId)
         external
         view

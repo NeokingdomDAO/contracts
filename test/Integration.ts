@@ -4,17 +4,14 @@ import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import {
   ShareholderRegistry,
-  ShareholderRegistry__factory,
   Voting,
-  Voting__factory,
   TelediskoToken,
-  TelediskoToken__factory,
   ResolutionManager,
-  ResolutionManager__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
 import { roles } from "./utils/roles";
+import { deployDAO } from "./utils/deploy";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -23,7 +20,7 @@ const { expect } = chai;
 const DAY = 60 * 60 * 24;
 const AddressZero = ethers.constants.AddressZero;
 
-describe("Resolution", () => {
+describe("Integration", () => {
   let voting: Voting;
   let token: TelediskoToken;
   let resolution: ResolutionManager;
@@ -39,77 +36,15 @@ describe("Resolution", () => {
 
   beforeEach(async () => {
     [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
-    const VotingFactory = (await ethers.getContractFactory(
-      "Voting",
-      deployer
-    )) as Voting__factory;
-
-    const TelediskoTokenFactory = (await ethers.getContractFactory(
-      "TelediskoToken",
-      deployer
-    )) as TelediskoToken__factory;
-
-    const ShareholderRegistryFactory = (await ethers.getContractFactory(
-      "ShareholderRegistry",
-      deployer
-    )) as ShareholderRegistry__factory;
-
-    const ResolutionFactory = (await ethers.getContractFactory(
-      "ResolutionManager",
-      deployer
-    )) as ResolutionManager__factory;
-
-    voting = await VotingFactory.deploy();
-    token = await TelediskoTokenFactory.deploy("TestToken", "TT");
-    shareholderRegistry = await ShareholderRegistryFactory.deploy(
-      "TestShare",
-      "TS"
+    [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
+    [voting, token, shareholderRegistry, resolution] = await deployDAO(
+      deployer,
+      managingBoard
     );
-
-    await voting.deployed();
-    await token.deployed();
-    await shareholderRegistry.deployed();
-
-    var operatorRole = await roles.OPERATOR_ROLE();
-    var resolutionRole = await roles.RESOLUTION_ROLE();
-    var shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
-
-    await shareholderRegistry.grantRole(operatorRole, deployer.address);
-    await voting.grantRole(
-      shareholderRegistryRole,
-      shareholderRegistry.address
-    );
-    await voting.grantRole(operatorRole, deployer.address);
-    await token.grantRole(operatorRole, deployer.address);
-    await token.grantRole(resolutionRole, deployer.address);
-
-    await voting.setShareholderRegistry(shareholderRegistry.address);
-    await voting.setToken(token.address);
-    await token.setShareholderRegistry(shareholderRegistry.address);
-    await token.setVoting(voting.address);
-    await shareholderRegistry.setVoting(voting.address);
-
-    resolution = await ResolutionFactory.deploy(
-      shareholderRegistry.address,
-      token.address,
-      voting.address
-    );
-
-    await resolution.deployed();
-
-    await shareholderRegistry.grantRole(resolutionRole, resolution.address);
-    await voting.grantRole(resolutionRole, resolution.address);
-    await token.grantRole(resolutionRole, resolution.address);
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
-
-    await shareholderRegistry.mint(managingBoard.address, 1);
-    await shareholderRegistry.setStatus(
-      managingBoardStatus,
-      managingBoard.address
-    );
   });
 
   describe("integration", async () => {

@@ -20,6 +20,9 @@ const { expect } = chai;
 
 const AddressZero = ethers.constants.AddressZero;
 
+      const DAY = 60 * 60 * 24;
+      const WEEK = DAY * 7;
+
 describe("TelediskoToken", () => {
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
   let telediskoToken: TelediskoToken;
@@ -153,6 +156,11 @@ describe("TelediskoToken", () => {
       expect(await telediskoToken.vestingBalanceOf(account.address)).equal(110);
     });
 
+    it("should emit events on update the vesting balance", async () => {
+      expect(await telediskoToken.mintVesting(account.address, 100)).emit(telediskoToken, "VestingSet").withArgs(account.address, 100);
+      expect(await telediskoToken.mintVesting(account.address, 10)).emit(telediskoToken, "VestingSet").withArgs(account.address, 110);
+    });
+
     it("should allow to transfer balance that is not vesting", async () => {
       await telediskoToken.mint(account.address, 10);
       await telediskoToken.mintVesting(account.address, 100);
@@ -184,17 +192,21 @@ describe("TelediskoToken", () => {
     describe("create", async () => {
       it("should allow a contributor to create an offer", async () => {
         await telediskoToken.mint(contributor.address, 100);
+        const ts = await getEVMTimestamp()+1;
+        await setEVMTimestamp(ts);
         await expect(telediskoToken.connect(contributor).createOffer(40))
           .emit(telediskoToken, "OfferCreated")
-          .withArgs(contributor.address, 40);
+          .withArgs(0, contributor.address, 40, ts+WEEK);
       });
 
       it("should allow a contributor with balance currently vesting to create an offer", async () => {
         await telediskoToken.mintVesting(contributor.address, 100);
         await telediskoToken.mint(contributor.address, 100);
+        const ts = await getEVMTimestamp()+1;
+        await setEVMTimestamp(ts);
         await expect(telediskoToken.connect(contributor).createOffer(50))
           .emit(telediskoToken, "OfferCreated")
-          .withArgs(contributor.address, 50);
+          .withArgs(0, contributor.address, 50, ts+WEEK);
       });
       it("should not allow a non contributor to create an offer", async () => {
         await telediskoToken.mint(nonContributor.address, 100);
@@ -221,8 +233,6 @@ describe("TelediskoToken", () => {
 
     describe("match", async () => {
       let ts: number;
-      const DAY = 60 * 60 * 24;
-      const WEEK = DAY * 7;
 
       beforeEach(async () => {
         // At the end of this method we have:
@@ -253,7 +263,7 @@ describe("TelediskoToken", () => {
           )
         )
           .emit(telediskoToken, "OfferMatched")
-          .withArgs(contributor.address, contributor2.address, 11, 0)
+          .withArgs(0, contributor.address, contributor2.address, 11)
           .emit(telediskoToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 11);
       });
@@ -269,9 +279,9 @@ describe("TelediskoToken", () => {
           )
         )
           .emit(telediskoToken, "OfferExpired")
-          .withArgs(contributor.address, 11, ts)
+          .withArgs(0, contributor.address, 11)
           .emit(telediskoToken, "OfferMatched")
-          .withArgs(contributor.address, contributor2.address, 25, 0)
+          .withArgs(1, contributor.address, contributor2.address, 25)
           .emit(telediskoToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 25);
       });
@@ -285,11 +295,11 @@ describe("TelediskoToken", () => {
           )
         )
           .emit(telediskoToken, "OfferMatched")
-          .withArgs(contributor.address, contributor2.address, 11, 0)
+          .withArgs(0, contributor.address, contributor2.address, 11)
           .emit(telediskoToken, "OfferMatched")
-          .withArgs(contributor.address, contributor2.address, 25, 0)
+          .withArgs(1, contributor.address, contributor2.address, 25)
           .emit(telediskoToken, "OfferMatched")
-          .withArgs(contributor.address, contributor2.address, 1, 35 - 1)
+          .withArgs(2, contributor.address, contributor2.address, 1)
           .emit(telediskoToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 11 + 25 + 1);
       });
@@ -349,7 +359,7 @@ describe("TelediskoToken", () => {
           telediskoToken.connect(contributor).transfer(contributor2.address, 11)
         )
           .emit(telediskoToken, "OfferExpired")
-          .withArgs(contributor.address, 11, ts)
+          .withArgs(0, contributor.address, 11)
           .emit(telediskoToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 11);
       });

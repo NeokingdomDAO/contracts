@@ -18,7 +18,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     }
 
     struct Offer {
-        uint256 ts;
+        uint256 expiration;
         uint256 amount;
     }
 
@@ -28,13 +28,25 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         mapping(uint128 => Offer) offer;
     }
 
-    function _enqueue(Offers storage offers, Offer memory offer) internal {
-        offers.offer[offers.end++] = offer;
+    function _enqueue(Offers storage offers, Offer memory offer)
+        internal
+        returns (uint128)
+    {
+        offers.offer[offers.end] = offer;
+        return offers.end++;
     }
 
-    event OfferCreated(address from, uint256 amount);
-    event OfferExpired(address from, uint256 amount, uint256 ts);
-    event OfferMatched(address from, address to, uint256 amount, uint256 left);
+    event OfferCreated(
+        uint128 id,
+        address from,
+        uint256 amount,
+        uint256 expiration
+    );
+
+    event OfferExpired(uint128 id, address from, uint256 amount);
+
+    event OfferMatched(uint128 id, address from, address to, uint256 amount);
+
     event VestingSet(address to, uint256 amount);
 
     uint256 public constant OFFER_EXPIRATION = 7 days;
@@ -65,10 +77,10 @@ contract TelediskoTokenBase is ERC20Upgradeable {
                     _unlockedBalance[account],
             "TelediskoToken: offered amount exceeds balance"
         );
+        uint256 expiration = block.timestamp + OFFER_EXPIRATION;
+        uint128 id = _enqueue(_offers[account], Offer(expiration, amount));
 
-        _enqueue(_offers[account], Offer(block.timestamp, amount));
-
-        emit OfferCreated(_msgSender(), amount);
+        emit OfferCreated(id, _msgSender(), amount, expiration);
     }
 
     function _drainOffers(
@@ -81,14 +93,14 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];
 
-            if (block.timestamp > offer.ts + OFFER_EXPIRATION) {
+            if (block.timestamp > offer.expiration) {
                 // If offer expired:
 
                 // 1. free the tokens
                 _unlockedBalance[from] += offer.amount;
 
                 // 2. delete the expired offer
-                emit OfferExpired(from, offer.amount, offer.ts);
+                emit OfferExpired(i, from, offer.amount);
                 delete offers.offer[offers.start++];
             } else {
                 // If offer is active check if the amount is bigger than the
@@ -103,7 +115,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
                     _unlockedBalance[from] += offer.amount;
 
                     // 2. remove the offer
-                    emit OfferMatched(from, to, offer.amount, 0);
+                    emit OfferMatched(i, from, to, offer.amount);
                     delete offers.offer[offers.start++];
 
                     // If the amount is smaller than the offer amount, then
@@ -114,7 +126,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
 
                     // 2. decrease the amount of offered tokens
                     offer.amount -= amount;
-                    emit OfferMatched(from, to, amount, offer.amount);
+                    emit OfferMatched(i, from, to, amount);
 
                     // 3. we've exhausted the amount, set it to zero and go back
                     // to the calling function
@@ -184,7 +196,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     function _mintVesting(address to, uint256 amount) internal {
         _vestingBalance[to] += amount;
         _mint(to, amount);
-        emit VestingSet(to, amount);
+        emit VestingSet(to, _vestingBalance[to]);
     }
 
     function _setVesting(address account, uint256 amount) internal {
@@ -220,7 +232,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];
 
-            if (block.timestamp > offer.ts + OFFER_EXPIRATION) {
+            if (block.timestamp > offer.expiration) {
                 unlocked += offer.amount;
             } else {
                 offered += offer.amount;

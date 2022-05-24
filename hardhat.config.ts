@@ -55,6 +55,7 @@ const config: HardhatUserConfig = {
     currency: "USD",
     gasPrice: 500,
     coinmarketcap: COINMARKETCAP_KEY,
+    enabled: process.env.REPORT_GAS ? true : false,
   },
   typechain: {
     outDir: "./typechain",

@@ -28,3 +28,15 @@ When the node is running, try the following commands
 - `npx hardhat --network localhost store 666` to store a new value in the contract.
 - `npx hardhat --network localhost retrieve` to retrieve the current value.
 - `npx hardhat --network localhost retrieve --hex` to retrieve the current value in hex.
+
+# Generate gas reports
+
+The gas report script will generate 8 reports:
+
+- 4 reports for Ethereum Mainnet
+- 4 reports for Polygon Mainnet
+  For each network, the tool calculates the EUR price for all public functions and deployment, using as gas fee
+- the min and max of the average of 2022 for the given network
+- the min and max of the median of 2022 for the given network
+  Execute:
+  `./generate_gas_report.sh <reports folder or empy>`

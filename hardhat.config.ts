@@ -26,6 +26,16 @@ const KOVAN_PRIVATE_KEY =
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINMARKETCAP_KEY = process.env.COINMARKETCAP_KEY || "";
+const TOKEN = process.env.TOKEN || "MATIC";
+const GASPRICE_API =
+  TOKEN == "MATIC"
+    ? "https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice"
+    : "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice";
+const GASREPORT_FILE = process.env.GASREPORT_FILE || "";
+const NO_COLORS = process.env.NO_COLORS == "false" || GASREPORT_FILE != "";
+const GAS_PRICE = process.env.GAS_PRICE
+  ? (process.env.GAS_PRICE as unknown as number)
+  : undefined;
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -52,10 +62,21 @@ const config: HardhatUserConfig = {
     apiKey: ETHERSCAN_API_KEY,
   },
   gasReporter: {
-    currency: "USD",
-    gasPrice: 500,
+    currency: "EUR",
     coinmarketcap: COINMARKETCAP_KEY,
     enabled: process.env.REPORT_GAS ? true : false,
+    gasPriceApi: GASPRICE_API,
+    token: TOKEN,
+    gasPrice: GAS_PRICE,
+    outputFile: GASREPORT_FILE,
+    noColors: NO_COLORS,
+    excludeContracts: [
+      "ERC20Mock",
+      "ResolutionManagerV2Mock",
+      "ShareholderRegistryMock",
+      "TelediskoTokenMock",
+      "VotingMock",
+    ],
   },
   typechain: {
     outDir: "./typechain",

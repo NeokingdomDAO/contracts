@@ -242,12 +242,22 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     }
 
     // Tokens that are still in the vesting phase
-    function vestingBalanceOf(address account) public view returns (uint256) {
+    function vestingBalanceOf(address account)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         return _vestingBalance[account];
     }
 
     // Tokens owned by a contributor that cannot be freely transferred (see SHA Article 10)
-    function lockedBalanceOf(address account) public view returns (uint256) {
+    function lockedBalanceOf(address account)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         if (
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
@@ -262,7 +272,12 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     }
 
     // Tokens owned by a contributor that are offered to other contributors
-    function offeredBalanceOf(address account) public view returns (uint256) {
+    function offeredBalanceOf(address account)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         if (
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
@@ -278,7 +293,12 @@ contract TelediskoTokenBase is ERC20Upgradeable {
 
     // Tokens that has been offered but not bought by any other contributor
     // within the allowed timeframe.
-    function unlockedBalanceOf(address account) public view returns (uint256) {
+    function unlockedBalanceOf(address account)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         if (
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),

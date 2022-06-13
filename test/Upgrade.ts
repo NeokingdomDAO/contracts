@@ -8,6 +8,8 @@ import {
   TelediskoToken,
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
+  TelediskoTokenV2Mock__factory,
+  NewTelediskoTokenMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
@@ -24,9 +26,10 @@ describe("Upgrade", () => {
   let token: TelediskoToken;
   let shareholderRegistry: ShareholderRegistry;
   let resolution: ResolutionManager;
-  let managingBoardStatus: string;
-  let contributorStatus: string;
-  let investorStatus: string;
+  let managingBoardStatus: string,
+    contributorStatus: string,
+    shareholderStatus: string,
+    investorStatus: string;
   let deployer: SignerWithAddress,
     managingBoard: SignerWithAddress,
     user1: SignerWithAddress,
@@ -42,10 +45,11 @@ describe("Upgrade", () => {
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
+    shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
   });
 
-  describe("minor upgrades", async () => {
+  describe("upgrades", async () => {
     var currentResolution: number;
     beforeEach(async () => {
       currentResolution = 0;
@@ -71,7 +75,8 @@ describe("Upgrade", () => {
       return currentResolution;
     }
 
-    it("can change notice and voting period of a resolution type", async () => {
+    it("should change previous version storage variables", async () => {
+      // Change notice period of the a resolution type in the Resolution contract
       await _prepareForVoting(user1, 42);
       const resolutionId = await _prepareResolution(6);
       const resolutionObject = await resolution.resolutions(resolutionId);
@@ -106,12 +111,10 @@ describe("Upgrade", () => {
       await resolutionV2Contract.reinitialize();
 
       const newResolutionId = await _prepareResolution(6);
-      const newResolutionObject = await resolutionV2Contract.resolutions(
-        newResolutionId
-      );
+      const newResolutionObject = await resolution.resolutions(newResolutionId);
 
       await expect(
-        resolutionV2Contract.connect(user1).vote(newResolutionId, true)
+        resolution.connect(user1).vote(newResolutionId, true)
       ).revertedWith("Resolution: not votable");
 
       // Now it's expected to have 1 day notice, 1 days voting
@@ -119,15 +122,70 @@ describe("Upgrade", () => {
         newResolutionObject.approveTimestamp.toNumber() + DAY * 1;
       await setEVMTimestamp(newVotingTimestamp);
 
-      await resolutionV2Contract.connect(user1).vote(newResolutionId, true);
+      await resolution.connect(user1).vote(newResolutionId, true);
 
       const newVotingEndTimestamp = (await getEVMTimestamp()) + DAY * 1;
       await setEVMTimestamp(newVotingEndTimestamp);
       await mineEVMBlock();
 
       await expect(
-        resolutionV2Contract.connect(user1).vote(newResolutionId, false)
+        resolution.connect(user1).vote(newResolutionId, false)
       ).revertedWith("Resolution: not votable");
+    });
+
+    it("should change contract logic", async () => {
+      // Prevents also shareholder from transfering their tokens on TelediskoToken
+      await shareholderRegistry.mint(user1.address, 1);
+      await shareholderRegistry.setStatus(contributorStatus, user1.address);
+      await _mintTokens(user1, 42);
+
+      await shareholderRegistry.mint(user2.address, 1);
+      await shareholderRegistry.setStatus(shareholderStatus, user2.address);
+      await _mintTokens(user2, 42);
+
+      await expect(
+        token.connect(user1).transfer(user2.address, 1)
+      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+
+      await token.connect(user2).transfer(user1.address, 1);
+
+      const TelediskoTokenV2MockFactory = (await ethers.getContractFactory(
+        "TelediskoTokenV2Mock"
+      )) as TelediskoTokenV2Mock__factory;
+
+      const tokenV2Contract = await upgrades.upgradeProxy(
+        token.address,
+        TelediskoTokenV2MockFactory
+      );
+      await tokenV2Contract.deployed();
+
+      await expect(
+        token.connect(user1).transfer(user2.address, 1)
+      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+
+      await expect(
+        token.connect(user2).transfer(user1.address, 1)
+      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+    });
+
+    it("should change events", async () => {
+      await expect(token.mintVesting(user1.address, 31))
+        .emit(token, "VestingSet")
+        .withArgs(user1.address, 31);
+
+      const NewTelediskoTokenMockFactory = (await ethers.getContractFactory(
+        "NewTelediskoTokenMock"
+      )) as NewTelediskoTokenMock__factory;
+
+      const tokenV2Contract = await upgrades.upgradeProxy(
+        token.address,
+        NewTelediskoTokenMockFactory
+      );
+      await tokenV2Contract.deployed();
+
+      await expect(token.mintVesting(user1.address, 31))
+        .emit(tokenV2Contract, "VestingSet2")
+        .withArgs(deployer.address, user1.address, 31);
     });
   });
 });

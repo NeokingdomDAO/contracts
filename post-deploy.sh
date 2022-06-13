@@ -1,5 +1,6 @@
 WALLETS_FILE=$1
-NETWORK=$1
+NETWORK=$2
+
 echo "Granting OPERATOR_ROLE on ResolutionManager"
 cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract ResolutionManager --role OPERATOR_ROLE --account WALLET --network $NETWORK
 echo "Granting OPERATOR_ROLE on ShareholderRegistry"

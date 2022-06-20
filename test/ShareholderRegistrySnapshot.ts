@@ -19,6 +19,8 @@ const { expect } = chai;
 const Bytes32Zero =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
+const AddressZero = ethers.constants.AddressZero;
+
 describe("Shareholder Registry", () => {
   let RESOLUTION_ROLE: string,
     OPERATOR_ROLE: string,
@@ -32,11 +34,10 @@ describe("Shareholder Registry", () => {
   let operator: SignerWithAddress,
     managingBoard: SignerWithAddress,
     alice: SignerWithAddress,
-    bob: SignerWithAddress,
-    carol: SignerWithAddress;
+    bob: SignerWithAddress;
 
   beforeEach(async () => {
-    [operator, managingBoard, alice, bob, carol] = await ethers.getSigners();
+    [operator, managingBoard, alice, bob] = await ethers.getSigners();
     const ShareholderRegistryFactory = (await ethers.getContractFactory(
       "ShareholderRegistry",
       operator
@@ -68,17 +69,13 @@ describe("Shareholder Registry", () => {
     await registry.grantRole(RESOLUTION_ROLE, operator.address);
     await registry.grantRole(OPERATOR_ROLE, operator.address);
     await registry.setVoting(voting.address);
-    await registry.mint(managingBoard.address, shareCapital);
-    await registry
-      .connect(managingBoard)
-      .approve(operator.address, shareCapital);
   });
 
   describe("Status management", () => {
     it("should fail if address is not a shareholder set the given type for an address", async () => {
       await expect(
         registry.setStatus(CONTRIBUTOR_STATUS, alice.address)
-      ).revertedWith("Shareholder: address has no tokens");
+      ).revertedWith("ShareholderRegistry: address has no tokens");
     });
 
     it("should be callable only by a operator", async () => {
@@ -111,11 +108,7 @@ describe("Shareholder Registry", () => {
       expect(await registry.isAtLeast(INVESTOR_STATUS, alice.address)).equal(
         false
       );
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       expect(await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)).equal(
         true
       );
@@ -134,11 +127,7 @@ describe("Shareholder Registry", () => {
       expect(await registry.isAtLeast(CONTRIBUTOR_STATUS, alice.address)).equal(
         false
       );
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       expect(await registry.isAtLeast(SHAREHOLDER_STATUS, alice.address)).equal(
         true
@@ -152,26 +141,18 @@ describe("Shareholder Registry", () => {
     });
 
     it("should notify the Voting contract when a shareholder transfers all their shares", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       expect(await registry.getStatus(alice.address)).equal(CONTRIBUTOR_STATUS);
       await expect(
-        registry.connect(alice).transfer(managingBoard.address, parseEther("1"))
+        registry.connect(alice).transfer(registry.address, parseEther("1"))
       )
         .to.emit(voting, "BeforeRemoveContributor")
         .withArgs(alice.address);
     });
 
     it("should notify the Voting contract when status updated to investor", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       await expect(registry.setStatus(INVESTOR_STATUS, alice.address))
         .to.emit(voting, "BeforeRemoveContributor")
@@ -179,11 +160,7 @@ describe("Shareholder Registry", () => {
     });
 
     it("should not notify the Voting contract when status updated to managingBoard", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       await expect(
         registry.setStatus(MANAGING_BOARD_STATUS, alice.address)
@@ -191,22 +168,14 @@ describe("Shareholder Registry", () => {
     });
 
     it("should call afterAddContributor when status updated for the first time to contributor", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await expect(
         registry.setStatus(CONTRIBUTOR_STATUS, alice.address)
       ).to.emit(voting, "AfterAddContributor");
     });
 
     it("should not call afterAddContributor when status is already at least contributor", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       await expect(
         registry.setStatus(MANAGING_BOARD_STATUS, alice.address)
@@ -214,11 +183,7 @@ describe("Shareholder Registry", () => {
     });
 
     it("should not notify the Voting contract when adding an investor", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
 
       await expect(
         registry.setStatus(INVESTOR_STATUS, alice.address)
@@ -226,16 +191,10 @@ describe("Shareholder Registry", () => {
     });
 
     it("should cleanup the status when a shareholder transfers all their shares", async () => {
-      await registry.transferFrom(
-        managingBoard.address,
-        alice.address,
-        parseEther("1")
-      );
+      await registry.mint(alice.address, parseEther("1"));
       await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
       expect(await registry.getStatus(alice.address)).equal(CONTRIBUTOR_STATUS);
-      await registry
-        .connect(alice)
-        .transfer(managingBoard.address, parseEther("1"));
+      await registry.connect(alice).transfer(registry.address, parseEther("1"));
       expect(await registry.getStatus(alice.address)).equal(Bytes32Zero);
     });
   });
@@ -271,11 +230,7 @@ describe("Shareholder Registry", () => {
         expect(await registry.balanceOf(alice.address)).equal(0);
         await registry.snapshot();
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
-        await registry.transferFrom(
-          managingBoard.address,
-          alice.address,
-          parseEther("1")
-        );
+        await registry.mint(alice.address, parseEther("1"));
         expect(await registry.balanceOf(alice.address)).equal(parseEther("1"));
         expect(
           await registry.balanceOfAt(alice.address, snapshotIdBefore)
@@ -307,13 +262,14 @@ describe("Shareholder Registry", () => {
       });
 
       it("returns the correct value per snapshot", async () => {
+        await registry.mint(registry.address, shareCapital);
         expect(await registry.totalSupply()).equal(shareCapital);
         await registry.snapshot();
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
         expect(await registry.totalSupplyAt(snapshotIdBefore)).equal(
           shareCapital
         );
-        await registry.mint(managingBoard.address, parseEther("5"));
+        await registry.mint(registry.address, parseEther("5"));
         expect(await registry.totalSupply()).equal(
           shareCapital.add(parseEther("5"))
         );
@@ -330,43 +286,42 @@ describe("Shareholder Registry", () => {
 
     describe("burn", () => {
       it("allows a resolution to burn shares of an account", async () => {
+        await registry.mint(registry.address, parseEther("5"));
         await expect(() =>
-          registry.burn(managingBoard.address, 4)
-        ).changeTokenBalance(registry, managingBoard, -4);
+          registry.burn(registry.address, parseEther("4"))
+        ).changeTokenBalance(registry, registry, parseEther("-4"));
       });
 
       it("updates total supply", async () => {
+        await registry.mint(registry.address, parseEther("5"));
         const totalSupplyBefore = await registry.totalSupply();
-        await registry.burn(managingBoard.address, 1);
+        await registry.burn(registry.address, parseEther("1"));
 
         const totalSupplyAfter = await registry.totalSupply();
-        expect(totalSupplyAfter).equal(totalSupplyBefore.sub(1));
+        expect(totalSupplyAfter).equal(totalSupplyBefore.sub(parseEther("1")));
       });
 
       it("does not allows anyone not RESOLUTION_ROLE to not be able to burn shares", async () => {
         await expect(
-          registry.connect(bob).burn(managingBoard.address, 4)
+          registry.connect(bob).burn(registry.address, 4)
         ).revertedWith(
           `AccessControl: account ${bob.address.toLowerCase()} ` +
-            `is missing role ${RESOLUTION_ROLE}`
+            `is missing role ${OPERATOR_ROLE}`
         );
       });
 
       it("should cleanup the account status when its share is burnt", async () => {
-        await registry.transferFrom(
-          managingBoard.address,
-          alice.address,
-          parseEther("1")
-        );
+        await registry.mint(alice.address, parseEther("1"));
         await registry.burn(alice.address, parseEther("1"));
 
         expect(await registry.getStatus(alice.address)).equal(Bytes32Zero);
       });
 
       it("updates the snapshots", async () => {
+        await registry.mint(registry.address, parseEther("5"));
         await registry.snapshot();
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
-        await registry.burn(managingBoard.address, 1);
+        await registry.burn(registry.address, parseEther("1"));
 
         await registry.snapshot();
         const snapshotIdAfter = await registry.getCurrentSnapshotId();
@@ -375,7 +330,7 @@ describe("Shareholder Registry", () => {
           snapshotIdBefore
         );
         const totalSupplyAfter = await registry.totalSupplyAt(snapshotIdAfter);
-        expect(totalSupplyAfter).equal(totalSupplyBefore.sub(1));
+        expect(totalSupplyAfter).equal(totalSupplyBefore.sub(parseEther("1")));
       });
     });
 
@@ -397,11 +352,7 @@ describe("Shareholder Registry", () => {
         await registry.snapshot();
         const snapshotIdBefore = await registry.getCurrentSnapshotId();
 
-        await registry.transferFrom(
-          managingBoard.address,
-          alice.address,
-          parseEther("1")
-        );
+        await registry.mint(alice.address, parseEther("1"));
         await registry.setStatus(CONTRIBUTOR_STATUS, alice.address);
 
         await registry.snapshot();
@@ -439,11 +390,7 @@ describe("Shareholder Registry", () => {
         await registry.snapshot();
         const snapshotId0 = await registry.getCurrentSnapshotId();
 
-        await registry.transferFrom(
-          managingBoard.address,
-          alice.address,
-          parseEther("1")
-        );
+        await registry.mint(alice.address, parseEther("1"));
         expect(
           await registry.isAtLeastAt(
             SHAREHOLDER_STATUS,
@@ -498,6 +445,73 @@ describe("Shareholder Registry", () => {
           )
         ).equal(true);
       });
+    });
+  });
+
+  describe("transferFromDAOBatch", async () => {
+    it("allow transfering DAO shares to multiple addresses", async () => {
+      await registry.mint(registry.address, parseEther("20"));
+
+      await expect(
+        registry.transferFromDAOBatch([
+          alice.address,
+          bob.address,
+          managingBoard.address,
+        ])
+      );
+
+      expect(await registry.balanceOf(alice.address)).equal(parseEther("1"));
+      expect(await registry.balanceOf(bob.address)).equal(parseEther("1"));
+      expect(await registry.balanceOf(managingBoard.address)).equal(
+        parseEther("1")
+      );
+    });
+  });
+
+  describe("transfer", async () => {
+    it("should prevent non-DAO addresses from receiving more than 1 share", async () => {
+      await expect(registry.mint(alice.address, parseEther("2"))).revertedWith(
+        "ShareholderRegistry: Only the DAO can have more than 1 share"
+      );
+    });
+
+    it("should prevent non-DAO addresses from receiving 1 share after they already got one", async () => {
+      await registry.mint(alice.address, parseEther("1"));
+      await expect(registry.mint(alice.address, parseEther("1"))).revertedWith(
+        "ShareholderRegistry: Only the DAO can have more than 1 share"
+      );
+    });
+
+    it("should allow the DAO to receive more than 1 share", async () => {
+      await registry.mint(registry.address, parseEther("10"));
+
+      expect(await registry.balanceOf(registry.address)).equal(
+        parseEther("10")
+      );
+    });
+
+    it("should allow the DAO to receive 1 share after they already got one", async () => {
+      await registry.mint(registry.address, parseEther("1"));
+      await registry.mint(registry.address, parseEther("1"));
+
+      expect(await registry.balanceOf(registry.address)).equal(parseEther("2"));
+    });
+
+    it("should allow burning as many tokens as desired", async () => {
+      await registry.mint(registry.address, parseEther("10"));
+      await registry.burn(registry.address, parseEther("4"));
+
+      expect(await registry.balanceOf(registry.address)).equal(parseEther("6"));
+    });
+
+    it("should not allow to transfer factional tokens", async () => {
+      await expect(
+        registry.mint(registry.address, parseEther("0.1"))
+      ).revertedWith("No fractional tokens");
+
+      await expect(
+        registry.mint(registry.address, parseEther("2.5"))
+      ).revertedWith("No fractional tokens");
     });
   });
 });

@@ -12,6 +12,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
 import { roles } from "./utils/roles";
 import { deployDAO } from "./utils/deploy";
+import { parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -55,7 +56,7 @@ describe("Integration", () => {
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
-      await shareholderRegistry.mint(user.address, 1);
+      await shareholderRegistry.mint(user.address, parseEther("1"));
       await shareholderRegistry.setStatus(contributorStatus, user.address);
       await _mintTokens(user, tokens);
     }
@@ -279,7 +280,7 @@ describe("Integration", () => {
       // votes given from non DAO members
       await expect(_vote(user2, true, resolutionId)).reverted;
       // votes given from less than Contributors
-      await shareholderRegistry.mint(user2.address, 1);
+      await shareholderRegistry.mint(user2.address, parseEther("1"));
       await shareholderRegistry.setStatus(investorStatus, user2.address);
 
       const resolutionId2 = await _prepareResolution();
@@ -292,7 +293,7 @@ describe("Integration", () => {
         await roles.RESOLUTION_ROLE(),
         deployer.address
       );
-      await shareholderRegistry.burn(user3.address, 1);
+      await shareholderRegistry.burn(user3.address, parseEther("1"));
       const resolutionId3 = await _prepareResolution();
       await _makeVotable(resolutionId3);
       await expect(_vote(user3, true, resolutionId3)).reverted;

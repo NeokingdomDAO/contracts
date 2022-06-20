@@ -76,4 +76,11 @@ contract TelediskoToken is
     {
         _setVesting(to, amount);
     }
+
+    function burn(address account, uint256 amount)
+        public
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
+        super._burn(account, amount);
+    }
 }

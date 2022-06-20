@@ -307,8 +307,8 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         ) {
             (, uint256 unlocked) = _calculateOffersOf(account);
             return unlocked;
-        } else {
-            return balanceOf(account);
         }
+
+        return balanceOf(account);
     }
 }

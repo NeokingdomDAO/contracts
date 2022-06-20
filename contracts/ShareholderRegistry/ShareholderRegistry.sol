@@ -59,8 +59,15 @@ contract ShareholderRegistry is
 
     function burn(address account, uint256 amount)
         external
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyRole(Roles.OPERATOR_ROLE)
     {
         _burn(account, amount);
+    }
+
+    function transferFromDAOBatch(address[] memory recipients)
+        public
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
+        super._transferFromDAOBatch(recipients);
     }
 }

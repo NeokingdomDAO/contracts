@@ -1,4 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { parseEther } from "ethers/lib/utils";
 import { ethers, upgrades } from "hardhat";
 import { ShareholderRegistry, TelediskoToken, Voting } from "../../typechain";
 import { ResolutionManager } from "../../typechain";
@@ -91,7 +92,7 @@ export async function deployDAO(
 
   var managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
 
-  await shareholderRegistry.mint(managingBoard.address, 1);
+  await shareholderRegistry.mint(managingBoard.address, parseEther("1"));
   await shareholderRegistry.setStatus(
     managingBoardStatus,
     managingBoard.address

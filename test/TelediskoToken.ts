@@ -20,8 +20,8 @@ const { expect } = chai;
 
 const AddressZero = ethers.constants.AddressZero;
 
-      const DAY = 60 * 60 * 24;
-      const WEEK = DAY * 7;
+const DAY = 60 * 60 * 24;
+const WEEK = DAY * 7;
 
 describe("TelediskoToken", () => {
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
@@ -113,7 +113,7 @@ describe("TelediskoToken", () => {
         .withArgs(AddressZero, account.address, 10);
     });
 
-    it("should call the Voting hook after a token trasnfer", async () => {
+    it("should call the Voting hook after a token transfer", async () => {
       telediskoToken.mint(account.address, 10);
       await expect(
         telediskoToken.connect(account).transfer(nonContributor.address, 10)
@@ -141,6 +141,22 @@ describe("TelediskoToken", () => {
     });
   });
 
+  describe("burning", async () => {
+    it("should disable burn when tokens are minted to a contributor", async () => {
+      telediskoToken.mint(contributor.address, 10);
+      await expect(telediskoToken.burn(contributor.address, 1)).revertedWith(
+        "TelediskoToken: transfer amount exceeds unlocked tokens"
+      );
+    });
+
+    it("should allow burn when tokens are minted to anyone else", async () => {
+      telediskoToken.mint(account.address, 10);
+      await expect(telediskoToken.burn(account.address, 1))
+        .emit(telediskoToken, "Transfer")
+        .withArgs(account.address, AddressZero, 1);
+    });
+  });
+
   describe("vesting", async () => {
     it("should not allow balance in vesting to be transferred", async () => {
       await telediskoToken.mintVesting(account.address, 100);
@@ -157,8 +173,12 @@ describe("TelediskoToken", () => {
     });
 
     it("should emit events on update the vesting balance", async () => {
-      expect(await telediskoToken.mintVesting(account.address, 100)).emit(telediskoToken, "VestingSet").withArgs(account.address, 100);
-      expect(await telediskoToken.mintVesting(account.address, 10)).emit(telediskoToken, "VestingSet").withArgs(account.address, 110);
+      expect(await telediskoToken.mintVesting(account.address, 100))
+        .emit(telediskoToken, "VestingSet")
+        .withArgs(account.address, 100);
+      expect(await telediskoToken.mintVesting(account.address, 10))
+        .emit(telediskoToken, "VestingSet")
+        .withArgs(account.address, 110);
     });
 
     it("should allow to transfer balance that is not vesting", async () => {
@@ -192,21 +212,21 @@ describe("TelediskoToken", () => {
     describe("create", async () => {
       it("should allow a contributor to create an offer", async () => {
         await telediskoToken.mint(contributor.address, 100);
-        const ts = await getEVMTimestamp()+1;
+        const ts = (await getEVMTimestamp()) + 1;
         await setEVMTimestamp(ts);
         await expect(telediskoToken.connect(contributor).createOffer(40))
           .emit(telediskoToken, "OfferCreated")
-          .withArgs(0, contributor.address, 40, ts+WEEK);
+          .withArgs(0, contributor.address, 40, ts + WEEK);
       });
 
       it("should allow a contributor with balance currently vesting to create an offer", async () => {
         await telediskoToken.mintVesting(contributor.address, 100);
         await telediskoToken.mint(contributor.address, 100);
-        const ts = await getEVMTimestamp()+1;
+        const ts = (await getEVMTimestamp()) + 1;
         await setEVMTimestamp(ts);
         await expect(telediskoToken.connect(contributor).createOffer(50))
           .emit(telediskoToken, "OfferCreated")
-          .withArgs(0, contributor.address, 50, ts+WEEK);
+          .withArgs(0, contributor.address, 50, ts + WEEK);
       });
       it("should not allow a non contributor to create an offer", async () => {
         await telediskoToken.mint(nonContributor.address, 100);
@@ -420,6 +440,15 @@ describe("TelediskoToken", () => {
               .offeredBalanceOf(contributor.address)
           ).equal(25 + 35);
         });
+
+        it("should be equal to 0 for non contributors", async () => {
+          await telediskoToken.mint(nonContributor.address, 100);
+          const result = await telediskoToken.offeredBalanceOf(
+            nonContributor.address
+          );
+
+          expect(result).equal(0);
+        });
       });
 
       describe("unlockedBalanceOf", async () => {
@@ -442,6 +471,15 @@ describe("TelediskoToken", () => {
               .unlockedBalanceOf(contributor.address)
           ).equal(11 + 25);
         });
+
+        it("should be equal to balance for non contributors", async () => {
+          await telediskoToken.mint(nonContributor.address, 100);
+          const result = await telediskoToken.unlockedBalanceOf(
+            nonContributor.address
+          );
+
+          expect(result).equal(100);
+        });
       });
 
       describe("lockedBalanceOf", async () => {
@@ -463,6 +501,15 @@ describe("TelediskoToken", () => {
               .connect(contributor)
               .lockedBalanceOf(contributor.address)
           ).equal(1000 + 100 - 11 - 25);
+        });
+
+        it("should be equal to 0 for non contributors", async () => {
+          await telediskoToken.mint(nonContributor.address, 100);
+          const result = await telediskoToken.lockedBalanceOf(
+            nonContributor.address
+          );
+
+          expect(result).equal(0);
         });
       });
     });

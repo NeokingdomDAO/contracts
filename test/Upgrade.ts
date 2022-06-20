@@ -14,6 +14,7 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
 import { deployDAO } from "./utils/deploy";
+import { parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -60,7 +61,7 @@ describe("Upgrade", () => {
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
-      await shareholderRegistry.mint(user.address, 1);
+      await shareholderRegistry.mint(user.address, parseEther("1"));
       await shareholderRegistry.setStatus(contributorStatus, user.address);
       await _mintTokens(user, tokens);
     }
@@ -135,11 +136,11 @@ describe("Upgrade", () => {
 
     it("should change contract logic", async () => {
       // Prevents also shareholder from transfering their tokens on TelediskoToken
-      await shareholderRegistry.mint(user1.address, 1);
+      await shareholderRegistry.mint(user1.address, parseEther("1"));
       await shareholderRegistry.setStatus(contributorStatus, user1.address);
       await _mintTokens(user1, 42);
 
-      await shareholderRegistry.mint(user2.address, 1);
+      await shareholderRegistry.mint(user2.address, parseEther("1"));
       await shareholderRegistry.setStatus(shareholderStatus, user2.address);
       await _mintTokens(user2, 42);
 

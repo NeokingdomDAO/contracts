@@ -23,8 +23,6 @@ const { expect } = chai;
 
 const DAY = 60 * 60 * 24;
 
-const AddressZero = ethers.constants.AddressZero;
-
 describe("Resolution", () => {
   let managingBoardStatus: string;
   let contributorStatus: string;

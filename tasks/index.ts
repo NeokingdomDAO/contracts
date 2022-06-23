@@ -1,4 +1,4 @@
-import "./deploy";
+import "./deployTevmos";
 import "./upgrade";
 import "./status";
 import "./delegate";

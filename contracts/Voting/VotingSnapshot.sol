@@ -18,13 +18,14 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
         uint256[] values;
     }
 
-    mapping(address => SnapshotsDelegates) _delegationSnapshots;
-    mapping(address => SnapshotsValues) _votingPowerSnapshots;
-    SnapshotsValues private _totalVotingPowerSnapshots;
+    mapping(address => SnapshotsDelegates) internal _delegationSnapshots;
+    mapping(address => SnapshotsValues) internal _votingPowerSnapshots;
+    SnapshotsValues internal _totalVotingPowerSnapshots;
 
     function getDelegateAt(address account, uint256 snapshotId)
         public
         view
+        virtual
         returns (address)
     {
         SnapshotsDelegates storage snapshots = _delegationSnapshots[account];
@@ -36,6 +37,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     function canVoteAt(address account, uint256 snapshotId)
         public
         view
+        virtual
         returns (bool)
     {
         SnapshotsDelegates storage snapshots = _delegationSnapshots[account];
@@ -48,6 +50,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     function getVotingPowerAt(address account, uint256 snapshotId)
         public
         view
+        virtual
         returns (uint256)
     {
         SnapshotsValues storage snapshots = _votingPowerSnapshots[account];
@@ -59,6 +62,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     function getTotalVotingPowerAt(uint256 snapshotId)
         public
         view
+        virtual
         returns (uint256)
     {
         (bool valid, uint256 index) = _indexAt(
@@ -79,7 +83,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     function _updateSnaphshotDelegation(
         SnapshotsDelegates storage snapshots,
         address currentDelegate
-    ) private {
+    ) internal virtual {
         uint256 currentId = getCurrentSnapshotId();
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);
@@ -90,7 +94,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     function _updateSnaphshotValues(
         SnapshotsValues storage snapshots,
         uint256 currentValue
-    ) private {
+    ) internal virtual {
         uint256 currentId = getCurrentSnapshotId();
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);
@@ -102,7 +106,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
      * Callbacks
      */
 
-    function _beforeDelegate(address delegator) internal override {
+    function _beforeDelegate(address delegator) internal virtual override {
         super._beforeDelegate(delegator);
         _updateSnaphshotDelegation(
             _delegationSnapshots[delegator],
@@ -110,7 +114,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
         );
     }
 
-    function _beforeMoveVotingPower(address account) internal override {
+    function _beforeMoveVotingPower(address account) internal virtual override {
         super._beforeMoveVotingPower(account);
         _updateSnaphshotValues(
             _votingPowerSnapshots[account],
@@ -118,7 +122,7 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
         );
     }
 
-    function _beforeUpdateTotalVotingPower() internal override {
+    function _beforeUpdateTotalVotingPower() internal virtual override {
         super._beforeUpdateTotalVotingPower();
         _updateSnaphshotValues(
             _totalVotingPowerSnapshots,

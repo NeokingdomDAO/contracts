@@ -17,6 +17,7 @@ contract Voting is VotingSnapshot, AccessControl, Initializable {
 
     function snapshot()
         public
+        virtual
         override
         onlyRole(Roles.RESOLUTION_ROLE)
         returns (uint256)
@@ -26,6 +27,7 @@ contract Voting is VotingSnapshot, AccessControl, Initializable {
 
     function setToken(IERC20Upgradeable token)
         external
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         super._setToken(token);
@@ -33,6 +35,7 @@ contract Voting is VotingSnapshot, AccessControl, Initializable {
 
     function beforeRemoveContributor(address account)
         external
+        virtual
         onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE)
     {
         super._beforeRemoveContributor(account);
@@ -40,6 +43,7 @@ contract Voting is VotingSnapshot, AccessControl, Initializable {
 
     function afterAddContributor(address account)
         external
+        virtual
         onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE)
     {
         super._afterAddContributor(account);
@@ -47,6 +51,7 @@ contract Voting is VotingSnapshot, AccessControl, Initializable {
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         super._setShareholderRegistry(shareholderRegistry);

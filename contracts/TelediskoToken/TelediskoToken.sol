@@ -27,6 +27,7 @@ contract TelediskoToken is
 
     function snapshot()
         public
+        virtual
         override
         onlyRole(Roles.RESOLUTION_ROLE)
         returns (uint256)
@@ -34,12 +35,17 @@ contract TelediskoToken is
         return _snapshot();
     }
 
-    function setVoting(IVoting voting) external onlyRole(Roles.OPERATOR_ROLE) {
+    function setVoting(IVoting voting)
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
         _setVoting(voting);
     }
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _setShareholderRegistry(shareholderRegistry);
@@ -79,6 +85,7 @@ contract TelediskoToken is
 
     function burn(address account, uint256 amount)
         public
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         super._burn(account, amount);

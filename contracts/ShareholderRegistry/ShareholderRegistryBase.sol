@@ -14,7 +14,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
     bytes32 public CONTRIBUTOR_STATUS;
     bytes32 public MANAGING_BOARD_STATUS;
 
-    IVoting _voting;
+    IVoting internal _voting;
 
     event StatusChanged(
         address indexed account,
@@ -22,7 +22,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         bytes32 current
     );
 
-    mapping(address => bytes32) private _statuses;
+    mapping(address => bytes32) internal _statuses;
 
     function initialize(string memory name, string memory symbol)
         public
@@ -35,7 +35,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         MANAGING_BOARD_STATUS = keccak256("MANAGING_BOARD_STATUS");
     }
 
-    function _setVoting(IVoting voting) internal {
+    function _setVoting(IVoting voting) internal virtual {
         _voting = voting;
     }
 
@@ -51,19 +51,23 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         emit StatusChanged(account, previous, status);
     }
 
-    function getStatus(address account) public view returns (bytes32) {
+    function getStatus(address account) public view virtual returns (bytes32) {
         return _statuses[account];
     }
 
     function isAtLeast(bytes32 status, address account)
         public
         view
+        virtual
         returns (bool)
     {
         return _isAtLeast(balanceOf(account), _statuses[account], status);
     }
 
-    function _transferFromDAOBatch(address[] memory recipients) internal {
+    function _transferFromDAOBatch(address[] memory recipients)
+        internal
+        virtual
+    {
         uint256 recipientLength = recipients.length;
 
         for (uint256 i = 0; i < recipientLength; ) {
@@ -79,7 +83,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         uint256 balance,
         bytes32 accountStatus,
         bytes32 status
-    ) internal view returns (bool) {
+    ) internal view virtual returns (bool) {
         return
             balance > 0 &&
             // shareholder < investor < contributor < managing board
@@ -139,7 +143,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         address from,
         address,
         uint256
-    ) internal override {
+    ) internal virtual override {
         if (balanceOf(from) == 0) {
             _setStatus(0, from);
         }

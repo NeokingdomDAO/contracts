@@ -32,6 +32,7 @@ contract ShareholderRegistry is
 
     function snapshot()
         public
+        virtual
         override
         onlyRole(Roles.RESOLUTION_ROLE)
         returns (uint256)
@@ -41,17 +42,23 @@ contract ShareholderRegistry is
 
     function setStatus(bytes32 status, address account)
         public
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _setStatus(status, account);
     }
 
-    function setVoting(IVoting voting) external onlyRole(Roles.OPERATOR_ROLE) {
+    function setVoting(IVoting voting)
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
         _setVoting(voting);
     }
 
     function mint(address account, uint256 amount)
         public
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _mint(account, amount);
@@ -59,6 +66,7 @@ contract ShareholderRegistry is
 
     function burn(address account, uint256 amount)
         external
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _burn(account, amount);
@@ -66,6 +74,7 @@ contract ShareholderRegistry is
 
     function transferFromDAOBatch(address[] memory recipients)
         public
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         super._transferFromDAOBatch(recipients);

@@ -7,8 +7,8 @@ import "../Voting/IVoting.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 
 contract TelediskoTokenBase is ERC20Upgradeable {
-    IVoting _voting;
-    IShareholderRegistry _shareholderRegistry;
+    IVoting internal _voting;
+    IShareholderRegistry internal _shareholderRegistry;
 
     function initialize(string memory name, string memory symbol)
         public
@@ -63,11 +63,12 @@ contract TelediskoTokenBase is ERC20Upgradeable {
 
     function _setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         internal
+        virtual
     {
         _shareholderRegistry = shareholderRegistry;
     }
 
-    function _createOffer(address account, uint256 amount) internal {
+    function _createOffer(address account, uint256 amount) internal virtual {
         // Vesting tokens cannot be offered because they need to be vested
         // before they can be transferred
         require(
@@ -87,7 +88,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         address from,
         address to,
         uint256 amount
-    ) internal {
+    ) internal virtual {
         Offers storage offers = _offers[from];
 
         for (uint128 i = offers.start; i < offers.end; i++) {
@@ -187,19 +188,19 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         address from,
         address to,
         uint256 amount
-    ) internal {
+    ) internal virtual {
         _drainOffers(from, to, amount);
         _transfer(from, to, amount);
     }
 
     // TODO: ask Marko whether vesting tokens can be given only to contributors
-    function _mintVesting(address to, uint256 amount) internal {
+    function _mintVesting(address to, uint256 amount) internal virtual {
         _vestingBalance[to] += amount;
         _mint(to, amount);
         emit VestingSet(to, _vestingBalance[to]);
     }
 
-    function _setVesting(address account, uint256 amount) internal {
+    function _setVesting(address account, uint256 amount) internal virtual {
         require(
             amount < _vestingBalance[account],
             "TelediskoToken: vesting can only be decreased"
@@ -208,7 +209,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         emit VestingSet(account, amount);
     }
 
-    function createOffer(uint256 amount) public {
+    function createOffer(uint256 amount) public virtual {
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
@@ -222,6 +223,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     function _calculateOffersOf(address account)
         internal
         view
+        virtual
         returns (uint256, uint256)
     {
         Offers storage offers = _offers[account];

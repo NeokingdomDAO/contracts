@@ -15,7 +15,7 @@ abstract contract ShareholderRegistrySnapshot is
         uint256[] values;
     }
 
-    TotalSupplySnapshots private _totalSupplySnapshots;
+    TotalSupplySnapshots internal _totalSupplySnapshots;
 
     struct StatusAndBalance {
         bytes32 status;
@@ -28,7 +28,7 @@ abstract contract ShareholderRegistrySnapshot is
     }
 
     mapping(address => StatusAndBalanceSnapshots)
-        private _accountStatusAndBalanceSnapshots;
+        internal _accountStatusAndBalanceSnapshots;
 
     /**
      * @dev Retrieves the total supply at the time `snapshotId` was created.
@@ -94,7 +94,7 @@ abstract contract ShareholderRegistrySnapshot is
         bytes32 status,
         address account,
         uint256 snapshotId
-    ) public view returns (bool) {
+    ) public view virtual returns (bool) {
         (uint256 balanceAt, bytes32 statusAt) = getBalanceAndStatusAt(
             account,
             snapshotId
@@ -126,7 +126,7 @@ abstract contract ShareholderRegistrySnapshot is
         }
     }
 
-    function _updateAccountSnapshot(address account) private {
+    function _updateAccountSnapshot(address account) internal virtual {
         uint256 currentId = getCurrentSnapshotId();
         StatusAndBalanceSnapshots
             storage snapshots = _accountStatusAndBalanceSnapshots[account];
@@ -138,7 +138,7 @@ abstract contract ShareholderRegistrySnapshot is
         }
     }
 
-    function _updateTotalSupplySnapshot() private {
+    function _updateTotalSupplySnapshot() internal virtual {
         uint256 currentId = getCurrentSnapshotId();
         TotalSupplySnapshots storage snapshots = _totalSupplySnapshots;
         if (_lastSnapshotId(snapshots.ids) < currentId) {
@@ -151,7 +151,7 @@ abstract contract ShareholderRegistrySnapshot is
         address account,
         bytes32 statusBefore,
         bytes32 statusAfter
-    ) internal override {
+    ) internal virtual override {
         super._beforeSetStatus(account, statusBefore, statusAfter);
         _updateAccountSnapshot(account);
     }

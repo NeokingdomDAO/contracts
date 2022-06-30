@@ -14,8 +14,8 @@ abstract contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
         uint256[] values;
     }
 
-    mapping(address => Snapshots) private _accountBalanceSnapshots;
-    Snapshots private _totalSupplySnapshots;
+    mapping(address => Snapshots) internal _accountBalanceSnapshots;
+    Snapshots internal _totalSupplySnapshots;
 
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.
@@ -76,8 +76,9 @@ abstract contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
     }
 
     function _valueAt(uint256 snapshotId, Snapshots storage snapshots)
-        private
+        internal
         view
+        virtual
         returns (bool snapshotted, uint256 value)
     {
         uint256 index;
@@ -88,16 +89,17 @@ abstract contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
         }
     }
 
-    function _updateAccountSnapshot(address account) private {
+    function _updateAccountSnapshot(address account) internal virtual {
         _updateSnapshot(_accountBalanceSnapshots[account], balanceOf(account));
     }
 
-    function _updateTotalSupplySnapshot() private {
+    function _updateTotalSupplySnapshot() internal virtual {
         _updateSnapshot(_totalSupplySnapshots, totalSupply());
     }
 
     function _updateSnapshot(Snapshots storage snapshots, uint256 currentValue)
-        private
+        internal
+        virtual
     {
         uint256 currentId = getCurrentSnapshotId();
         if (_lastSnapshotId(snapshots.ids) < currentId) {

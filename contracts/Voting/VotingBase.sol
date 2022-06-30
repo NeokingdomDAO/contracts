@@ -6,17 +6,17 @@ import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
 contract VotingBase {
-    IShareholderRegistry _shareholderRegistry;
-    IERC20Upgradeable _token;
+    IShareholderRegistry internal _shareholderRegistry;
+    IERC20Upgradeable internal _token;
 
-    bytes32 private _contributorRole;
+    bytes32 internal _contributorRole;
 
     // TODO Turn into struct
-    mapping(address => address) _delegates;
-    mapping(address => uint256) _votingPower;
-    mapping(address => uint256) _delegators;
+    mapping(address => address) internal _delegates;
+    mapping(address => uint256) internal _votingPower;
+    mapping(address => uint256) internal _delegators;
 
-    uint256 _totalVotingPower;
+    uint256 internal _totalVotingPower;
 
     event DelegateChanged(
         address indexed delegator,
@@ -29,7 +29,7 @@ contract VotingBase {
         uint256 newVotingPower
     );
 
-    modifier onlyToken() {
+    modifier onlyToken() virtual {
         require(
             msg.sender == address(_token),
             "Voting: only Token contract can call this method."
@@ -37,22 +37,23 @@ contract VotingBase {
         _;
     }
 
-    function canVote(address account) public view returns (bool) {
+    function canVote(address account) public view virtual returns (bool) {
         return getDelegate(account) != address(0);
     }
 
-    function _setToken(IERC20Upgradeable token) internal {
+    function _setToken(IERC20Upgradeable token) internal virtual {
         _token = token;
     }
 
     function _setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         internal
+        virtual
     {
         _shareholderRegistry = shareholderRegistry;
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
     }
 
-    function _beforeRemoveContributor(address account) internal {
+    function _beforeRemoveContributor(address account) internal virtual {
         address delegated = getDelegate(account);
         if (delegated == account) {
             _beforeDelegate(account);
@@ -68,7 +69,7 @@ contract VotingBase {
         }
     }
 
-    function _afterAddContributor(address account) internal {
+    function _afterAddContributor(address account) internal virtual {
         _delegate(account, account);
     }
 
@@ -82,14 +83,19 @@ contract VotingBase {
         address from,
         address to,
         uint256 amount
-    ) external onlyToken {
+    ) external virtual onlyToken {
         _moveVotingPower(getDelegate(from), getDelegate(to), amount);
     }
 
     /// @dev Returns the account's current delegate
     /// @param account The account whose delegate is requested
     /// @return Account's voting power
-    function getDelegate(address account) public view returns (address) {
+    function getDelegate(address account)
+        public
+        view
+        virtual
+        returns (address)
+    {
         return _delegates[account];
     }
 
@@ -98,14 +104,19 @@ contract VotingBase {
     /// @notice An address that has not delegated at least itself, will have always 0 voting power
     /// @param account The account whose voting power is requested
     /// @return Account's voting power
-    function getVotingPower(address account) public view returns (uint256) {
+    function getVotingPower(address account)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         return _votingPower[account];
     }
 
     /// @dev Returns the total amount of valid votes
     /// @notice It's the sum of all tokens owned by contributors who has been at least delegated to themselves
     /// @return Total voting power
-    function getTotalVotingPower() public view returns (uint256) {
+    function getTotalVotingPower() public view virtual returns (uint256) {
         return _totalVotingPower;
     }
 
@@ -113,11 +124,14 @@ contract VotingBase {
     /// @notice The first address to be delegated must be the sender itself
     /// @notice Sub-delegation is not allowed
     /// @param newDelegate Destination address of module transaction.
-    function delegate(address newDelegate) public {
+    function delegate(address newDelegate) public virtual {
         _delegate(msg.sender, newDelegate);
     }
 
-    function _delegate(address delegator, address newDelegate) internal {
+    function _delegate(address delegator, address newDelegate)
+        internal
+        virtual
+    {
         address currentDelegate = getDelegate(delegator);
         address newDelegateDelegate = getDelegate(newDelegate);
         uint256 countDelegatorDelegators = _delegators[delegator];
@@ -178,7 +192,7 @@ contract VotingBase {
         address from,
         address to,
         uint256 amount
-    ) private {
+    ) internal virtual {
         if (from != to && amount > 0) {
             if (from != address(0)) {
                 _beforeMoveVotingPower(from);

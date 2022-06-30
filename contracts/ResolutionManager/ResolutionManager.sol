@@ -97,7 +97,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 noticePeriod,
         uint256 votingPeriod,
         bool canBeNegative
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+    ) public virtual onlyRole(Roles.OPERATOR_ROLE) {
         _addResolutionType(
             name,
             quorum,
@@ -109,6 +109,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
     function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
         external
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _shareholderRegistry = shareholderRegistry;
@@ -116,16 +117,21 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
     function setTelediskoToken(ITelediskoToken telediskoToken)
         external
+        virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
         _telediskoToken = telediskoToken;
     }
 
-    function setVoting(IVoting voting) external onlyRole(Roles.OPERATOR_ROLE) {
+    function setVoting(IVoting voting)
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+    {
         _voting = voting;
     }
 
-    function _snapshotAll() internal returns (uint256) {
+    function _snapshotAll() internal virtual returns (uint256) {
         _shareholderRegistry.snapshot();
         _telediskoToken.snapshot();
         return _voting.snapshot();
@@ -135,7 +141,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         string calldata dataURI,
         uint256 resolutionTypeId,
         bool isNegative
-    ) public returns (uint256) {
+    ) public virtual returns (uint256) {
         ResolutionType storage resolutionType = resolutionTypes[
             resolutionTypeId
         ];
@@ -160,7 +166,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         return resolutionId;
     }
 
-    function approveResolution(uint256 resolutionId) public {
+    function approveResolution(uint256 resolutionId) public virtual {
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -188,7 +194,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         string calldata dataURI,
         uint256 resolutionTypeId,
         bool isNegative
-    ) public {
+    ) public virtual {
         Resolution storage resolution = resolutions[resolutionId];
         require(
             resolution.approveTimestamp == 0,
@@ -220,6 +226,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
     function getVoterVote(uint256 resolutionId, address voter)
         public
         view
+        virtual
         returns (
             bool isYes,
             bool hasVoted,
@@ -253,6 +260,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
     function getResolutionResult(uint256 resolutionId)
         public
         view
+        virtual
         returns (bool)
     {
         Resolution storage resolution = resolutions[resolutionId];
@@ -269,7 +277,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         return resolution.isNegative ? !hasQuorum : hasQuorum;
     }
 
-    function vote(uint256 resolutionId, bool isYes) public {
+    function vote(uint256 resolutionId, bool isYes) public virtual {
         Resolution storage resolution = resolutions[resolutionId];
         require(
             _voting.canVoteAt(_msgSender(), resolution.snapshotId),
@@ -348,7 +356,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 noticePeriod,
         uint256 votingPeriod,
         bool canBeNegative
-    ) internal {
+    ) internal virtual {
         resolutionTypes.push(
             ResolutionType(
                 name,

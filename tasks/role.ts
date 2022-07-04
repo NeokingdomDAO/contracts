@@ -8,7 +8,7 @@ task(
   .addParam("contract", "The name of the contract")
   .addParam(
     "role",
-    "The role, can be OPERATOR_ROLE, RESOLUTION_ROLE, SHAREHOLDER_REGISTRY_ROLE"
+    "The role, can be OPERATOR_ROLE, RESOLUTION_ROLE, ESCROW_ROLE, SHAREHOLDER_REGISTRY_ROLE"
   )
   .addParam("account", "The address")
   .setAction(

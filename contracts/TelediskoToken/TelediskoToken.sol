@@ -54,7 +54,7 @@ contract TelediskoToken is
     function mint(address to, uint256 amount)
         public
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         _mint(to, amount);
     }
@@ -62,7 +62,7 @@ contract TelediskoToken is
     function mintVesting(address to, uint256 amount)
         public
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         _mintVesting(to, amount);
     }
@@ -71,7 +71,7 @@ contract TelediskoToken is
         address from,
         address to,
         uint256 amount
-    ) public virtual onlyRole(Roles.OPERATOR_ROLE) {
+    ) public virtual onlyRole(Roles.ESCROW_ROLE) {
         _matchOffer(from, to, amount);
     }
 
@@ -86,7 +86,7 @@ contract TelediskoToken is
     function burn(address account, uint256 amount)
         public
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         super._burn(account, amount);
     }

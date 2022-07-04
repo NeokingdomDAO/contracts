@@ -97,7 +97,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 noticePeriod,
         uint256 votingPeriod,
         bool canBeNegative
-    ) public virtual onlyRole(Roles.OPERATOR_ROLE) {
+    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
         _addResolutionType(
             name,
             quorum,

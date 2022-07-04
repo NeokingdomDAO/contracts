@@ -24,7 +24,7 @@ const DAY = 60 * 60 * 24;
 const WEEK = DAY * 7;
 
 describe("TelediskoToken", () => {
-  let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
+  let RESOLUTION_ROLE: string, OPERATOR_ROLE: string, ESCROW_ROLE: string;
   let telediskoToken: TelediskoToken;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -68,6 +68,9 @@ describe("TelediskoToken", () => {
 
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
     await telediskoToken.grantRole(OPERATOR_ROLE, deployer.address);
+
+    ESCROW_ROLE = await roles.ESCROW_ROLE();
+    await telediskoToken.grantRole(ESCROW_ROLE, deployer.address);
 
     shareholderRegistry = (await upgrades.deployProxy(
       ShareholderRegistryMockFactory,

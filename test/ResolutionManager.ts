@@ -94,6 +94,7 @@ describe("Resolution", () => {
     await resolution.deployed();
 
     await resolution.grantRole(await roles.OPERATOR_ROLE(), deployer.address);
+    await resolution.grantRole(await roles.RESOLUTION_ROLE(), deployer.address);
 
     await voting.mock_getDelegateAt(user1.address, user1.address);
 
@@ -319,12 +320,19 @@ describe("Resolution", () => {
         .withArgs(deployer.address, 7);
     });
 
-    it("should allow a non operator to add a resolution type", async () => {
+    it("should not allow a non resolution to add a resolution type", async () => {
       await expect(
         resolution.connect(user1).addResolutionType("test", 42, 43, 44, false)
       ).revertedWith(
-        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.OPERATOR_ROLE()}`
+        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.RESOLUTION_ROLE()}`
       );
+    });
+
+    it("should allow a resolution to add a resolution type", async () => {
+      await resolution.grantRole(await roles.RESOLUTION_ROLE(), user1.address);
+      await resolution
+        .connect(user1)
+        .addResolutionType("test", 42, 43, 44, false);
     });
   });
 

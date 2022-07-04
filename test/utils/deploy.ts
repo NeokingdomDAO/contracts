@@ -61,18 +61,25 @@ export async function deployDAO(
   )) as ShareholderRegistry;
   await shareholderRegistry.deployed();
 
-  var operatorRole = await roles.OPERATOR_ROLE();
-  var resolutionRole = await roles.RESOLUTION_ROLE();
-  var shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
+  const operatorRole = await roles.OPERATOR_ROLE();
+  const resolutionRole = await roles.RESOLUTION_ROLE();
+  const shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
+  const escrowRole = await roles.ESCROW_ROLE();
 
   await shareholderRegistry.grantRole(operatorRole, deployer.address);
+  await shareholderRegistry.grantRole(resolutionRole, deployer.address);
+
   await voting.grantRole(shareholderRegistryRole, shareholderRegistry.address);
   await voting.grantRole(operatorRole, deployer.address);
+  await voting.grantRole(resolutionRole, deployer.address);
+
   await token.grantRole(operatorRole, deployer.address);
   await token.grantRole(resolutionRole, deployer.address);
+  await token.grantRole(escrowRole, deployer.address);
 
   await voting.setShareholderRegistry(shareholderRegistry.address);
   await voting.setToken(token.address);
+
   await token.setShareholderRegistry(shareholderRegistry.address);
   await token.setVoting(voting.address);
   await shareholderRegistry.setVoting(voting.address);

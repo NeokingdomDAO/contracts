@@ -78,11 +78,11 @@ describe("Shareholder Registry", () => {
       ).revertedWith("ShareholderRegistry: address has no tokens");
     });
 
-    it("should be callable only by a operator", async () => {
+    it("should be callable only by a resolution", async () => {
       await expect(
         registry.connect(alice).setStatus(CONTRIBUTOR_STATUS, alice.address)
       ).revertedWith(
-        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${OPERATOR_ROLE}`
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${RESOLUTION_ROLE}`
       );
     });
 
@@ -306,7 +306,7 @@ describe("Shareholder Registry", () => {
           registry.connect(bob).burn(registry.address, 4)
         ).revertedWith(
           `AccessControl: account ${bob.address.toLowerCase()} ` +
-            `is missing role ${OPERATOR_ROLE}`
+            `is missing role ${RESOLUTION_ROLE}`
         );
       });
 

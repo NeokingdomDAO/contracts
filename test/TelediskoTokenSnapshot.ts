@@ -11,7 +11,6 @@ import {
   VotingMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
 import { roles } from "./utils/roles";
 
 chai.use(solidity);
@@ -68,6 +67,9 @@ describe("TelediskoTokenSnapshot", () => {
 
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
     await telediskoToken.grantRole(OPERATOR_ROLE, deployer.address);
+
+    const ESCROW_ROLE = await roles.ESCROW_ROLE();
+    await telediskoToken.grantRole(ESCROW_ROLE, deployer.address);
 
     shareholderRegistry = (await upgrades.deployProxy(
       ShareholderRegistryMockFactory,

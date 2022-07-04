@@ -43,7 +43,7 @@ contract ShareholderRegistry is
     function setStatus(bytes32 status, address account)
         public
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         _setStatus(status, account);
     }
@@ -59,7 +59,7 @@ contract ShareholderRegistry is
     function mint(address account, uint256 amount)
         public
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         _mint(account, amount);
     }
@@ -67,7 +67,7 @@ contract ShareholderRegistry is
     function burn(address account, uint256 amount)
         external
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         _burn(account, amount);
     }
@@ -75,7 +75,7 @@ contract ShareholderRegistry is
     function transferFromDAOBatch(address[] memory recipients)
         public
         virtual
-        onlyRole(Roles.OPERATOR_ROLE)
+        onlyRole(Roles.RESOLUTION_ROLE)
     {
         super._transferFromDAOBatch(recipients);
     }

@@ -1468,5 +1468,22 @@ describe("Resolution", () => {
         "Resolution: already executed"
       );
     });
+
+    it("should fail if executor fails", async () => {
+      const abi = ["function doesNotExist()"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("doesNotExist");
+      await setupUser(user1, 1);
+      await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 5;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1)).revertedWith(
+        "Resolution: execution failed"
+      );
+    });
   });
 });

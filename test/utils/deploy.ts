@@ -96,6 +96,7 @@ export async function deployDAO(
   await shareholderRegistry.grantRole(resolutionRole, resolution.address);
   await voting.grantRole(resolutionRole, resolution.address);
   await token.grantRole(resolutionRole, resolution.address);
+  await resolution.grantRole(resolutionRole, resolution.address);
 
   var managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
 

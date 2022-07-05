@@ -30,6 +30,10 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 votingPower,
         bool isYes
     );
+    event ResolutionExecuted(
+        address indexed from,
+        uint256 indexed resolutionId
+    );
     event ResolutionTypeCreated(
         address indexed from,
         uint256 indexed typeIndex
@@ -58,6 +62,10 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 snapshotId;
         uint256 yesVotesTotal;
         bool isNegative;
+        // Transaction fields
+        address[] executionTo;
+        bytes[] executionData;
+        uint256 executionTimestamp;
         mapping(address => bool) hasVoted;
         mapping(address => bool) hasVotedYes;
         mapping(address => uint256) lostVotingPower;
@@ -140,7 +148,9 @@ contract ResolutionManager is Initializable, Context, AccessControl {
     function createResolution(
         string calldata dataURI,
         uint256 resolutionTypeId,
-        bool isNegative
+        bool isNegative,
+        address[] memory executionTo,
+        bytes[] memory executionData
     ) public virtual returns (uint256) {
         ResolutionType storage resolutionType = resolutionTypes[
             resolutionTypeId
@@ -156,12 +166,19 @@ contract ResolutionManager is Initializable, Context, AccessControl {
             !isNegative || resolutionType.canBeNegative,
             "Resolution: cannot be negative"
         );
+        require(
+            executionTo.length == executionData.length,
+            "Resolution: length mismatch"
+        );
         uint256 resolutionId = _currentResolutionId++;
         Resolution storage resolution = resolutions[resolutionId];
 
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;
+        resolution.executionTo = executionTo;
+        resolution.executionData = executionData;
+
         emit ResolutionCreated(_msgSender(), resolutionId);
         return resolutionId;
     }
@@ -193,9 +210,15 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 resolutionId,
         string calldata dataURI,
         uint256 resolutionTypeId,
-        bool isNegative
+        bool isNegative,
+        address[] memory executionTo,
+        bytes[] memory executionData
     ) public virtual {
         Resolution storage resolution = resolutions[resolutionId];
+        require(
+            executionTo.length == executionData.length,
+            "Resolution: length mismatch"
+        );
         require(
             resolution.approveTimestamp == 0,
             "Resolution: already approved"
@@ -220,7 +243,51 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         resolution.dataURI = dataURI;
         resolution.resolutionTypeId = resolutionTypeId;
         resolution.isNegative = isNegative;
+        resolution.executionTo = executionTo;
+        resolution.executionData = executionData;
+
         emit ResolutionUpdated(_msgSender(), resolutionId);
+    }
+
+    function executeResolution(uint256 resolutionId) public virtual {
+        Resolution storage resolution = resolutions[resolutionId];
+        require(
+            resolution.executionTo.length > 0,
+            "Resolution: nothing to execute"
+        );
+        require(resolution.approveTimestamp > 0, "Resolution: not approved");
+        require(
+            resolution.executionTimestamp == 0,
+            "Resolution: already executed"
+        );
+
+        (, uint256 votingEnd) = _votingWindow(resolution);
+
+        require(block.timestamp >= votingEnd, "Resolution: not ended");
+
+        require(getResolutionResult(resolutionId), "Resolution: not passed");
+
+        address[] memory to = resolution.executionTo;
+        bytes[] memory data = resolution.executionData;
+
+        // Set timestamp before execution as a re-entrancy guard.
+        resolution.executionTimestamp = block.timestamp;
+
+        for (uint256 i; i < to.length; i++) {
+            (bool success, ) = to[i].call(data[i]);
+            require(success, "Resolution: execution failed");
+        }
+        emit ResolutionExecuted(_msgSender(), resolutionId);
+    }
+
+    function getExecutionDetails(uint256 resolutionId)
+        public
+        view
+        returns (address[] memory, bytes[] memory)
+    {
+        Resolution storage resolution = resolutions[resolutionId];
+
+        return (resolution.executionTo, resolution.executionData);
     }
 
     function getVoterVote(uint256 resolutionId, address voter)
@@ -284,9 +351,6 @@ contract ResolutionManager is Initializable, Context, AccessControl {
             "Resolution: account cannot vote"
         );
 
-        ResolutionType storage resolutionType = resolutionTypes[
-            resolution.resolutionTypeId
-        ];
         require(
             isYes != resolution.hasVotedYes[_msgSender()] ||
                 !resolution.hasVoted[_msgSender()],
@@ -294,9 +358,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         );
         require(resolution.approveTimestamp > 0, "Resolution: not approved");
 
-        uint256 votingStart = resolution.approveTimestamp +
-            resolutionType.noticePeriod;
-        uint256 votingEnd = votingStart + resolutionType.votingPeriod;
+        (uint256 votingStart, uint256 votingEnd) = _votingWindow(resolution);
 
         require(
             block.timestamp >= votingStart && block.timestamp < votingEnd,
@@ -348,6 +410,22 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
         resolution.hasVoted[_msgSender()] = true;
         resolution.hasVotedYes[_msgSender()] = isYes;
+    }
+
+    function _votingWindow(Resolution storage resolution)
+        internal
+        view
+        virtual
+        returns (uint256 _votingStart, uint256 _votingEnd)
+    {
+        ResolutionType storage resolutionType = resolutionTypes[
+            resolution.resolutionTypeId
+        ];
+
+        _votingStart =
+            resolution.approveTimestamp +
+            resolutionType.noticePeriod;
+        _votingEnd = _votingStart + resolutionType.votingPeriod;
     }
 
     function _addResolutionType(

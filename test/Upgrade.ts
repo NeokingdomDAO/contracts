@@ -68,7 +68,9 @@ describe("Upgrade", () => {
 
     async function _prepareResolution(type: number) {
       currentResolution++;
-      await resolution.connect(user1).createResolution("Qxtest", type, false);
+      await resolution
+        .connect(user1)
+        .createResolution("Qxtest", type, false, [], []);
       await resolution
         .connect(managingBoard)
         .approveResolution(currentResolution);

@@ -11,6 +11,8 @@ import {
   TelediskoTokenMock__factory,
   ResolutionManager,
   ResolutionManager__factory,
+  ResolutionExecutorMock,
+  ResolutionExecutorMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ContractReceipt } from "ethers";
@@ -33,6 +35,7 @@ describe("Resolution", () => {
   let token: TelediskoTokenMock;
   let resolution: ResolutionManager;
   let shareholderRegistry: ShareholderRegistryMock;
+  let resolutionExecutorMock: ResolutionExecutorMock;
   let deployer: SignerWithAddress,
     managingBoard: SignerWithAddress,
     user1: SignerWithAddress,
@@ -58,6 +61,11 @@ describe("Resolution", () => {
       deployer
     )) as ShareholderRegistryMock__factory;
 
+    const ResolutionExecutorMockFactory = (await ethers.getContractFactory(
+      "ResolutionExecutorMock",
+      deployer
+    )) as ResolutionExecutorMock__factory;
+
     const ResolutionFactory = (await ethers.getContractFactory(
       "ResolutionManager",
       deployer
@@ -78,6 +86,11 @@ describe("Resolution", () => {
       }
     )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
+
+    resolutionExecutorMock = (await upgrades.deployProxy(
+      ResolutionExecutorMockFactory
+    )) as ResolutionExecutorMock;
+    await resolutionExecutorMock.deployed();
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -139,6 +152,27 @@ describe("Resolution", () => {
     );
   }
 
+  async function setupUser(user: SignerWithAddress, votingPower: number) {
+    await voting.mock_getDelegateAt(user.address, user.address);
+    await voting.mock_getVotingPowerAt(user.address, votingPower);
+  }
+
+  async function setupResolution(
+    totalVotingPower: number,
+    negative: boolean = false,
+    executeTo: string[] = [],
+    executeData: string[] = []
+  ) {
+    await voting.mock_getTotalVotingPowerAt(totalVotingPower);
+
+    await resolution
+      .connect(user1)
+      .createResolution("test", 6, negative, executeTo, executeData);
+    await resolution.connect(managingBoard).approveResolution(1);
+    const approveTimestamp = await getEVMTimestamp();
+    await setEVMTimestamp(approveTimestamp + 3 * DAY);
+  }
+
   let resolutionId: number;
   beforeEach(async () => {
     resolutionId = 1; // first resolution ID is always 1
@@ -146,19 +180,23 @@ describe("Resolution", () => {
 
   describe("creation logic", async () => {
     it("allows to create a resolution", async () => {
-      await expect(resolution.connect(user1).createResolution("test", 0, false))
+      await expect(
+        resolution.connect(user1).createResolution("test", 0, false, [], [])
+      )
         .to.emit(resolution, "ResolutionCreated")
         .withArgs(user1.address, resolutionId);
     });
     it("doesn't allow non contributors to create a resolution", async () => {
       await expect(
-        resolution.connect(nonContributor).createResolution("test", 0, false)
+        resolution
+          .connect(nonContributor)
+          .createResolution("test", 0, false, [], [])
       ).revertedWith("Resolution: only contributor can create");
     });
     it("allows to create a resolution and read the resolutionId with an event", async () => {
       const tx = await resolution
         .connect(user1)
-        .createResolution("test", 0, false);
+        .createResolution("test", 0, false, [], []);
 
       function getResolutionId(receipt: ContractReceipt) {
         const filter = resolution.filters.ResolutionCreated(resolution.address);
@@ -179,8 +217,22 @@ describe("Resolution", () => {
 
     it("doesn't allow to create a negative resolution if type is non-negative", async () => {
       await expect(
-        resolution.connect(user1).createResolution("test", 0, true)
+        resolution.connect(user1).createResolution("test", 0, true, [], [])
       ).revertedWith("Resolution: cannot be negative");
+    });
+
+    it("doesn't allow to create a resolution with mismatching length between executor and data", async () => {
+      await expect(
+        resolution
+          .connect(user1)
+          .createResolution(
+            "test",
+            0,
+            false,
+            [resolutionExecutorMock.address],
+            []
+          )
+      ).revertedWith("Resolution: length mismatch");
     });
   });
 
@@ -202,7 +254,7 @@ describe("Resolution", () => {
       }
       const tx = await resolution
         .connect(user1)
-        .createResolution("test", 0, false);
+        .createResolution("test", 0, false, [], []);
       const receipt = await tx.wait();
       resolutionId = getResolutionId(receipt).toNumber();
     });
@@ -211,7 +263,7 @@ describe("Resolution", () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .updateResolution(resolutionId, "updated test", 6, true)
+          .updateResolution(resolutionId, "updated test", 6, true, [], [])
       )
         .to.emit(resolution, "ResolutionUpdated")
         .withArgs(managingBoard.address, resolutionId);
@@ -222,9 +274,13 @@ describe("Resolution", () => {
     });
 
     it("doesn't allow the managing board to update to a negative resolution if type is non-negative", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
       await expect(
-        resolution.connect(managingBoard).updateResolution(1, "test", 0, true)
+        resolution
+          .connect(managingBoard)
+          .updateResolution(1, "test", 0, true, [], [])
       ).revertedWith("Resolution: cannot be negative");
     });
 
@@ -233,7 +289,7 @@ describe("Resolution", () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .updateResolution(resolutionId, "updated test", 6, true)
+          .updateResolution(resolutionId, "updated test", 6, true, [], [])
       ).revertedWith("Resolution: already approved");
     });
 
@@ -241,8 +297,23 @@ describe("Resolution", () => {
       await expect(
         resolution
           .connect(user1)
-          .updateResolution(resolutionId, "updated test", 6, true)
+          .updateResolution(resolutionId, "updated test", 6, true, [], [])
       ).revertedWith("Resolution: only managing board can update");
+    });
+
+    it("doesn't allow to update a resolution with mismatching length between executor and data", async () => {
+      await expect(
+        resolution
+          .connect(user1)
+          .updateResolution(
+            resolutionId,
+            "updated test",
+            6,
+            true,
+            [resolutionExecutorMock.address],
+            []
+          )
+      ).revertedWith("Resolution: length mismatch");
     });
   });
 
@@ -295,10 +366,11 @@ describe("Resolution", () => {
     });
   });
 
-  describe("resolution type addition", async () => {
-    it("should allow a operator to add a resolution type", async () => {
+  describe("resolution type management", async () => {
+    it("should allow a resolution to add a resolution type", async () => {
+      await resolution.grantRole(await roles.RESOLUTION_ROLE(), user1.address);
       await resolution
-        .connect(deployer)
+        .connect(user1)
         .addResolutionType("test", 42, 43, 44, false);
 
       const result = await resolution.resolutionTypes(7);
@@ -327,13 +399,6 @@ describe("Resolution", () => {
         `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.RESOLUTION_ROLE()}`
       );
     });
-
-    it("should allow a resolution to add a resolution type", async () => {
-      await resolution.grantRole(await roles.RESOLUTION_ROLE(), user1.address);
-      await resolution
-        .connect(user1)
-        .addResolutionType("test", 42, 43, 44, false);
-    });
   });
 
   describe("approval logic", async () => {
@@ -344,7 +409,9 @@ describe("Resolution", () => {
     });
 
     it("should allow the managing board to approve an existing resolution", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
 
       await expect(
         resolution.connect(managingBoard).approveResolution(resolutionId)
@@ -358,7 +425,9 @@ describe("Resolution", () => {
     });
 
     it("should not allow non managing board members to approve an existing resolution", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
 
       await expect(
         resolution.connect(user1).approveResolution(resolutionId)
@@ -366,7 +435,9 @@ describe("Resolution", () => {
     });
 
     it("should fail if already approved", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
@@ -386,7 +457,9 @@ describe("Resolution", () => {
     });
 
     it("should not allow to vote on a non approved resolution", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
 
       await expect(
         resolution.connect(user1).vote(resolutionId, false)
@@ -394,7 +467,9 @@ describe("Resolution", () => {
     });
 
     it("should not allow to vote on a resolution when voting didn't start", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
       await expect(resolution.connect(user1).vote(1, false)).revertedWith(
@@ -403,7 +478,9 @@ describe("Resolution", () => {
     });
 
     it("should not allow to vote on a resolution when voting ended", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -416,7 +493,9 @@ describe("Resolution", () => {
     });
 
     it("should allow to vote on an approved resolution when voting started", async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -429,7 +508,9 @@ describe("Resolution", () => {
 
   describe("voting logic", async () => {
     beforeEach(async () => {
-      await resolution.connect(user1).createResolution("test", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1099,23 +1180,6 @@ describe("Resolution", () => {
   });
 
   describe("resolution outcome", async () => {
-    async function setupUser(user: SignerWithAddress, votingPower: number) {
-      await voting.mock_getDelegateAt(user.address, user.address);
-      await voting.mock_getVotingPowerAt(user.address, votingPower);
-    }
-
-    async function setupResolution(
-      totalVotingPower: number,
-      negative: boolean = false
-    ) {
-      await voting.mock_getTotalVotingPowerAt(totalVotingPower);
-
-      await resolution.connect(user1).createResolution("test", 6, negative);
-      await resolution.connect(managingBoard).approveResolution(1);
-      const approveTimestamp = await getEVMTimestamp();
-      await setEVMTimestamp(approveTimestamp + 3 * DAY);
-    }
-
     it("should return true when minimum quorum is achieved - 1 user", async () => {
       await setupUser(user1, 51);
       await setupResolution(100);
@@ -1206,6 +1270,203 @@ describe("Resolution", () => {
 
       const result = await resolution.getResolutionResult(1);
       expect(result).false;
+    });
+  });
+
+  describe("resolution execution", async () => {
+    function dataSimpleFunction(param: number) {
+      const abi = ["function mockExecuteSimple(uint256 a)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("mockExecuteSimple", [param]);
+
+      return data;
+    }
+
+    function dataArrayFunction(param: number[]) {
+      const abi = ["function mockExecuteArray(uint256[] memory a)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("mockExecuteArray", [param]);
+
+      return data;
+    }
+
+    it("should create a resolution with multiple executors", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution(
+          "test",
+          0,
+          false,
+          [resolutionExecutorMock.address, user2.address],
+          [dataSimpleFunction(0), dataSimpleFunction(1)]
+        );
+
+      const result = await resolution.getExecutionDetails(1);
+
+      expect(result[0][0]).equal(resolutionExecutorMock.address);
+      expect(result[0][1]).equal(user2.address);
+      expect(result[1][0]).equal(dataSimpleFunction(0));
+      expect(result[1][1]).equal(dataSimpleFunction(1));
+    });
+
+    it("should execute a passed resolution with 1 executor", async () => {
+      const data = dataSimpleFunction(42);
+      await setupUser(user1, 50);
+      await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 5;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await resolution.executeResolution(1);
+    });
+
+    it("should pass the given single parameter to the executor", async () => {
+      const data = dataSimpleFunction(42);
+      await setupUser(user1, 1);
+      await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 5;
+      await setEVMTimestamp(votingTimestamp + DAY * 2);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1))
+        .to.emit(resolutionExecutorMock, "MockExecutionSimple")
+        .withArgs(42);
+    });
+
+    it("should pass the given list parameter to the executor", async () => {
+      const data = dataArrayFunction([42, 43]);
+      await setupUser(user1, 1);
+      await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 5;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1))
+        .to.emit(resolutionExecutorMock, "MockExecutionArray")
+        .withArgs([42, 43]);
+    });
+
+    it("should not execute a resolution with no executors", async () => {
+      await setupUser(user2, 1);
+      await setupResolution(1);
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 3;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await resolution.connect(user1).vote(1, true);
+
+      await setEVMTimestamp(votingTimestamp + DAY * 2);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1)).revertedWith(
+        "Resolution: nothing to execute"
+      );
+    });
+
+    it("should execute a passed resolution with multiple executors", async () => {
+      const data1 = dataSimpleFunction(42);
+      const data2 = dataSimpleFunction(43);
+      await setupUser(user1, 50);
+      await setupResolution(
+        1,
+        false,
+        [resolutionExecutorMock.address, resolutionExecutorMock.address],
+        [data1, data2]
+      );
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 3;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await resolution.connect(user1).vote(1, true);
+
+      await setEVMTimestamp(votingTimestamp + DAY * 2);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1))
+        .to.emit(resolutionExecutorMock, "MockExecutionSimple")
+        .withArgs(42)
+        .to.emit(resolutionExecutorMock, "MockExecutionSimple")
+        .withArgs(43);
+    });
+
+    it("should not execute a resolution that is not ended", async () => {
+      await setupResolution(
+        1,
+        false,
+        [resolutionExecutorMock.address],
+        [dataSimpleFunction(0)]
+      );
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 3;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1)).revertedWith(
+        "Resolution: not ended"
+      );
+    });
+
+    it("should not execute a resolution that is not approved", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution(
+          "test",
+          0,
+          false,
+          [resolutionExecutorMock.address],
+          [dataSimpleFunction(0)]
+        );
+
+      await expect(resolution.executeResolution(1)).revertedWith(
+        "Resolution: not approved"
+      );
+    });
+
+    it("should not execute a resolution that didn't pass", async () => {
+      await setupUser(user1, 10);
+      await setupResolution(
+        1,
+        false,
+        [resolutionExecutorMock.address],
+        [dataSimpleFunction(0)]
+      );
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 5;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await expect(resolution.executeResolution(1)).revertedWith(
+        "Resolution: not passed"
+      );
+    });
+
+    it("should not execute a resolution more than once", async () => {
+      const data = dataSimpleFunction(42);
+      await setupUser(user1, 1);
+      await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
+      let approvalTimestamp = await getEVMTimestamp();
+
+      let votingTimestamp = approvalTimestamp + DAY * 5;
+      await setEVMTimestamp(votingTimestamp);
+      await mineEVMBlock();
+
+      await resolution.executeResolution(1);
+
+      await expect(resolution.executeResolution(1)).revertedWith(
+        "Resolution: already executed"
+      );
     });
   });
 });

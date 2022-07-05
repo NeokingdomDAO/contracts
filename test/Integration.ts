@@ -14,6 +14,8 @@ import { roles } from "./utils/roles";
 import { deployDAO } from "./utils/deploy";
 import { parseEther } from "ethers/lib/utils";
 
+import { BigNumber, BytesLike } from "ethers";
+
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -72,9 +74,15 @@ describe("Integration", () => {
       await setEVMTimestamp(votingTimestamp);
     }
 
-    async function _prepareResolution(type: number = 0) {
+    async function _prepareResolution(
+      type: number = 0,
+      executionTo: string[] = [],
+      executionData: BytesLike[] = []
+    ) {
       currentResolution++;
-      await resolution.connect(user1).createResolution("Qxtest", type, false);
+      await resolution
+        .connect(user1)
+        .createResolution("Qxtest", type, false, executionTo, executionData);
       await resolution
         .connect(managingBoard)
         .approveResolution(currentResolution);
@@ -265,7 +273,9 @@ describe("Integration", () => {
     it("invalid voting should not be counted", async () => {
       const resolutionId = ++currentResolution;
       await _prepareForVoting(user1, 42);
-      await resolution.connect(user1).createResolution("Qxtest", 0, false);
+      await resolution
+        .connect(user1)
+        .createResolution("Qxtest", 0, false, [], []);
       // votes given before approval
       await expect(_vote(user1, true, resolutionId)).reverted;
 
@@ -561,6 +571,66 @@ describe("Integration", () => {
       expect((await token.unlockedBalanceOf(user3.address)).toNumber()).equal(
         5
       );
+    });
+
+    it("Mints tokens to a contributor after a resolution passes", async () => {
+      await _prepareForVoting(user1, 100);
+      await _prepareForVoting(user2, 50);
+
+      const abi = ["function mint(address to, uint256 amount)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("mint", [user2.address, 42]);
+      const resolutionId = await _prepareResolution(6, [token.address], [data]);
+
+      await _makeVotable(resolutionId); // this will automatically put resolutionId1 also up for voting
+      await _vote(user1, true, resolutionId);
+      await _vote(user2, true, resolutionId);
+
+      await _endResolution();
+
+      await resolution.executeResolution(resolutionId);
+
+      expect(await token.balanceOf(user2.address)).equal(BigNumber.from(92));
+    });
+
+    it("Adds a resolution type after a resolution passes", async () => {
+      await _prepareForVoting(user1, 100);
+      await _prepareForVoting(user2, 50);
+
+      const abi = [
+        "function addResolutionType(string memory name, uint256 quorum, uint256 noticePeriod, uint256 votingPeriod, bool canBeNegative)",
+      ];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("addResolutionType", [
+        "test",
+        50,
+        3,
+        6,
+        false,
+      ]);
+      const resolutionId = await _prepareResolution(
+        6,
+        [resolution.address],
+        [data]
+      );
+
+      await _makeVotable(resolutionId); // this will automatically put resolutionId1 also up for voting
+      await _vote(user1, true, resolutionId);
+      await _vote(user2, true, resolutionId);
+
+      await _endResolution();
+
+      await expect(resolution.executeResolution(resolutionId))
+        .to.emit(resolution, "ResolutionTypeCreated")
+        .withArgs(resolution.address, 7);
+
+      const result = await resolution.resolutionTypes(7);
+
+      expect(result.name).equal("test");
+      expect(result.quorum).equal(50);
+      expect(result.noticePeriod).equal(3);
+      expect(result.votingPeriod).equal(6);
+      expect(result.canBeNegative).equal(false);
     });
   });
 });

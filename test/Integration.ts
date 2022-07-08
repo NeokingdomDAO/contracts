@@ -622,9 +622,9 @@ describe("Integration", () => {
 
       await expect(resolution.executeResolution(resolutionId))
         .to.emit(resolution, "ResolutionTypeCreated")
-        .withArgs(resolution.address, 7);
+        .withArgs(resolution.address, 8);
 
-      const result = await resolution.resolutionTypes(7);
+      const result = await resolution.resolutionTypes(8);
 
       expect(result.name).equal("test");
       expect(result.quorum).equal(50);

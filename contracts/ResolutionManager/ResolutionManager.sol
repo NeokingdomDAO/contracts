@@ -92,6 +92,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         _addResolutionType("significant", 51, 6 days, 4 days, false);
         _addResolutionType("dissolution", 66, 14 days, 6 days, false);
         _addResolutionType("routine", 51, 3 days, 2 days, true);
+        _addResolutionType("genesis", 100, 0 days, 5 days, false);
 
         _currentResolutionId = 1;
     }

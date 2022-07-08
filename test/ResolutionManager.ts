@@ -373,7 +373,7 @@ describe("Resolution", () => {
         .connect(user1)
         .addResolutionType("test", 42, 43, 44, false);
 
-      const result = await resolution.resolutionTypes(7);
+      const result = await resolution.resolutionTypes(8);
 
       expect(result.name).equal("test");
       expect(result.quorum).equal(42);
@@ -389,7 +389,7 @@ describe("Resolution", () => {
           .addResolutionType("test", 42, 43, 44, false)
       )
         .to.emit(resolution, "ResolutionTypeCreated")
-        .withArgs(deployer.address, 7);
+        .withArgs(deployer.address, 8);
     });
 
     it("should not allow a non resolution to add a resolution type", async () => {

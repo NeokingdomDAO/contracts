@@ -4,8 +4,9 @@ import {
   ResolutionManager,
   ShareholderRegistry,
   TelediskoToken,
+  Voting__factory,
 } from "../typechain";
-import { exportAddress, ROLES } from "./config";
+import { exportAddress, loadContract, ROLES } from "./config";
 import { deployProxy, getWallet } from "./utils";
 
 task("deploy", "Deploy DAO")
@@ -29,6 +30,7 @@ task("deploy", "Deploy DAO")
       deployer,
       "Voting"
     )) as Voting;
+    await exportAddress(hre, votingContract, "Voting");
 
     const shareholderRegistryContract = (await deployProxy(
       hre,
@@ -36,6 +38,11 @@ task("deploy", "Deploy DAO")
       "ShareholderRegistry",
       ["Teledisko Share", "TS"]
     )) as ShareholderRegistry;
+    await exportAddress(
+      hre,
+      shareholderRegistryContract,
+      "ShareholderRegistry"
+    );
 
     const telediskoTokenContract = (await deployProxy(
       hre,
@@ -43,6 +50,7 @@ task("deploy", "Deploy DAO")
       "TelediskoToken",
       ["Teledisko Token", "TT"]
     )) as TelediskoToken;
+    await exportAddress(hre, telediskoTokenContract, "TelediskoToken");
 
     const resolutionManagerContract = (await deployProxy(
       hre,
@@ -56,13 +64,6 @@ task("deploy", "Deploy DAO")
     )) as ResolutionManager;
 
     await exportAddress(hre, resolutionManagerContract, "ResolutionManager");
-    await exportAddress(hre, telediskoTokenContract, "TelediskoToken");
-    await exportAddress(
-      hre,
-      shareholderRegistryContract,
-      "ShareholderRegistry"
-    );
-    await exportAddress(hre, votingContract, "Voting");
 
     /**
      * Grant roles to contracts and deployer

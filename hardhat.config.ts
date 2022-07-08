@@ -27,6 +27,9 @@ const KOVAN_PRIVATE_KEY =
 const TEVMOS_PRIVATE_KEY =
   process.env.TEVMOS_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
+const EVMOS_PRIVATE_KEY =
+  process.env.EVMOS_PRIVATE_KEY! ||
+  "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINMARKETCAP_KEY = process.env.COINMARKETCAP_KEY || "";
 const TOKEN = process.env.TOKEN || "MATIC";
@@ -73,6 +76,10 @@ const config: HardhatUserConfig = {
     tevmos: {
       url: "https://eth.bd.evmos.dev:8545",
       accounts: [TEVMOS_PRIVATE_KEY],
+    },
+    evmos: {
+      url: "https://jsonrpc-evmos-ia.notional.ventures/",
+      accounts: [EVMOS_PRIVATE_KEY],
     },
   },
   etherscan: {

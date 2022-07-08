@@ -49,6 +49,106 @@
       "address": "0x10dE9B3Feb9b5F03d43B0FD955a97749fdDB2a6f",
       "txHash": "0x7c8674961c40256a71ef772fd14793fa258d760c659ccab537466c06c9c6c13a",
       "kind": "transparent"
+    },
+    {
+      "address": "0x4aeb52ba055Ec7fA4Ecc80B200db994C42d8149E",
+      "txHash": "0x163dec2899d99fdbe6ba738e7fc058602d2169c0e258322a5853a38fac801d02",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x722129a0295F46882BE1416e30b854F971eE7f0f",
+      "txHash": "0xbc8a0f9bbebf2d32058e6229f825f0907e4ca6c72c6baa16f9d09dad8c93c852",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9d8e0F09178E74AFA7D8A98de144097B8EDEa7A0",
+      "txHash": "0x95eb4a6bfc93fc7b08498cf5d9fe2fc9a02bb536854316b7cc8da3b87f2e80da",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5Ca38951D37591493A6B5EEbF2EFE591BFEe777d",
+      "txHash": "0xabf30b84c1505a84838e83367b621b9b60da55e337dcae1d7bf872926466d05b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x74FdD2b10cF71B9b7AEB402F90aDE1a67D9C2258",
+      "txHash": "0x872b5de4ea3510a43f09e7f2c56a1b2936fe811d096c5799926fba1127d9833f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x374eE19adA26E55bBA0aa43A402Aeb471fA4D364",
+      "txHash": "0x64b223d7491869bec4d0ca0802aaf5b5aaca95362b3a0a38ef016a6861dd6256",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xf4537D936a31abb933acdBF288a274eC732B15aF",
+      "txHash": "0xcff39a3f46c9cbf626356d1de515ae5bc7b4e79936630bff4ff2954110766220",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xdC6dc5c5524A77633EF1b3eFb08fe0950A155E44",
+      "txHash": "0xf5a33327d729dae92be0e4196ab79b97807e18708cb9b8aae784cbc2fd9fe0b7",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x4865C7009d48398b349c29a362c03765aAA90223",
+      "txHash": "0x2f77eabeadef547cdf72a969721f6d5542628e28b09fbe835dfea23d0f0418a3",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xe0F7B1BF22FA028045F231E5AC3989053D572D36",
+      "txHash": "0xf9cfe57a60ab2d303986db5630a2cc4c75af78a1c0370904def506561112a971",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5b7dE80bDB9f759F6fA3Eb46C61BD586A05dA216",
+      "txHash": "0x153edab0d208ef8183625024790a41c5e981cee90890963f03357213d75d40a2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xaDaB7814bA2ae1eBfE43D591fcaEB672D2E3709a",
+      "txHash": "0x07563e9b87d833c07036fe0e776aed2afd715dde032086f017de7136ca91f54c",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xD0A04300B06b0b972D26aB328BbfFbD80Ee2B8a2",
+      "txHash": "0x435c8d81fc98ee71b4010d51c9f146eec7a6c12d126ab599bb77f74ab95e65d2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xBbCbA7f8c66A34256BbDff4bd80dDE7E26eDB1f1",
+      "txHash": "0x54147c278ca5bef6d30a66d037577b223297a7ba8ff550eb56fefef73891c73f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x2EdbCdDA85CC393b1104BE2Db62D7C0028dE88Fa",
+      "txHash": "0x775d3c8c495a6a89d4f98745445c6764d78d7defcf62f2fc353c5ffc21f8d518",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9f6AcbA5e9f72aE9cbAa788b0ce8015fBd6aD291",
+      "txHash": "0xdd750d3bff8e7e708c945c79c8dfaa4cd4f2b877f91690931fcb3758482e6ba7",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xC0f6d13017D42bDB0B6207221761a6320Ff6dF02",
+      "txHash": "0x929594eb807c4e28a4f22d14d95607c6bb6e8086020b26823eeebe110b31f1a9",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9DbeE0455Ab2910771928D65c4D52F36d2d7eBFD",
+      "txHash": "0xf2209d2d1d4d479eaa4b1fceb4fb7e9f46a16a15df4f9fda394122be91168d3d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x255E7F86a8EdBcba1159f6664958b23Fd05ad128",
+      "txHash": "0x9583341cffb3914fd6039409222cb41b5ef19eea1520ff137813bed7d1d35438",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5c93e075286513ad35355EFdE1EB26C1Ff783b27",
+      "txHash": "0x27811a0746893672936b81a5bcc5d5f268afe73be0b845a5eab832f695b25b09",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -2272,6 +2372,289 @@
             "numberOfBytes": "288"
           },
           "t_struct(ResolutionType)2719_storage": {
+            "label": "struct ResolutionManager.ResolutionType",
+            "members": [
+              {
+                "label": "name",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "quorum",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "noticePeriod",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "votingPeriod",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "canBeNegative",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "4"
+              }
+            ],
+            "numberOfBytes": "160"
+          },
+          "t_struct(RoleData)1832_storage": {
+            "label": "struct AccessControl.RoleData",
+            "members": [
+              {
+                "label": "members",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "adminRole",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "c5f7ab9efb3e4588b5eef11ce99eb351b5eed5d78203109dd34ec83c3e00adab": {
+      "address": "0x58eD587f4F0B2c896199620C5947E6BeA10cF396",
+      "txHash": "0x3a62359b62279367ca6159cbd81de08c8dd0966b57a740e3bd28fee1c37f8eae",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "_roles",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)1832_storage)",
+            "contract": "AccessControl",
+            "src": "@openzeppelin/contracts/access/AccessControl.sol:55"
+          },
+          {
+            "label": "_currentResolutionId",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "ResolutionManager",
+            "src": "contracts/ResolutionManager/ResolutionManager.sol:15"
+          },
+          {
+            "label": "_shareholderRegistry",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_contract(IShareholderRegistry)3864",
+            "contract": "ResolutionManager",
+            "src": "contracts/ResolutionManager/ResolutionManager.sol:17"
+          },
+          {
+            "label": "_telediskoToken",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_contract(ITelediskoToken)4764",
+            "contract": "ResolutionManager",
+            "src": "contracts/ResolutionManager/ResolutionManager.sol:18"
+          },
+          {
+            "label": "_voting",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_contract(IVoting)5974",
+            "contract": "ResolutionManager",
+            "src": "contracts/ResolutionManager/ResolutionManager.sol:19"
+          },
+          {
+            "label": "resolutionTypes",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_array(t_struct(ResolutionType)2725_storage)dyn_storage",
+            "contract": "ResolutionManager",
+            "src": "contracts/ResolutionManager/ResolutionManager.sol:56"
+          },
+          {
+            "label": "resolutions",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_uint256,t_struct(Resolution)2762_storage)",
+            "contract": "ResolutionManager",
+            "src": "contracts/ResolutionManager/ResolutionManager.sol:74"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes_storage)dyn_storage": {
+            "label": "bytes[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(ResolutionType)2725_storage)dyn_storage": {
+            "label": "struct ResolutionManager.ResolutionType[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IShareholderRegistry)3864": {
+            "label": "contract IShareholderRegistry",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ITelediskoToken)4764": {
+            "label": "contract ITelediskoToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVoting)5974": {
+            "label": "contract IVoting",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(RoleData)1832_storage)": {
+            "label": "mapping(bytes32 => struct AccessControl.RoleData)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Resolution)2762_storage)": {
+            "label": "mapping(uint256 => struct ResolutionManager.Resolution)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Resolution)2762_storage": {
+            "label": "struct ResolutionManager.Resolution",
+            "members": [
+              {
+                "label": "dataURI",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "resolutionTypeId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "approveTimestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "snapshotId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "yesVotesTotal",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "isNegative",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "executionTo",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "executionData",
+                "type": "t_array(t_bytes_storage)dyn_storage",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "executionTimestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "hasVoted",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "hasVotedYes",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "10"
+              },
+              {
+                "label": "lostVotingPower",
+                "type": "t_mapping(t_address,t_uint256)",
+                "offset": 0,
+                "slot": "11"
+              }
+            ],
+            "numberOfBytes": "384"
+          },
+          "t_struct(ResolutionType)2725_storage": {
             "label": "struct ResolutionManager.ResolutionType",
             "members": [
               {

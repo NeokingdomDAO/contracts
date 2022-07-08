@@ -6,10 +6,16 @@
     "Voting": "0x70b976d7C1aEb25B526031733321C15Ae4ca3A33"
   },
   "9000": {
-    "ResolutionManager": "0x10dE9B3Feb9b5F03d43B0FD955a97749fdDB2a6f",
-    "TelediskoToken": "0xfEad8c35758633364289b6AAC6aBd8337aaf9681",
-    "ShareholderRegistry": "0xAcf42a38Dc1505F50C07880186C8B2d6a8A378a0",
-    "Voting": "0x7792E80D03f8D191802b4E7B1eeC0170cd08Fb5F"
+    "ResolutionManager": "0x5c93e075286513ad35355EFdE1EB26C1Ff783b27",
+    "TelediskoToken": "0x255E7F86a8EdBcba1159f6664958b23Fd05ad128",
+    "ShareholderRegistry": "0x9DbeE0455Ab2910771928D65c4D52F36d2d7eBFD",
+    "Voting": "0xC0f6d13017D42bDB0B6207221761a6320Ff6dF02"
+  },
+  "31337": {
+    "ResolutionManager": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "TelediskoToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "ShareholderRegistry": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "Voting": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
   },
   "80001": {
     "ResolutionManager": "0xB188Fa60ffE57a20E338337D1E35E663C4887B7a",

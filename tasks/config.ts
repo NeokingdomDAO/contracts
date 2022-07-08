@@ -45,7 +45,7 @@ export const ROLES = {
   SHAREHOLDER_REGISTRY_ROLE: keccak256(
     toUtf8Bytes("SHAREHOLDER_REGISTRY_ROLE")
   ),
-};
+} as const;
 
 function getDefaultConfigPath(
   hre: HardhatRuntimeEnvironment,

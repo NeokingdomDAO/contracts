@@ -5,6 +5,12 @@
     "ShareholderRegistry": "0x172397ab6868387F8D39697169cbF8E2C47ba46D",
     "Voting": "0x70b976d7C1aEb25B526031733321C15Ae4ca3A33"
   },
+  "338": {
+    "Voting": "0xF5cB53a25fd808080b57Def998a4AA3Dc7b30bEF",
+    "ShareholderRegistry": "0xD91E3491b707b71C53FEd17F47A16Fa393Bbf05c",
+    "TelediskoToken": "0xB426F074F3BB15cb94E117FE22bc439878E980A0",
+    "ResolutionManager": "0x55999aD7f697FD15A82b8f125752FaBc25cc53B4"
+  },
   "9000": {
     "ResolutionManager": "0x5c93e075286513ad35355EFdE1EB26C1Ff783b27",
     "TelediskoToken": "0x255E7F86a8EdBcba1159f6664958b23Fd05ad128",

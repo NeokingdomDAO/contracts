@@ -30,13 +30,21 @@ const TEVMOS_PRIVATE_KEY =
 const EVMOS_PRIVATE_KEY =
   process.env.EVMOS_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
+const CRONOS_PRIVATE_KEY =
+  process.env.CRONOS_PRIVATE_KEY! ||
+  "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
+const TCRONOS_PRIVATE_KEY =
+  process.env.TCRONOS_PRIVATE_KEY! ||
+  "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
+const CRONOSCAN_API_KEY = process.env.CRONOSCAN_API_KEY;
 const COINMARKETCAP_KEY = process.env.COINMARKETCAP_KEY || "";
-const TOKEN = process.env.TOKEN || "MATIC";
-const GASPRICE_API =
-  TOKEN == "MATIC"
-    ? "https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice"
-    : "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice";
+const TOKEN = process.env.TOKEN || "CRO";
+const GASPRICE_API = {
+  MATIC: "https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice",
+  ETH: "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice",
+  CRO: `https://api.cronoscan.com/api?module=proxy&action=eth_gasPrice&apiKey=${CRONOSCAN_API_KEY}`,
+}[TOKEN];
 const GASREPORT_FILE = process.env.GASREPORT_FILE || "";
 const NO_COLORS = process.env.NO_COLORS == "false" || GASREPORT_FILE != "";
 const GAS_PRICE = process.env.GAS_PRICE
@@ -80,6 +88,14 @@ const config: HardhatUserConfig = {
     evmos: {
       url: "https://jsonrpc-evmos-ia.notional.ventures/",
       accounts: [EVMOS_PRIVATE_KEY],
+    },
+    "cronostestnet_338-3": {
+      url: "https://evm-t3.cronos.org/",
+      accounts: [TCRONOS_PRIVATE_KEY],
+    },
+    "cronosmainnet_25-1": {
+      url: "https://evm.cronos.org/",
+      accounts: [CRONOS_PRIVATE_KEY],
     },
   },
   etherscan: {

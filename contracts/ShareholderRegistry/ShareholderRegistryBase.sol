@@ -64,7 +64,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         return _isAtLeast(balanceOf(account), _statuses[account], status);
     }
 
-    function _transferFromDAOBatch(address[] memory recipients)
+    function _batchTransferFromDAO(address[] memory recipients)
         internal
         virtual
     {

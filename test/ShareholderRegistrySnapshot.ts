@@ -453,11 +453,11 @@ describe("Shareholder Registry", () => {
     });
   });
 
-  describe("transferFromDAOBatch", async () => {
+  describe("batchTransferFromDAO", async () => {
     it("allow transfering DAO shares to multiple addresses", async () => {
       await registry.mint(registry.address, parseEther("20"));
 
-      await registry.transferFromDAOBatch([
+      await registry.batchTransferFromDAO([
         alice.address,
         bob.address,
         managingBoard.address,
@@ -472,7 +472,7 @@ describe("Shareholder Registry", () => {
 
     it("should not allow anyone without RESOLUTION_ROLE to transferFromDAOBatch", async () => {
       await expect(
-        registry.connect(alice).transferFromDAOBatch([])
+        registry.connect(alice).batchTransferFromDAO([])
       ).revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${RESOLUTION_ROLE.toLowerCase()}`
       );

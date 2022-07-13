@@ -293,6 +293,15 @@ describe("Resolution", () => {
       ).revertedWith("Resolution: already approved");
     });
 
+    it("doesn't allow the managing board to update a rejected resolution", async () => {
+      await resolution.connect(managingBoard).rejectResolution(resolutionId);
+      await expect(
+        resolution
+          .connect(managingBoard)
+          .updateResolution(resolutionId, "updated test", 6, true, [], [])
+      ).revertedWith("Resolution: already rejected");
+    });
+
     it("doesn't allow anyone else to update a resolution", async () => {
       await expect(
         resolution
@@ -445,6 +454,76 @@ describe("Resolution", () => {
         resolution.connect(managingBoard).approveResolution(resolutionId)
       ).revertedWith("Resolution: already approved");
     });
+
+    it("should fail if already rejected", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
+
+      await resolution.connect(managingBoard).rejectResolution(resolutionId);
+
+      await expect(
+        resolution.connect(managingBoard).approveResolution(resolutionId)
+      ).revertedWith("Resolution: already rejected");
+    });
+  });
+
+  describe("rejection logic", async () => {
+    it("should not allow to reject a non existing resolution", async () => {
+      await expect(
+        resolution.connect(managingBoard).rejectResolution(resolutionId)
+      ).revertedWith("Resolution: does not exist");
+    });
+
+    it("should allow the managing board to reject an existing resolution", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
+
+      await expect(
+        resolution.connect(managingBoard).rejectResolution(resolutionId)
+      )
+        .to.emit(resolution, "ResolutionRejected")
+        .withArgs(managingBoard.address, resolutionId);
+      const rejectTimestamp = (await resolution.resolutions(resolutionId))[6];
+
+      let blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
+      expect(rejectTimestamp.toNumber()).equal(blockTimestamp);
+    });
+
+    it("should not allow non managing board members to reject an existing resolution", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
+
+      await expect(
+        resolution.connect(user1).rejectResolution(resolutionId)
+      ).revertedWith("Resolution: only managing board can reject");
+    });
+
+    it("should fail if already approved", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+      await expect(
+        resolution.connect(managingBoard).rejectResolution(resolutionId)
+      ).revertedWith("Resolution: already approved");
+    });
+
+    it("should fail if already rejected", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
+
+      await resolution.connect(managingBoard).rejectResolution(resolutionId);
+
+      await expect(
+        resolution.connect(managingBoard).rejectResolution(resolutionId)
+      ).revertedWith("Resolution: already rejected");
+    });
   });
 
   describe("voting prevention logic", async () => {
@@ -460,6 +539,18 @@ describe("Resolution", () => {
       await resolution
         .connect(user1)
         .createResolution("test", 0, false, [], []);
+
+      await expect(
+        resolution.connect(user1).vote(resolutionId, false)
+      ).revertedWith("Resolution: not approved");
+    });
+
+    it("should not allow to vote on rejected resolution", async () => {
+      await resolution
+        .connect(user1)
+        .createResolution("test", 0, false, [], []);
+
+      await resolution.connect(managingBoard).rejectResolution(resolutionId);
 
       await expect(
         resolution.connect(user1).vote(resolutionId, false)

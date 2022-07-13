@@ -24,6 +24,10 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         address indexed from,
         uint256 indexed resolutionId
     );
+    event ResolutionRejected(
+        address indexed from,
+        uint256 indexed resolutionId
+    );
     event ResolutionVoted(
         address indexed from,
         uint256 indexed resolutionId,
@@ -62,6 +66,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         uint256 snapshotId;
         uint256 yesVotesTotal;
         bool isNegative;
+        uint256 rejectionTimestamp;
         // Transaction fields
         address[] executionTo;
         bytes[] executionData;
@@ -99,6 +104,29 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
+
+    modifier onlyPending(uint256 resolutionId) {
+        Resolution storage resolution = resolutions[resolutionId];
+        require(
+            resolution.approveTimestamp == 0,
+            "Resolution: already approved"
+        );
+        require(
+            resolution.rejectionTimestamp == 0,
+            "Resolution: already rejected"
+        );
+
+        _;
+    }
+
+    modifier exists(uint256 resolutionId) {
+        require(
+            resolutionId < _currentResolutionId,
+            "Resolution: does not exist"
+        );
+
+        _;
+    }
 
     function addResolutionType(
         string memory name,
@@ -184,7 +212,12 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         return resolutionId;
     }
 
-    function approveResolution(uint256 resolutionId) public virtual {
+    function approveResolution(uint256 resolutionId)
+        public
+        virtual
+        onlyPending(resolutionId)
+        exists(resolutionId)
+    {
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -192,19 +225,31 @@ contract ResolutionManager is Initializable, Context, AccessControl {
             ),
             "Resolution: only managing board can approve"
         );
-        require(
-            resolutionId < _currentResolutionId,
-            "Resolution: does not exist"
-        );
 
         Resolution storage resolution = resolutions[resolutionId];
-        require(
-            resolution.approveTimestamp == 0,
-            "Resolution: already approved"
-        );
         resolution.approveTimestamp = block.timestamp;
         resolution.snapshotId = _snapshotAll();
         emit ResolutionApproved(_msgSender(), resolutionId);
+    }
+
+    function rejectResolution(uint256 resolutionId)
+        public
+        virtual
+        onlyPending(resolutionId)
+        exists(resolutionId)
+    {
+        require(
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.MANAGING_BOARD_STATUS(),
+                _msgSender()
+            ),
+            "Resolution: only managing board can reject"
+        );
+
+        Resolution storage resolution = resolutions[resolutionId];
+
+        resolution.rejectionTimestamp = block.timestamp;
+        emit ResolutionRejected(_msgSender(), resolutionId);
     }
 
     function updateResolution(
@@ -214,15 +259,11 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         bool isNegative,
         address[] memory executionTo,
         bytes[] memory executionData
-    ) public virtual {
+    ) public virtual onlyPending(resolutionId) {
         Resolution storage resolution = resolutions[resolutionId];
         require(
             executionTo.length == executionData.length,
             "Resolution: length mismatch"
-        );
-        require(
-            resolution.approveTimestamp == 0,
-            "Resolution: already approved"
         );
 
         require(

@@ -94,7 +94,7 @@ const config: HardhatUserConfig = {
       accounts: [TCRONOS_PRIVATE_KEY],
     },
     "cronosmainnet_25-1": {
-      url: "https://evm.cronos.org/",
+      url: "https://cronosrpc-1.xstaking.sg/",
       accounts: [CRONOS_PRIVATE_KEY],
     },
   },

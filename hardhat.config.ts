@@ -21,6 +21,9 @@ const RINKEBY_PRIVATE_KEY =
 const MUMBAI_PRIVATE_KEY =
   process.env.RINKEBY_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
+const POLYGON_PRIVATE_KEY =
+  process.env.POLYGON_PRIVATE_KEY! ||
+  "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const KOVAN_PRIVATE_KEY =
   process.env.KOVAN_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
@@ -80,6 +83,10 @@ const config: HardhatUserConfig = {
     mumbai: {
       url: `https://polygon-testnet.blastapi.io/${BLAST_API_KEY}`,
       accounts: [MUMBAI_PRIVATE_KEY],
+    },
+    polygon: {
+      url: "https://polygon-rpc.com/",
+      accounts: [POLYGON_PRIVATE_KEY],
     },
     tevmos: {
       url: "https://eth.bd.evmos.dev:8545",

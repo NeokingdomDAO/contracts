@@ -11,6 +11,12 @@
     "TelediskoToken": "0x0D65D30F88499d26939Dc2a7cDD147E043c873E0",
     "ResolutionManager": "0xC3bb4003b0843508d7Ef05F5B83FbdfE5d637CBc"
   },
+  "137": {
+    "Voting": "0x612CbF3E7Faeef00F08E499CDa76f5D4d28123Bb",
+    "ShareholderRegistry": "0xAb9CadDf05CC6533905B555DB8a2D16d4A80E3C8",
+    "TelediskoToken": "0x91C7F946C513aEE3AE8484Bc3B4040a45eA8B5e0",
+    "ResolutionManager": "0x5df34741BC1d69605CdBbf9b4ABeF359B90A2622"
+  },
   "338": {
     "Voting": "0xF5cB53a25fd808080b57Def998a4AA3Dc7b30bEF",
     "ShareholderRegistry": "0xD91E3491b707b71C53FEd17F47A16Fa393Bbf05c",

@@ -1,42 +1,41 @@
-![Test workflow](https://github.com/vrde/hardhat-typescript-template/actions/workflows/node.yml/badge.svg)
+![Test workflow](https://github.com/TelediskoDAO/contracts/actions/workflows/node.yml/badge.svg)
 
-# HardHat TypeScript Template
+# Teledisko DAO Contracts
 
-```bash
-npx degit https://github.com/vrde/hardhat-typescript-template\#main contracts
+Welcome to the Teledisko DAO Contacts.
+
+## Deployments
+
+Teledisko DAO lives in EVMOS.
+
+### v1
+
+```
+Deploy DAO
+  Network: evmos
+  ChainId: 9001
+  Deployer address: 0x62817523F3B94182B9DF911a8071764F998f11a4
+
+
+⛏️  Mine contracts
+  Voting.sol deployed at 0x5c91fB736aDf04a1DAd11E0C3c1bD7E1Eb68cf33
+  ShareholderRegistry.sol deployed at 0xa516a9AbDBD6bF29DA5B76820465f366146449A3
+  TelediskoToken.sol deployed at 0x8Add9613f43786eaD117E73ce6820ecf9b7d0cC3
+  ResolutionManager.sol deployed at 0x5F667BDee7b2742003BA0E616Ea3D678F9AF1738
 ```
 
-## What's included
+## Commands
 
-- CI with GitHub actions.
-- TypeScript configuration.
-- Sample `Storage` contract and tests.
-- Tasks:
-  - `deploy`
-  - `store` to store a value
-  - `retrieve` to retrieve the current value
+```
+# Clean the build dir, sometimes this is a good idea
+npx hardhat clean
 
-## Run it
+# Compile the contracts
+npx hardhat compile
 
-If you just want to run tests, then `npm test` is your friend.
+# Test the contracts
+npx hardhat test
 
-If you want to play with the tasks, run your favorite Ethereum development node (mine is [ethnode](https://github.com/vrde/ethnode/), give it a try).
-
-When the node is running, try the following commands
-
-- `npx hardhat --network localhost deploy` to deploy the contract in your local node.
-- `npx hardhat --network localhost store 666` to store a new value in the contract.
-- `npx hardhat --network localhost retrieve` to retrieve the current value.
-- `npx hardhat --network localhost retrieve --hex` to retrieve the current value in hex.
-
-# Generate gas reports
-
-The gas report script will generate 8 reports:
-
-- 4 reports for Ethereum Mainnet
-- 4 reports for Polygon Mainnet
-  For each network, the tool calculates the EUR price for all public functions and deployment, using as gas fee
-- the min and max of the average of 2022 for the given network
-- the min and max of the median of 2022 for the given network
-  Execute:
-  `./generate_gas_report.sh <reports folder or empy>`
+# Deploy to production
+npx hardhat deploy --network evmos
+```

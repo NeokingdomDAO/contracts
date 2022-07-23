@@ -1,5 +1,5 @@
 import { Signer } from "ethers";
-import { formatUnits, parseEther } from "ethers/lib/utils";
+import { parseEther } from "ethers/lib/utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export async function getWallet(hre: HardhatRuntimeEnvironment) {

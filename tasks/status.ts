@@ -29,7 +29,7 @@ task(
   "transfer-shares-batch",
   "Transfer shares from DAO to multiple addresses address"
 )
-  .addPositionalParam("accountFile", "The addresses file")
+  .addParam("accountFile", "The addresses file")
   .setAction(async ({ accountFile }: { accountFile: string }, hre) => {
     const contract = await loadContract(
       hre,

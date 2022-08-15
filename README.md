@@ -18,11 +18,16 @@ Deploy DAO
 
 
 ⛏️  Mine contracts
-  Voting.sol deployed at 0x5c91fB736aDf04a1DAd11E0C3c1bD7E1Eb68cf33
-  ShareholderRegistry.sol deployed at 0xa516a9AbDBD6bF29DA5B76820465f366146449A3
-  TelediskoToken.sol deployed at 0x8Add9613f43786eaD117E73ce6820ecf9b7d0cC3
-  ResolutionManager.sol deployed at 0x5F667BDee7b2742003BA0E616Ea3D678F9AF1738
+  Voting.sol deployed at 0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4
+  ShareholderRegistry.sol deployed at 0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f
+  TelediskoToken.sol deployed at 0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B
+  ResolutionManager.sol deployed at 0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7
 ```
+
+- [Voting](https://evm.evmos.org/address/0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4)
+- [ShareholderRegistry](https://evm.evmos.org/address/0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f)
+- [TelediskoToken](https://evm.evmos.org/address/0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B)
+- [ResolutionManager](https://evm.evmos.org/address/0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7)
 
 ## Commands
 

@@ -5,3 +5,4 @@ import "./delegate";
 import "./role";
 import "./types";
 import "./setup";
+import "./match";

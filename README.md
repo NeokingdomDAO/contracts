@@ -24,10 +24,11 @@ Deploy DAO
   ResolutionManager.sol deployed at 0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7
 ```
 
-- [Voting](https://evm.evmos.org/address/0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4)
-- [ShareholderRegistry](https://evm.evmos.org/address/0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f)
-- [TelediskoToken](https://evm.evmos.org/address/0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B)
-- [ResolutionManager](https://evm.evmos.org/address/0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7)
+- [Voting](https://evm.evmos.org/address/0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4) `0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4`
+- [ShareholderRegistry](https://evm.evmos.org/address/0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f) `0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f`
+- [TelediskoToken](https://evm.evmos.org/address/0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B) `0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B`
+- [ResolutionManager](https://evm.evmos.org/address/0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7) `0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7`
+- [Treasury (Safe)](https://safe.evmos.org/evmos:0xBa4e22770217342d3a805527e7AfdF5147cA0827) `0xBa4e22770217342d3a805527e7AfdF5147cA0827`
 
 ## Commands
 

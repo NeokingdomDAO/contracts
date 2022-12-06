@@ -11,6 +11,8 @@ import {
   TelediskoToken__factory,
   Voting,
   Voting__factory,
+  PriceOracle,
+  PriceOracle__factory,
 } from "../typechain";
 
 export const DEFAULT_CONFIG_PATH = "./deployments/networks.json";
@@ -22,13 +24,15 @@ export type ContractName =
   | "ResolutionManager"
   | "ShareholderRegistry"
   | "Voting"
-  | "VotingV2";
+  | "VotingV2"
+  | "PriceOracle";
 
 export type DAOContract =
   | TelediskoToken
   | ResolutionManager
   | ShareholderRegistry
-  | Voting;
+  | Voting
+  | PriceOracle;
 
 export type NetworkConfig = {
   [key: number]: {
@@ -92,7 +96,8 @@ type ContractFactory =
   | typeof ShareholderRegistry__factory
   | typeof ResolutionManager__factory
   | typeof TelediskoToken__factory
-  | typeof Voting__factory;
+  | typeof Voting__factory
+  | typeof PriceOracle__factory;
 
 export async function loadContract<T extends ContractFactory>(
   hre: HardhatRuntimeEnvironment,

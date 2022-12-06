@@ -27,7 +27,8 @@
     "ResolutionManager": "0x0D65D30F88499d26939Dc2a7cDD147E043c873E0",
     "TelediskoToken": "0x682e7e6BdcD0699D9551fE53DbAe1729bAdbcD56",
     "ShareholderRegistry": "0x8e9cc3bA014B457C0eF6D51d658CfbC7DDd7C92b",
-    "Voting": "0x5153c164A64BAD1FaC3C6596FA784f587caC26ab"
+    "Voting": "0x5153c164A64BAD1FaC3C6596FA784f587caC26ab",
+    "PriceOracle": "0x5c2a36F8C1be8724ab2525f7d9e6b251a18C7Fb4"
   },
   "9001": {
     "Voting": "0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4",

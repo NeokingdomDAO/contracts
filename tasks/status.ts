@@ -1,5 +1,10 @@
 import { task } from "hardhat/config";
-import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
+import {
+  formatEther,
+  keccak256,
+  parseEther,
+  toUtf8Bytes,
+} from "ethers/lib/utils";
 import { loadContract } from "./config";
 import {
   ShareholderRegistry__factory,
@@ -108,3 +113,15 @@ task("mint-vesting", "Mint teledisko tokens to an address, vesting")
       console.log("  Transaction included in block", receipt.blockNumber);
     }
   );
+
+task("balance", "Get tt balance")
+  .addParam("account", "The address")
+  .setAction(async ({ account }: { account: string }, hre) => {
+    const contract = await loadContract(
+      hre,
+      TelediskoToken__factory,
+      "TelediskoToken"
+    );
+    const balance = await contract.balanceOf(account);
+    console.log(`${account} has ${formatEther(balance)} tokens`);
+  });

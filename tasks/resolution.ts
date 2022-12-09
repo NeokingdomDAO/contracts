@@ -16,3 +16,16 @@ task("resolution:execute", "Execute a resolution")
     const receipt = await tx.wait();
     console.log("  Transaction included in block", receipt.blockNumber);
   });
+
+task("resolution:get", "Get a resolution")
+  .addPositionalParam("id", "The id of the resolution to get")
+  .setAction(async ({ id }: { id: string }, hre) => {
+    const contract = await loadContract(
+      hre,
+      ResolutionManager__factory,
+      "ResolutionManager"
+    );
+
+    const r = await contract.resolutions(id);
+    console.log(r);
+  });

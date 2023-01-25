@@ -22,6 +22,9 @@ task("match-offer", "Match an offer")
         "TelediskoToken"
       );
 
+      throw "Not implemented";
+
+      /*
       const tx = await contract.matchOffer(
         fromAddress,
         toAddress,
@@ -30,5 +33,6 @@ task("match-offer", "Match an offer")
       console.log("  Submitted tx", tx.hash);
       const receipt = await tx.wait();
       console.log("  Transaction included in block", receipt.blockNumber);
+      */
     }
   );

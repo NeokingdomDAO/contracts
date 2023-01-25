@@ -1,7 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, upgrades } from "hardhat";
-import { ShareholderRegistry, TelediskoToken, Voting } from "../../typechain";
+import {
+  InternalMarket,
+  InternalMarket__factory,
+  ShareholderRegistry,
+  TelediskoToken,
+  Voting,
+} from "../../typechain";
 import { ResolutionManager } from "../../typechain";
 import {
   Voting__factory,
@@ -14,11 +20,12 @@ import { roles } from "./roles";
 export async function deployDAO(
   deployer: SignerWithAddress,
   managingBoard: SignerWithAddress
-): Promise<[Voting, TelediskoToken, ShareholderRegistry, ResolutionManager]> {
-  let voting: Voting,
-    token: TelediskoToken,
-    shareholderRegistry: ShareholderRegistry,
-    resolution: ResolutionManager;
+) {
+  let voting: Voting;
+  let token: TelediskoToken;
+  let registry: ShareholderRegistry;
+  let resolution: ResolutionManager;
+  let market: InternalMarket;
 
   const VotingFactory = (await ethers.getContractFactory(
     "Voting",
@@ -29,6 +36,11 @@ export async function deployDAO(
     "TelediskoToken",
     deployer
   )) as TelediskoToken__factory;
+
+  const InternalMarketFactory = (await ethers.getContractFactory(
+    "InternalMarket",
+    deployer
+  )) as InternalMarket__factory;
 
   const ShareholderRegistryFactory = (await ethers.getContractFactory(
     "ShareholderRegistry",
@@ -52,59 +64,63 @@ export async function deployDAO(
   )) as TelediskoToken;
   await token.deployed();
 
-  shareholderRegistry = (await upgrades.deployProxy(
+  market = await InternalMarketFactory.deploy(token.address);
+  await market.deployed();
+
+  registry = (await upgrades.deployProxy(
     ShareholderRegistryFactory,
     ["TestShare", "TS"],
     {
       initializer: "initialize",
     }
   )) as ShareholderRegistry;
-  await shareholderRegistry.deployed();
+  await registry.deployed();
 
   const operatorRole = await roles.OPERATOR_ROLE();
   const resolutionRole = await roles.RESOLUTION_ROLE();
   const shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
   const escrowRole = await roles.ESCROW_ROLE();
 
-  await shareholderRegistry.grantRole(operatorRole, deployer.address);
-  await shareholderRegistry.grantRole(resolutionRole, deployer.address);
+  await registry.grantRole(operatorRole, deployer.address);
+  await registry.grantRole(resolutionRole, deployer.address);
 
-  await voting.grantRole(shareholderRegistryRole, shareholderRegistry.address);
+  await voting.grantRole(shareholderRegistryRole, registry.address);
   await voting.grantRole(operatorRole, deployer.address);
   await voting.grantRole(resolutionRole, deployer.address);
 
   await token.grantRole(operatorRole, deployer.address);
   await token.grantRole(resolutionRole, deployer.address);
-  await token.grantRole(escrowRole, deployer.address);
 
-  await voting.setShareholderRegistry(shareholderRegistry.address);
+  await market.grantRole(escrowRole, deployer.address);
+
+  await voting.setShareholderRegistry(registry.address);
   await voting.setToken(token.address);
 
-  await token.setShareholderRegistry(shareholderRegistry.address);
+  await token.setShareholderRegistry(registry.address);
   await token.setVoting(voting.address);
-  await shareholderRegistry.setVoting(voting.address);
+
+  await registry.setVoting(voting.address);
+
+  await token.setInternalMarket(market.address);
 
   resolution = (await upgrades.deployProxy(
     ResolutionFactory,
-    [shareholderRegistry.address, token.address, voting.address],
+    [registry.address, token.address, voting.address],
     {
       initializer: "initialize",
     }
   )) as ResolutionManager;
   await resolution.deployed();
 
-  await shareholderRegistry.grantRole(resolutionRole, resolution.address);
+  await registry.grantRole(resolutionRole, resolution.address);
   await voting.grantRole(resolutionRole, resolution.address);
   await token.grantRole(resolutionRole, resolution.address);
   await resolution.grantRole(resolutionRole, resolution.address);
 
-  var managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
+  var managingBoardStatus = await registry.MANAGING_BOARD_STATUS();
 
-  await shareholderRegistry.mint(managingBoard.address, parseEther("1"));
-  await shareholderRegistry.setStatus(
-    managingBoardStatus,
-    managingBoard.address
-  );
+  await registry.mint(managingBoard.address, parseEther("1"));
+  await registry.setStatus(managingBoardStatus, managingBoard.address);
 
-  return [voting, token, shareholderRegistry, resolution];
+  return { voting, token, registry, resolution, market };
 }

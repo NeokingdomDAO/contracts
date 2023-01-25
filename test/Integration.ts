@@ -7,6 +7,7 @@ import {
   Voting,
   TelediskoToken,
   ResolutionManager,
+  InternalMarket,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
@@ -22,13 +23,14 @@ const { expect } = chai;
 
 const DAY = 60 * 60 * 24;
 
-describe("Integration", () => {
+describe("Integration", async () => {
   let voting: Voting;
   let token: TelediskoToken;
   let resolution: ResolutionManager;
+  let registry: ShareholderRegistry;
+  let market: InternalMarket;
   let contributorStatus: string;
   let investorStatus: string;
-  let shareholderRegistry: ShareholderRegistry;
   let deployer: SignerWithAddress,
     managingBoard: SignerWithAddress,
     user1: SignerWithAddress,
@@ -37,14 +39,13 @@ describe("Integration", () => {
 
   beforeEach(async () => {
     [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
-    [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
-    [voting, token, shareholderRegistry, resolution] = await deployDAO(
+    ({ voting, token, registry, resolution, market } = await deployDAO(
       deployer,
       managingBoard
-    );
+    ));
 
-    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
-    investorStatus = await shareholderRegistry.INVESTOR_STATUS();
+    contributorStatus = await registry.CONTRIBUTOR_STATUS();
+    investorStatus = await registry.INVESTOR_STATUS();
   });
 
   describe("integration", async () => {
@@ -57,9 +58,16 @@ describe("Integration", () => {
       await token.mint(user.address, tokens);
     }
 
-    async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
-      await shareholderRegistry.mint(user.address, parseEther("1"));
-      await shareholderRegistry.setStatus(contributorStatus, user.address);
+    async function _makeContributor(user: SignerWithAddress, tokens: number) {
+      // Make user shareholder
+      await registry.mint(user.address, parseEther("1"));
+      // Make user contributor
+      await registry.setStatus(contributorStatus, user.address);
+      // User approves the market as a spender
+      await token
+        .connect(user)
+        .approve(market.address, ethers.constants.MaxUint256);
+      // Mint some tokens
       await _mintTokens(user, tokens);
     }
 
@@ -118,7 +126,7 @@ describe("Integration", () => {
     // Contributor votes resolution (yes)
     // Resolution passes
     it("allows simple DAO management (single contributor)", async () => {
-      await _prepareForVoting(user1, 42);
+      await _makeContributor(user1, 42);
       const resolutionId = await _prepareResolution();
       await _makeVotable(resolutionId);
 
@@ -141,8 +149,8 @@ describe("Integration", () => {
     // Enough contributors vote yes to resolution
     // Resolution passes
     it("successful resolution (multiple contributors)", async () => {
-      await _prepareForVoting(user1, 66);
-      await _prepareForVoting(user2, 34);
+      await _makeContributor(user1, 66);
+      await _makeContributor(user2, 34);
       const resolutionId = await _prepareResolution();
       await _makeVotable(resolutionId);
 
@@ -165,8 +173,8 @@ describe("Integration", () => {
     // Not enough contributors vote yes to resolution
     // Resolution passes
     it("unsuccessful resolution (multiple contributors)", async () => {
-      await _prepareForVoting(user1, 34);
-      await _prepareForVoting(user2, 66);
+      await _makeContributor(user1, 34);
+      await _makeContributor(user2, 66);
       const resolutionId = await _prepareResolution();
       await _makeVotable(resolutionId);
 
@@ -192,8 +200,8 @@ describe("Integration", () => {
     // Contributor with not sufficient voting power vote yes to resolution
     // Resolution fails
     it("multiple resolutions, different voting power over time, multiple contributors", async () => {
-      await _prepareForVoting(user1, 66);
-      await _prepareForVoting(user2, 34);
+      await _makeContributor(user1, 66);
+      await _makeContributor(user2, 34);
       const resolutionId1 = await _prepareResolution();
 
       await _mintTokens(user2, 96); // make them the most powerful user
@@ -215,8 +223,8 @@ describe("Integration", () => {
     });
 
     it("multiple resolutions, different voting power over time, delegation, multiple contributors", async () => {
-      await _prepareForVoting(user1, 66);
-      await _prepareForVoting(user2, 34);
+      await _makeContributor(user1, 66);
+      await _makeContributor(user2, 34);
       await _delegate(user2, user1);
       const resolutionId1 = await _prepareResolution();
 
@@ -272,7 +280,7 @@ describe("Integration", () => {
 
     it("invalid voting should not be counted", async () => {
       const resolutionId = ++currentResolution;
-      await _prepareForVoting(user1, 42);
+      await _makeContributor(user1, 42);
       await resolution
         .connect(user1)
         .createResolution("Qxtest", 0, false, [], []);
@@ -290,20 +298,17 @@ describe("Integration", () => {
       // votes given from non DAO members
       await expect(_vote(user2, true, resolutionId)).reverted;
       // votes given from less than Contributors
-      await shareholderRegistry.mint(user2.address, parseEther("1"));
-      await shareholderRegistry.setStatus(investorStatus, user2.address);
+      await registry.mint(user2.address, parseEther("1"));
+      await registry.setStatus(investorStatus, user2.address);
 
       const resolutionId2 = await _prepareResolution();
       await _makeVotable(resolutionId2);
       await expect(_vote(user2, true, resolutionId)).reverted;
 
       // votes given after burning share
-      _prepareForVoting(user3, 42);
-      await shareholderRegistry.grantRole(
-        await roles.RESOLUTION_ROLE(),
-        deployer.address
-      );
-      await shareholderRegistry.burn(user3.address, parseEther("1"));
+      _makeContributor(user3, 42);
+      await registry.grantRole(await roles.RESOLUTION_ROLE(), deployer.address);
+      await registry.burn(user3.address, parseEther("1"));
       const resolutionId3 = await _prepareResolution();
       await _makeVotable(resolutionId3);
       await expect(_vote(user3, true, resolutionId3)).reverted;
@@ -329,9 +334,9 @@ describe("Integration", () => {
     });
 
     it("expect chaos", async () => {
-      await _prepareForVoting(user1, 60);
-      await _prepareForVoting(user2, 30);
-      await _prepareForVoting(user3, 10);
+      await _makeContributor(user1, 60);
+      await _makeContributor(user2, 30);
+      await _makeContributor(user3, 10);
 
       await _delegate(user1, user3);
       await _delegate(user2, user3);
@@ -349,7 +354,7 @@ describe("Integration", () => {
 
       const resolutionId2 = await _prepareResolution();
 
-      await shareholderRegistry.setStatus(investorStatus, user3.address);
+      await registry.setStatus(investorStatus, user3.address);
       await token.connect(user3).transfer(user2.address, 50);
       await token.mint(user2.address, 50);
       // -> user 1 voting power == 60
@@ -358,7 +363,7 @@ describe("Integration", () => {
 
       const resolutionId3 = await _prepareResolution();
 
-      await shareholderRegistry.setStatus(contributorStatus, user3.address);
+      await registry.setStatus(contributorStatus, user3.address);
       // -> user 1 voting power == 60
       // -> user 2 voting power == 0 (130)
       // -> user 3 voting power == 190
@@ -416,8 +421,8 @@ describe("Integration", () => {
     // Resolution is created
     // A votes yes, B votes no. Resolution passes
     it("token economics + voting", async () => {
-      await _prepareForVoting(user1, 49);
-      await _prepareForVoting(user2, 51);
+      await _makeContributor(user1, 49);
+      await _makeContributor(user2, 51);
 
       const resolutionId1 = await _prepareResolution(6);
       await _makeVotable(resolutionId1);
@@ -431,10 +436,10 @@ describe("Integration", () => {
 
       await expect(
         token.connect(user2).transfer(user3.address, 2)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("TelediskoToken: contributor cannot transfer");
 
-      await token.connect(user2).createOffer(2);
-      await token.matchOffer(user2.address, user1.address, 1);
+      await market.connect(user2).makeOffer(2);
+      await market.matchOffer(user2.address, user1.address, 1);
 
       const resolutionId2 = await _prepareResolution(6);
       await _makeVotable(resolutionId2);
@@ -447,7 +452,7 @@ describe("Integration", () => {
       expect(resolution2Result).equal(false);
 
       // Let 7 days pass, so to unlock tokens from user2
-      const expirationSeconds = await token.OFFER_EXPIRATION();
+      const expirationSeconds = await market.offerDuration();
       const offerExpires =
         (await getEVMTimestamp()) + expirationSeconds.toNumber();
       await setEVMTimestamp(offerExpires);
@@ -455,10 +460,10 @@ describe("Integration", () => {
 
       // Tries first to transfer 2 tokens (becuase the user forgot that 1 was sold to user 1)
       await expect(
-        token.connect(user2).transfer(user3.address, 2)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+        market.connect(user2).withdraw(user3.address, 2)
+      ).revertedWith("InternalMarket: amount exceeds balance");
       // Tries now to transfer the right amount
-      await token.connect(user2).transfer(user3.address, 1);
+      await market.connect(user2).withdraw(user3.address, 1);
       // The external user transfers the token back to user 1, because they can
       await token.connect(user3).transfer(user1.address, 1);
 
@@ -471,6 +476,35 @@ describe("Integration", () => {
         resolutionId3
       );
       expect(resolution3Result).equal(true);
+    });
+
+    it("internal market + voting power", async () => {
+      await _makeContributor(user1, 49);
+      await _makeContributor(user2, 51);
+
+      const resolutionId1 = await _prepareResolution(6);
+      await _makeVotable(resolutionId1);
+
+      expect(await voting.getVotingPower(user1.address)).equal(49);
+      expect(await voting.getVotingPower(user2.address)).equal(51);
+
+      await market.connect(user2).makeOffer(2);
+      await market.matchOffer(user2.address, user1.address, 1);
+
+      const resolutionId2 = await _prepareResolution(6);
+      await _makeVotable(resolutionId2);
+
+      expect(await voting.getVotingPower(user1.address)).equal(50);
+      expect(await voting.getVotingPower(user2.address)).equal(49);
+
+      await setEVMTimestamp((await getEVMTimestamp()) + DAY * 8);
+      await market.connect(user2).withdraw(user2.address, 1);
+
+      const resolutionId3 = await _prepareResolution(6);
+      await _makeVotable(resolutionId3);
+
+      expect(await voting.getVotingPower(user1.address)).equal(50);
+      expect(await voting.getVotingPower(user2.address)).equal(50);
     });
 
     // Mint 50 tokens to A
@@ -493,28 +527,28 @@ describe("Integration", () => {
     // B transfers 5 tokens to C
     // Check
     it("complex tokenomics", async () => {
-      await _prepareForVoting(user1, 50);
-      await _prepareForVoting(user2, 100);
-      await _prepareForVoting(user3, 1);
+      await _makeContributor(user1, 50);
+      await _makeContributor(user2, 100);
+      await _makeContributor(user3, 1);
 
-      await token.connect(user2).createOffer(60);
-      await token.matchOffer(user2.address, user3.address, 10);
-      await token.matchOffer(user2.address, user1.address, 40);
-      await token.connect(user3).createOffer(5);
-      await token.connect(user1).createOffer(10);
-      await token.matchOffer(user1.address, user2.address, 10);
+      await market.connect(user2).makeOffer(60);
+      await market.matchOffer(user2.address, user3.address, 10);
+      await market.matchOffer(user2.address, user1.address, 40);
+      await market.connect(user3).makeOffer(5);
+      await market.connect(user1).makeOffer(10);
+      await market.matchOffer(user1.address, user2.address, 10);
 
       // Two days pass
       let offerExpires = (await getEVMTimestamp()) + 2 * DAY;
       await setEVMTimestamp(offerExpires);
       await mineEVMBlock();
 
-      await token.connect(user2).createOffer(10);
-      await token.matchOffer(user2.address, user3.address, 15);
+      await market.connect(user2).makeOffer(10);
+      await market.matchOffer(user2.address, user3.address, 15);
 
       await expect(
-        token.connect(user3).transfer(user1.address, 10)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+        market.connect(user3).withdraw(user1.address, 10)
+      ).revertedWith("InternalMarket: amount exceeds balance");
 
       // 5 days pass (first offer expires)
       offerExpires = (await getEVMTimestamp()) + 5 * DAY;
@@ -523,29 +557,20 @@ describe("Integration", () => {
 
       // Still fails, because first offers was already drained
       await expect(
-        token.connect(user2).transfer(user3.address, 5)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+        market.connect(user2).withdraw(user3.address, 5)
+      ).revertedWith("InternalMarket: amount exceeds balance");
 
-      expect((await token.lockedBalanceOf(user1.address)).toNumber()).equal(80);
-      expect((await token.balanceOf(user1.address)).toNumber()).equal(80);
-      expect((await token.offeredBalanceOf(user1.address)).toNumber()).equal(0);
-      expect((await token.unlockedBalanceOf(user1.address)).toNumber()).equal(
-        0
-      );
+      expect(await token.balanceOf(user1.address)).equal(80);
+      expect(await market.offeredBalanceOf(user1.address)).equal(0);
+      expect(await market.withdrawableBalanceOf(user1.address)).equal(0);
 
-      expect((await token.lockedBalanceOf(user2.address)).toNumber()).equal(45);
-      expect((await token.balanceOf(user2.address)).toNumber()).equal(45);
-      expect((await token.offeredBalanceOf(user2.address)).toNumber()).equal(5);
-      expect((await token.unlockedBalanceOf(user2.address)).toNumber()).equal(
-        0
-      );
+      expect(await token.balanceOf(user2.address)).equal(40);
+      expect(await market.offeredBalanceOf(user2.address)).equal(5);
+      expect(await market.withdrawableBalanceOf(user2.address)).equal(0);
 
-      expect((await token.lockedBalanceOf(user3.address)).toNumber()).equal(21);
-      expect((await token.balanceOf(user3.address)).toNumber()).equal(26);
-      expect((await token.offeredBalanceOf(user3.address)).toNumber()).equal(0);
-      expect((await token.unlockedBalanceOf(user3.address)).toNumber()).equal(
-        5
-      );
+      expect(await token.balanceOf(user3.address)).equal(21);
+      expect(await market.offeredBalanceOf(user3.address)).equal(0);
+      expect(await market.withdrawableBalanceOf(user3.address)).equal(5);
 
       // 3 days pass (last user2 offer expires)
       offerExpires = (await getEVMTimestamp()) + 3 * DAY;
@@ -554,28 +579,22 @@ describe("Integration", () => {
 
       // first tries wrong amount
       await expect(
-        token.connect(user2).transfer(user3.address, 10)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
-      token.connect(user2).transfer(user3.address, 5);
+        market.connect(user2).withdraw(user3.address, 10)
+      ).revertedWith("InternalMarket: amount exceeds balance");
+      await market.connect(user2).withdraw(user3.address, 5);
 
-      expect((await token.lockedBalanceOf(user2.address)).toNumber()).equal(40);
-      expect((await token.balanceOf(user2.address)).toNumber()).equal(40);
-      expect((await token.offeredBalanceOf(user2.address)).toNumber()).equal(0);
-      expect((await token.unlockedBalanceOf(user2.address)).toNumber()).equal(
-        0
-      );
+      expect(await token.balanceOf(user2.address)).equal(40);
+      expect(await market.offeredBalanceOf(user2.address)).equal(0);
+      expect(await market.withdrawableBalanceOf(user2.address)).equal(0);
 
-      expect((await token.lockedBalanceOf(user3.address)).toNumber()).equal(26);
-      expect((await token.balanceOf(user3.address)).toNumber()).equal(31);
-      expect((await token.offeredBalanceOf(user3.address)).toNumber()).equal(0);
-      expect((await token.unlockedBalanceOf(user3.address)).toNumber()).equal(
-        5
-      );
+      expect(await token.balanceOf(user3.address)).equal(26);
+      expect(await market.offeredBalanceOf(user3.address)).equal(0);
+      expect(await market.withdrawableBalanceOf(user3.address)).equal(5);
     });
 
     it("Mints tokens to a contributor after a resolution passes", async () => {
-      await _prepareForVoting(user1, 100);
-      await _prepareForVoting(user2, 50);
+      await _makeContributor(user1, 100);
+      await _makeContributor(user2, 50);
 
       const abi = ["function mint(address to, uint256 amount)"];
       const iface = new ethers.utils.Interface(abi);
@@ -594,8 +613,8 @@ describe("Integration", () => {
     });
 
     it("Adds a resolution type after a resolution passes", async () => {
-      await _prepareForVoting(user1, 100);
-      await _prepareForVoting(user2, 50);
+      await _makeContributor(user1, 100);
+      await _makeContributor(user2, 50);
 
       const abi = [
         "function addResolutionType(string memory name, uint256 quorum, uint256 noticePeriod, uint256 votingPeriod, bool canBeNegative)",

@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -19,10 +19,9 @@ const { expect } = chai;
 
 const AddressZero = ethers.constants.AddressZero;
 
-const DAY = 60 * 60 * 24;
-const WEEK = DAY * 7;
-
 describe("TelediskoToken", () => {
+  let snapshotId: string;
+
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string, ESCROW_ROLE: string;
   let telediskoToken: TelediskoToken;
   let voting: VotingMock;
@@ -33,7 +32,7 @@ describe("TelediskoToken", () => {
     contributor2: SignerWithAddress,
     nonContributor: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [deployer, account, contributor, contributor2, nonContributor] =
       await ethers.getSigners();
 
@@ -106,6 +105,14 @@ describe("TelediskoToken", () => {
         flag
       );
     }
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   describe("token transfer logic", async () => {

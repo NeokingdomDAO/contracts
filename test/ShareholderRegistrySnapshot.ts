@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -19,9 +19,9 @@ const { expect } = chai;
 const Bytes32Zero =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-const AddressZero = ethers.constants.AddressZero;
-
 describe("Shareholder Registry", () => {
+  let snapshotId: string;
+
   let RESOLUTION_ROLE: string,
     OPERATOR_ROLE: string,
     SHAREHOLDER_STATUS: string,
@@ -36,7 +36,7 @@ describe("Shareholder Registry", () => {
     alice: SignerWithAddress,
     bob: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [operator, managingBoard, alice, bob] = await ethers.getSigners();
     const ShareholderRegistryFactory = (await ethers.getContractFactory(
       "ShareholderRegistry",
@@ -69,6 +69,14 @@ describe("Shareholder Registry", () => {
     await registry.grantRole(RESOLUTION_ROLE, operator.address);
     await registry.grantRole(OPERATOR_ROLE, operator.address);
     await registry.setVoting(voting.address);
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   describe("Status management", () => {

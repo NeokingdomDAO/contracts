@@ -1,10 +1,9 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import {
   ShareholderRegistry,
-  Voting,
   TelediskoToken,
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
@@ -23,6 +22,8 @@ const { expect } = chai;
 const DAY = 60 * 60 * 24;
 
 describe("Upgrade", () => {
+  let snapshotId: string;
+
   let token: TelediskoToken;
   let registry: ShareholderRegistry;
   let resolution: ResolutionManager;
@@ -36,7 +37,7 @@ describe("Upgrade", () => {
   let user2: SignerWithAddress;
   let user3: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
     ({ token, registry, resolution } = await deployDAO(
       deployer,
@@ -47,6 +48,14 @@ describe("Upgrade", () => {
     contributorStatus = await registry.CONTRIBUTOR_STATUS();
     shareholderStatus = await registry.SHAREHOLDER_STATUS();
     investorStatus = await registry.INVESTOR_STATUS();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   describe("upgrades", async () => {

@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -20,6 +20,8 @@ const { expect } = chai;
 const AddressZero = ethers.constants.AddressZero;
 
 describe("VotingSnapshot", () => {
+  let snapshotId: string;
+
   let contributorStatus: string;
   let shareholderStatus: string;
   let investorStatus: string;
@@ -39,7 +41,7 @@ describe("VotingSnapshot", () => {
     noDelegate: SignerWithAddress,
     nonContributor: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [
       deployer,
       delegator1,
@@ -115,6 +117,14 @@ describe("VotingSnapshot", () => {
         await votingSnapshot.connect(voter).delegate(voter.address);
       })
     );
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   async function setContributor(user: SignerWithAddress, flag: boolean) {

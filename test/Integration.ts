@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -24,6 +24,8 @@ const { expect } = chai;
 const DAY = 60 * 60 * 24;
 
 describe("Integration", async () => {
+  let snapshotId: string;
+
   let voting: Voting;
   let token: TelediskoToken;
   let resolution: ResolutionManager;
@@ -37,7 +39,7 @@ describe("Integration", async () => {
     user2: SignerWithAddress,
     user3: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
     ({ voting, token, registry, resolution, market } = await deployDAO(
       deployer,
@@ -46,6 +48,14 @@ describe("Integration", async () => {
 
     contributorStatus = await registry.CONTRIBUTOR_STATUS();
     investorStatus = await registry.INVESTOR_STATUS();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   describe("integration", async () => {

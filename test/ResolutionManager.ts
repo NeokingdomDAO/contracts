@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -25,7 +25,9 @@ const { expect } = chai;
 
 const DAY = 60 * 60 * 24;
 
-describe("Resolution", () => {
+describe("Resolution", async () => {
+  let snapshotId: string;
+
   let managingBoardStatus: string;
   let contributorStatus: string;
   let shareholderStatus: string;
@@ -36,14 +38,16 @@ describe("Resolution", () => {
   let resolution: ResolutionManager;
   let shareholderRegistry: ShareholderRegistryMock;
   let resolutionExecutorMock: ResolutionExecutorMock;
+  let resolutionId: number;
   let deployer: SignerWithAddress,
     managingBoard: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
     delegate1: SignerWithAddress,
     nonContributor: SignerWithAddress;
+  let OPERATOR_ROLE: string, RESOLUTION_ROLE: string;
 
-  beforeEach(async () => {
+  before(async () => {
     [deployer, managingBoard, user1, user2, delegate1, nonContributor] =
       await ethers.getSigners();
     const VotingMockFactory = (await ethers.getContractFactory(
@@ -106,8 +110,11 @@ describe("Resolution", () => {
     )) as ResolutionManager;
     await resolution.deployed();
 
-    await resolution.grantRole(await roles.OPERATOR_ROLE(), deployer.address);
-    await resolution.grantRole(await roles.RESOLUTION_ROLE(), deployer.address);
+    OPERATOR_ROLE = await roles.OPERATOR_ROLE();
+    RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
+
+    await resolution.grantRole(OPERATOR_ROLE, deployer.address);
+    await resolution.grantRole(RESOLUTION_ROLE, deployer.address);
 
     await voting.mock_getDelegateAt(user1.address, user1.address);
 
@@ -132,6 +139,15 @@ describe("Resolution", () => {
         await voting.mock_canVoteAt(voter.address, true);
       })
     );
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+    resolutionId = 1; // first resolution ID is always 1
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   async function setContributor(user: SignerWithAddress, flag: boolean) {
@@ -172,11 +188,6 @@ describe("Resolution", () => {
     const approveTimestamp = await getEVMTimestamp();
     await setEVMTimestamp(approveTimestamp + 3 * DAY);
   }
-
-  let resolutionId: number;
-  beforeEach(async () => {
-    resolutionId = 1; // first resolution ID is always 1
-  });
 
   describe("creation logic", async () => {
     it("allows to create a resolution", async () => {
@@ -328,19 +339,19 @@ describe("Resolution", () => {
 
   describe("dependency injection", async () => {
     it("allows the OPERATOR_ROLE to setVoting", async () => {
-      await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
+      await resolution.grantRole(OPERATOR_ROLE, user1.address);
       await resolution.connect(user1).setVoting(managingBoard.address);
     });
 
     it("allow the OPERATOR_ROLE to setShareholderRegistry", async () => {
-      await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
+      await resolution.grantRole(OPERATOR_ROLE, user1.address);
       await resolution
         .connect(user1)
         .setShareholderRegistry(managingBoard.address);
     });
 
     it("allow the OPERATOR_ROLE to setTelediskoToken", async () => {
-      await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
+      await resolution.grantRole(OPERATOR_ROLE, user1.address);
       await resolution.connect(user1).setTelediskoToken(managingBoard.address);
     });
 
@@ -349,7 +360,7 @@ describe("Resolution", () => {
         resolution.connect(managingBoard).setVoting(managingBoard.address)
       ).revertedWith(
         `AccessControl: account ${managingBoard.address.toLowerCase()} ` +
-          `is missing role ${await roles.OPERATOR_ROLE()}`
+          `is missing role ${OPERATOR_ROLE}`
       );
     });
 
@@ -360,7 +371,7 @@ describe("Resolution", () => {
           .setShareholderRegistry(managingBoard.address)
       ).revertedWith(
         `AccessControl: account ${managingBoard.address.toLowerCase()} ` +
-          `is missing role ${await roles.OPERATOR_ROLE()}`
+          `is missing role ${OPERATOR_ROLE}`
       );
     });
     it("doesn't allow anyone not with OPERATOR_ROLE to setTelediskoToken", async () => {
@@ -370,14 +381,14 @@ describe("Resolution", () => {
           .setTelediskoToken(managingBoard.address)
       ).revertedWith(
         `AccessControl: account ${managingBoard.address.toLowerCase()} ` +
-          `is missing role ${await roles.OPERATOR_ROLE()}`
+          `is missing role ${OPERATOR_ROLE}`
       );
     });
   });
 
   describe("resolution type management", async () => {
     it("should allow a resolution to add a resolution type", async () => {
-      await resolution.grantRole(await roles.RESOLUTION_ROLE(), user1.address);
+      await resolution.grantRole(RESOLUTION_ROLE, user1.address);
       await resolution
         .connect(user1)
         .addResolutionType("test", 42, 43, 44, false);
@@ -405,7 +416,7 @@ describe("Resolution", () => {
       await expect(
         resolution.connect(user1).addResolutionType("test", 42, 43, 44, false)
       ).revertedWith(
-        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${await roles.RESOLUTION_ROLE()}`
+        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${RESOLUTION_ROLE}`
       );
     });
   });

@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, network } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
@@ -9,12 +9,13 @@ import { BigNumber } from "ethers";
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
+let snapshotId: string;
 
-describe("PriceOracle", () => {
+describe("PriceOracle", async () => {
   let priceOracle: PriceOracle;
   let deployer: SignerWithAddress, account: SignerWithAddress;
 
-  beforeEach(async () => {
+  before(async () => {
     [deployer, account] = await ethers.getSigners();
 
     const PriceOracleFactory = (await ethers.getContractFactory(
@@ -24,6 +25,14 @@ describe("PriceOracle", () => {
 
     priceOracle = await PriceOracleFactory.deploy();
     await priceOracle.deployed();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   describe("relay", async () => {

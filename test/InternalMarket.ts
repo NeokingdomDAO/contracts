@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { FakeContract, smock } from "@defi-wonderland/smock";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -17,6 +17,8 @@ const DAY = 60 * 60 * 24;
 const WEEK = DAY * 7;
 
 describe("InternalMarket", async () => {
+  let snapshotId: string;
+
   let RESOLUTION_ROLE: string, ESCROW_ROLE: string;
   let token: FakeContract<IERC20>;
   let internalMarket: InternalMarket;
@@ -27,7 +29,7 @@ describe("InternalMarket", async () => {
   let carol: SignerWithAddress;
   let offerDuration: number;
 
-  beforeEach(async () => {
+  before(async () => {
     [deployer, account, alice, bob, carol] = await ethers.getSigners();
 
     token = await smock.fake("IERC20");
@@ -48,6 +50,14 @@ describe("InternalMarket", async () => {
 
     // make transferFrom always succeed
     token.transferFrom.returns();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+  });
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshotId]);
   });
 
   describe("setERC20", async () => {
@@ -251,6 +261,7 @@ describe("InternalMarket", async () => {
         // - An offer made on `ts`
         // - An offer made on `ts + 2 days`
         // - An offer made on `ts + 4 days`
+        token.transfer.reset();
         await internalMarket.connect(alice).makeOffer(11);
         ts = await getEVMTimestamp();
 

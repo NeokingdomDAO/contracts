@@ -1,4 +1,5 @@
 import { deploy } from "@openzeppelin/hardhat-upgrades/dist/utils";
+import { deploy } from "@openzeppelin/hardhat-upgrades/dist/utils";
 import { task } from "hardhat/config";
 import {
   Voting,
@@ -7,8 +8,10 @@ import {
   TelediskoToken,
   PriceOracle,
   PriceOracle__factory,
+  PriceOracle,
+  PriceOracle__factory,
 } from "../typechain";
-import { exportAddress } from "./config";
+import { exportAddress, loadContract } from "./config";
 import { deployProxy, getWallet } from "./utils";
 
 task("deploy", "Deploy DAO").setAction(async (_, hre) => {

@@ -1,11 +1,12 @@
-import { ethers, network } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
-import { PriceOracle, PriceOracle__factory } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
+import { ethers, network } from "hardhat";
+
+import { PriceOracle, PriceOracle__factory } from "../typechain";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);

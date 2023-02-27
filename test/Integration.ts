@@ -1,28 +1,29 @@
-import { ethers, network } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
+import { BigNumber, BytesLike } from "ethers";
+import { parseEther } from "ethers/lib/utils";
+import { ethers, network } from "hardhat";
+
 import {
-  ShareholderRegistry,
-  Voting,
-  TelediskoToken,
-  ResolutionManager,
   InternalMarket,
   RedemptionController,
+  ResolutionManager,
+  ShareholderRegistry,
+  TelediskoToken,
   TokenMock,
+  Voting,
 } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+
+import { deployDAO } from "./utils/deploy";
 import {
-  setEVMTimestamp,
   getEVMTimestamp,
   mineEVMBlock,
+  setEVMTimestamp,
   timeTravel,
 } from "./utils/evm";
 import { roles } from "./utils/roles";
-import { deployDAO } from "./utils/deploy";
-import { parseEther } from "ethers/lib/utils";
-
-import { BigNumber, BytesLike } from "ethers";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);

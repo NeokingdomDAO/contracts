@@ -2,7 +2,10 @@ import { Contract } from "ethers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+
 import {
+  PriceOracle,
+  PriceOracle__factory,
   ResolutionManager,
   ResolutionManager__factory,
   ShareholderRegistry,
@@ -11,8 +14,6 @@ import {
   TelediskoToken__factory,
   Voting,
   Voting__factory,
-  PriceOracle,
-  PriceOracle__factory,
 } from "../typechain";
 
 export const DEFAULT_CONFIG_PATH = "./deployments/networks.json";

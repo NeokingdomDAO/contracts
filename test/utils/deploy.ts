@@ -1,6 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, upgrades } from "hardhat";
+
 import {
   InternalMarket,
   InternalMarket__factory,
@@ -16,10 +17,10 @@ import {
 } from "../../typechain";
 import { ResolutionManager } from "../../typechain";
 import {
-  Voting__factory,
-  TelediskoToken__factory,
-  ShareholderRegistry__factory,
   ResolutionManager__factory,
+  ShareholderRegistry__factory,
+  TelediskoToken__factory,
+  Voting__factory,
 } from "../../typechain";
 import { roles } from "./roles";
 

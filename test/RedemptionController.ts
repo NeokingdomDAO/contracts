@@ -1,12 +1,14 @@
-import { ethers, upgrades, network } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
+import { ethers, network, upgrades } from "hardhat";
+
 import {
   RedemptionController,
   RedemptionController__factory,
 } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+
 import { mineEVMBlock, timeTravel } from "./utils/evm";
 
 chai.use(solidity);

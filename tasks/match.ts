@@ -1,7 +1,9 @@
-import { task } from "hardhat/config";
 import { parseEther } from "ethers/lib/utils";
-import { loadContract } from "./config";
+import { task } from "hardhat/config";
+
 import { TelediskoToken__factory } from "../typechain";
+
+import { loadContract } from "./config";
 
 task("match-offer", "Match an offer")
   .addPositionalParam("fromAddress", "From address")

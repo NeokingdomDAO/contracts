@@ -1,15 +1,17 @@
-import { ethers, upgrades, network } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
+import { parseEther } from "ethers/lib/utils";
+import { ethers, network, upgrades } from "hardhat";
+
 import {
   ShareholderRegistry,
   ShareholderRegistry__factory,
   VotingMock,
   VotingMock__factory,
 } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { parseEther } from "ethers/lib/utils";
+
 import { roles } from "./utils/roles";
 
 chai.use(solidity);

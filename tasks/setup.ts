@@ -1,11 +1,13 @@
 import { task } from "hardhat/config";
+
 import {
-  Voting__factory,
-  ShareholderRegistry__factory,
   ResolutionManager__factory,
+  ShareholderRegistry__factory,
   TelediskoToken__factory,
+  Voting__factory,
 } from "../typechain";
-import { loadContract, ROLES } from "./config";
+
+import { ROLES, loadContract } from "./config";
 import { getWallet } from "./utils";
 
 task("setup", "Setup DAO")

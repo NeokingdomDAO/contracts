@@ -1,19 +1,21 @@
-import { ethers, upgrades, network } from "hardhat";
+import { FakeContract, smock } from "@defi-wonderland/smock";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
+import { ethers, network, upgrades } from "hardhat";
+
 import {
-  TelediskoToken,
-  TelediskoToken__factory,
+  IRedemptionController,
   ShareholderRegistryMock,
   ShareholderRegistryMock__factory,
+  TelediskoToken,
+  TelediskoToken__factory,
   VotingMock,
   VotingMock__factory,
-  IRedemptionController,
 } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+
 import { roles } from "./utils/roles";
-import { FakeContract, smock } from "@defi-wonderland/smock";
 
 chai.use(smock.matchers);
 chai.use(solidity);

@@ -1,16 +1,18 @@
-import { task } from "hardhat/config";
 import {
   formatEther,
   keccak256,
   parseEther,
   toUtf8Bytes,
 } from "ethers/lib/utils";
-import { loadContract } from "./config";
+import { readFileSync } from "fs";
+import { task } from "hardhat/config";
+
 import {
   ShareholderRegistry__factory,
   TelediskoToken__factory,
 } from "../typechain";
-import { readFileSync } from "fs";
+
+import { loadContract } from "./config";
 
 task("mint-share", "Mint a share to an address")
   .addPositionalParam("account", "The address")

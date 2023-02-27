@@ -1,6 +1,8 @@
 import { task } from "hardhat/config";
-import { loadContract } from "./config";
+
 import { PriceOracle__factory } from "../typechain";
+
+import { loadContract } from "./config";
 
 task("ref", "Get reference data")
   .addPositionalParam("base", "Base symbol")

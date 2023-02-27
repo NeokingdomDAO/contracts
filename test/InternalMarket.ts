@@ -1,19 +1,21 @@
-import { ethers, network, upgrades } from "hardhat";
 import { FakeContract, smock } from "@defi-wonderland/smock";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
-import { roles } from "./utils/roles";
+import { parseEther } from "ethers/lib/utils";
+import { ethers, network, upgrades } from "hardhat";
+
 import {
   IERC20,
-  InternalMarket,
-  InternalMarket__factory,
   IRedemptionController,
   IStdReference,
+  InternalMarket,
+  InternalMarket__factory,
 } from "../typechain";
-import { parseEther } from "ethers/lib/utils";
+
+import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
+import { roles } from "./utils/roles";
 
 chai.use(smock.matchers);
 chai.use(solidity);

@@ -1,15 +1,13 @@
-import { config as dotEnvConfig } from "dotenv";
-dotEnvConfig();
-
-import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 import "@openzeppelin/hardhat-upgrades";
-
-import "solidity-coverage";
+import "@typechain/hardhat";
+import { config as dotEnvConfig } from "dotenv";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/types";
+import "solidity-coverage";
 
-import "@nomiclabs/hardhat-etherscan";
+dotEnvConfig();
 
 import("./tasks").catch((e) => console.log("Cannot load tasks", e.toString()));
 

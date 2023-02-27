@@ -1,22 +1,24 @@
-import { ethers, upgrades, network } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
+import { BigNumber, ContractReceipt } from "ethers";
+import { ethers, network, upgrades } from "hardhat";
+
 import {
-  ShareholderRegistryMock,
-  ShareholderRegistryMock__factory,
-  VotingMock,
-  VotingMock__factory,
-  TelediskoTokenMock,
-  TelediskoTokenMock__factory,
-  ResolutionManager,
-  ResolutionManager__factory,
   ResolutionExecutorMock,
   ResolutionExecutorMock__factory,
+  ResolutionManager,
+  ResolutionManager__factory,
+  ShareholderRegistryMock,
+  ShareholderRegistryMock__factory,
+  TelediskoTokenMock,
+  TelediskoTokenMock__factory,
+  VotingMock,
+  VotingMock__factory,
 } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber, ContractReceipt } from "ethers";
-import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
+
+import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 import { roles } from "./utils/roles";
 
 chai.use(solidity);

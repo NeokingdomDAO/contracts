@@ -1,6 +1,7 @@
-import { ethers } from "hardhat";
-import { Roles, Roles__factory } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers } from "hardhat";
+
+import { Roles, Roles__factory } from "../../typechain";
 
 export let roles: Roles;
 

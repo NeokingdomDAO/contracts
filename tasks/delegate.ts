@@ -1,5 +1,7 @@
 import { task } from "hardhat/config";
+
 import { Voting__factory } from "../typechain";
+
 import { loadContract } from "./config";
 
 task("delegate", "Delegate an address")

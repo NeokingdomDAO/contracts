@@ -1,6 +1,8 @@
 import { task } from "hardhat/config";
-import { loadContract } from "./config";
+
 import { ResolutionManager__factory } from "../typechain";
+
+import { loadContract } from "./config";
 
 task("resolution:execute", "Execute a resolution")
   .addPositionalParam("id", "The id of the resolution")

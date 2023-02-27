@@ -1,3 +1,3 @@
 - deploy contracts
 - run `post-deploy.sh`
-- 
+-

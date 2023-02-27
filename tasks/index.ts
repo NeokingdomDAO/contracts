@@ -1,10 +1,10 @@
-import "./deploy";
-import "./upgrade";
-import "./status";
 import "./delegate";
-import "./role";
-import "./types";
-import "./setup";
+import "./deploy";
 import "./match";
 import "./oracle";
 import "./resolution";
+import "./role";
+import "./setup";
+import "./status";
+import "./types";
+import "./upgrade";

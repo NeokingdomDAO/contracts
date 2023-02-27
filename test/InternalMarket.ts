@@ -367,14 +367,15 @@ describe("InternalMarket", async () => {
           });
 
           it("should fail when the user redeems 70 tokens", async () => {
+            // smock2 bug causes this error rather than the faked one
             await expect(internalMarket.connect(alice).redeem(70)).revertedWith(
-              ""
+              "function returned an unexpected amount of data"
             );
           });
 
           it("should fail when the user redeems 60 tokens", async () => {
             await expect(internalMarket.connect(alice).redeem(60)).revertedWith(
-              ""
+              "function returned an unexpected amount of data"
             );
           });
 
@@ -406,7 +407,7 @@ describe("InternalMarket", async () => {
 
           it("should fail when the user redeems 70 tokens", async () => {
             await expect(internalMarket.connect(alice).redeem(70)).revertedWith(
-              ""
+              "function returned an unexpected amount of data"
             );
           });
 

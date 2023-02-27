@@ -536,11 +536,11 @@ describe("Shareholder Registry", () => {
     it("should not allow to transfer factional tokens", async () => {
       await expect(
         registry.mint(registry.address, parseEther("0.1"))
-      ).revertedWith("No fractional tokens");
+      ).revertedWith("ShareholderRegistry: No fractional tokens");
 
       await expect(
         registry.mint(registry.address, parseEther("2.5"))
-      ).revertedWith("No fractional tokens");
+      ).revertedWith("ShareholderRegistry: No fractional tokens");
     });
 
     it("should not allow anyone without RESOLUTION_ROLE to transfer shares", async () => {

@@ -1,10 +1,10 @@
 import { task } from "hardhat/config";
 
 import {
+  NeokingdomToken,
   PriceOracle__factory,
   ResolutionManager,
   ShareholderRegistry,
-  TelediskoToken,
   Voting,
 } from "../typechain";
 
@@ -31,17 +31,17 @@ task("deploy", "Deploy DAO").setAction(async (_, hre) => {
     hre,
     deployer,
     "ShareholderRegistry",
-    ["Teledisko Share", "TS"]
+    ["Neokingdom Share", "NS"]
   )) as ShareholderRegistry;
   await exportAddress(hre, shareholderRegistryContract, "ShareholderRegistry");
 
-  const telediskoTokenContract = (await deployProxy(
+  const neokingdomTokenContract = (await deployProxy(
     hre,
     deployer,
-    "TelediskoToken",
-    ["Teledisko Token", "TT"]
-  )) as TelediskoToken;
-  await exportAddress(hre, telediskoTokenContract, "TelediskoToken");
+    "NeokingdomToken",
+    ["Neokingdom Token", "NEOK"]
+  )) as NeokingdomToken;
+  await exportAddress(hre, neokingdomTokenContract, "NeokingdomToken");
 
   const resolutionManagerContract = (await deployProxy(
     hre,
@@ -49,7 +49,7 @@ task("deploy", "Deploy DAO").setAction(async (_, hre) => {
     "ResolutionManager",
     [
       shareholderRegistryContract.address,
-      telediskoTokenContract.address,
+      neokingdomTokenContract.address,
       votingContract.address,
     ]
   )) as ResolutionManager;

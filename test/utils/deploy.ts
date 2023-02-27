@@ -5,21 +5,21 @@ import { ethers, upgrades } from "hardhat";
 import {
   InternalMarket,
   InternalMarket__factory,
+  NeokingdomToken,
   PriceOracle,
   PriceOracle__factory,
   RedemptionController,
   RedemptionController__factory,
   ShareholderRegistry,
-  TelediskoToken,
   TokenMock,
   TokenMock__factory,
   Voting,
 } from "../../typechain";
 import { ResolutionManager } from "../../typechain";
 import {
+  NeokingdomToken__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
-  TelediskoToken__factory,
   Voting__factory,
 } from "../../typechain";
 import { roles } from "./roles";
@@ -30,7 +30,7 @@ export async function deployDAO(
   reserve: SignerWithAddress
 ) {
   let voting: Voting;
-  let token: TelediskoToken;
+  let token: NeokingdomToken;
   let usdc: TokenMock;
   let registry: ShareholderRegistry;
   let resolution: ResolutionManager;
@@ -46,10 +46,10 @@ export async function deployDAO(
     deployer
   )) as Voting__factory;
 
-  const TelediskoTokenFactory = (await ethers.getContractFactory(
-    "TelediskoToken",
+  const NeokingdomTokenFactory = (await ethers.getContractFactory(
+    "NeokingdomToken",
     deployer
-  )) as TelediskoToken__factory;
+  )) as NeokingdomToken__factory;
 
   const ShareholderRegistryFactory = (await ethers.getContractFactory(
     "ShareholderRegistry",
@@ -90,10 +90,10 @@ export async function deployDAO(
   await voting.deployed();
 
   token = (await upgrades.deployProxy(
-    TelediskoTokenFactory,
+    NeokingdomTokenFactory,
     ["TestToken", "TT"],
     { initializer: "initialize" }
-  )) as TelediskoToken;
+  )) as NeokingdomToken;
   await token.deployed();
 
   usdc = await TokenMockFactory.deploy();

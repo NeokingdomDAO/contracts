@@ -2,11 +2,11 @@
 
 ## 1 Abstract
 
-This document elaborates the logic behind the voting power distribution and delegation implemented in the TelediskoDAO contracts.
+This document elaborates the logic behind the voting power distribution and delegation implemented in the NeokingdomDAO contracts.
 
 ## 2 Motivation
 
-One of the main components of the TelediskoDAO is the automatic voting and settlement of resolutions. The Article of Association of the DAO describes how the voting process for a resolution should be implemented. More in detail:
+One of the main components of the NeokingdomDAO is the automatic voting and settlement of resolutions. The Article of Association of the DAO describes how the voting process for a resolution should be implemented. More in detail:
 
 - it specifies on how the voting power should be distributed among token holders
 - it specifies how the delegation among contributors should work

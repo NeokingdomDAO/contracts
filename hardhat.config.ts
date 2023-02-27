@@ -129,7 +129,7 @@ const config: HardhatUserConfig = {
       "ERC20Mock",
       "ResolutionManagerV2Mock",
       "ShareholderRegistryMock",
-      "TelediskoTokenMock",
+      "NeokingdomTokenMock",
       "VotingMock",
     ],
   },

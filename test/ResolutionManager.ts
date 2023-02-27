@@ -6,14 +6,14 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  NeokingdomTokenMock,
+  NeokingdomTokenMock__factory,
   ResolutionExecutorMock,
   ResolutionExecutorMock__factory,
   ResolutionManager,
   ResolutionManager__factory,
   ShareholderRegistryMock,
   ShareholderRegistryMock__factory,
-  TelediskoTokenMock,
-  TelediskoTokenMock__factory,
   VotingMock,
   VotingMock__factory,
 } from "../typechain";
@@ -36,7 +36,7 @@ describe("Resolution", async () => {
   let investorStatus: string;
 
   let voting: VotingMock;
-  let token: TelediskoTokenMock;
+  let token: NeokingdomTokenMock;
   let resolution: ResolutionManager;
   let shareholderRegistry: ShareholderRegistryMock;
   let resolutionExecutorMock: ResolutionExecutorMock;
@@ -57,10 +57,10 @@ describe("Resolution", async () => {
       deployer
     )) as VotingMock__factory;
 
-    const TelediskoTokenMockFactory = (await ethers.getContractFactory(
-      "TelediskoTokenMock",
+    const NeokingdomTokenMockFactory = (await ethers.getContractFactory(
+      "NeokingdomTokenMock",
       deployer
-    )) as TelediskoTokenMock__factory;
+    )) as NeokingdomTokenMock__factory;
 
     const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
       "ShareholderRegistryMock",
@@ -81,8 +81,8 @@ describe("Resolution", async () => {
     await voting.deployed();
 
     token = (await upgrades.deployProxy(
-      TelediskoTokenMockFactory
-    )) as TelediskoTokenMock;
+      NeokingdomTokenMockFactory
+    )) as NeokingdomTokenMock;
     await token.deployed();
 
     shareholderRegistry = (await upgrades.deployProxy(
@@ -352,9 +352,9 @@ describe("Resolution", async () => {
         .setShareholderRegistry(managingBoard.address);
     });
 
-    it("allow the OPERATOR_ROLE to setTelediskoToken", async () => {
+    it("allow the OPERATOR_ROLE to setNeokingdomToken", async () => {
       await resolution.grantRole(OPERATOR_ROLE, user1.address);
-      await resolution.connect(user1).setTelediskoToken(managingBoard.address);
+      await resolution.connect(user1).setNeokingdomToken(managingBoard.address);
     });
 
     it("doesn't allow anyone not with OPERATOR_ROLE to setVoting", async () => {
@@ -376,11 +376,11 @@ describe("Resolution", async () => {
           `is missing role ${OPERATOR_ROLE}`
       );
     });
-    it("doesn't allow anyone not with OPERATOR_ROLE to setTelediskoToken", async () => {
+    it("doesn't allow anyone not with OPERATOR_ROLE to setNeokingdomToken", async () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .setTelediskoToken(managingBoard.address)
+          .setNeokingdomToken(managingBoard.address)
       ).revertedWith(
         `AccessControl: account ${managingBoard.address.toLowerCase()} ` +
           `is missing role ${OPERATOR_ROLE}`

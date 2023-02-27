@@ -1,9 +1,9 @@
 import { task } from "hardhat/config";
 
 import {
+  NeokingdomToken__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
-  TelediskoToken__factory,
   Voting__factory,
 } from "../typechain";
 
@@ -33,10 +33,10 @@ task("setup", "Setup DAO")
       ResolutionManager__factory,
       "ResolutionManager"
     );
-    const telediskoTokenContract = await loadContract(
+    const neokingdomTokenContract = await loadContract(
       hre,
-      TelediskoToken__factory,
-      "TelediskoToken"
+      NeokingdomToken__factory,
+      "NeokingdomToken"
     );
 
     /**
@@ -82,15 +82,15 @@ task("setup", "Setup DAO")
       deployer.address
     );
 
-    console.log("  TelediskoToken");
+    console.log("  NeokingdomToken");
     console.log("    grant RESOLUTION_ROLE to ResolutionManager");
-    await telediskoTokenContract.grantRole(
+    await neokingdomTokenContract.grantRole(
       ROLES.RESOLUTION_ROLE,
       resolutionManagerContract.address
     );
 
     console.log("    grant OPERATOR_ROLE to deployer");
-    let tx = await telediskoTokenContract.grantRole(
+    let tx = await neokingdomTokenContract.grantRole(
       ROLES.OPERATOR_ROLE,
       deployer.address
     );
@@ -107,14 +107,14 @@ task("setup", "Setup DAO")
     await votingContract.setShareholderRegistry(
       shareholderRegistryContract.address
     );
-    console.log("  Voting set TelediskoToken");
-    await votingContract.setToken(telediskoTokenContract.address);
-    console.log("  TelediskoToken set ShareholderRegistry");
-    await telediskoTokenContract.setShareholderRegistry(
+    console.log("  Voting set NeokingdomToken");
+    await votingContract.setToken(neokingdomTokenContract.address);
+    console.log("  NeokingdomToken set ShareholderRegistry");
+    await neokingdomTokenContract.setShareholderRegistry(
       shareholderRegistryContract.address
     );
-    console.log("  TelediskoToken set Voting");
-    await telediskoTokenContract.setVoting(votingContract.address);
+    console.log("  NeokingdomToken set Voting");
+    await neokingdomTokenContract.setVoting(votingContract.address);
     console.log("  ShareholderRegistry set Voting");
     await shareholderRegistryContract.setVoting(votingContract.address);
 
@@ -160,18 +160,21 @@ task("setup", "Setup DAO")
       adminAddress
     );
 
-    console.log("  TelediskoToken");
+    console.log("  NeokingdomToken");
     console.log("    Grant DEFAULT_ADMIN_ROLE to admin");
-    await telediskoTokenContract.grantRole(
+    await neokingdomTokenContract.grantRole(
       ROLES.DEFAULT_ADMIN_ROLE,
       adminAddress
     );
     console.log("    Grant OPERATOR_ROLE to admin");
-    await telediskoTokenContract.grantRole(ROLES.OPERATOR_ROLE, adminAddress);
+    await neokingdomTokenContract.grantRole(ROLES.OPERATOR_ROLE, adminAddress);
     console.log("    Grant ESCROW_ROLE to admin");
-    await telediskoTokenContract.grantRole(ROLES.ESCROW_ROLE, adminAddress);
+    await neokingdomTokenContract.grantRole(ROLES.ESCROW_ROLE, adminAddress);
     console.log("    Grant RESOLUTION_ROLE to admin");
-    await telediskoTokenContract.grantRole(ROLES.RESOLUTION_ROLE, adminAddress);
+    await neokingdomTokenContract.grantRole(
+      ROLES.RESOLUTION_ROLE,
+      adminAddress
+    );
 
     /**
      * Remove roles to deployer
@@ -210,14 +213,14 @@ task("setup", "Setup DAO")
         deployer.address
       );
 
-      console.log("  TelediskoToken");
+      console.log("  NeokingdomToken");
       console.log("    Remove OPERATOR_ROLE to deployer");
-      await telediskoTokenContract.renounceRole(
+      await neokingdomTokenContract.renounceRole(
         ROLES.OPERATOR_ROLE,
         deployer.address
       );
       console.log("    Remove DEFAULT_ADMIN_ROLE to deployer");
-      tx = await telediskoTokenContract.renounceRole(
+      tx = await neokingdomTokenContract.renounceRole(
         ROLES.DEFAULT_ADMIN_ROLE,
         deployer.address
       );

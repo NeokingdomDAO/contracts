@@ -1,46 +1,45 @@
-![Test workflow](https://github.com/TelediskoDAO/contracts/actions/workflows/node.yml/badge.svg)
+![Test workflow](https://github.com/NeokingdomDAO/contracts/actions/workflows/node.yml/badge.svg)
 
-# Teledisko DAO Contracts
+# Neokingdom DAO Contracts
 
-Welcome to the Teledisko DAO Contacts.
+Welcome to the Neokingdom DAO Contacts.
 
 ## Deployments
 
-Teledisko DAO lives in EVMOS.
+Neokingdom DAO lives on EVMOS.
 
-### v1
+### v0
 
 ```
 Deploy DAO
   Network: evmos
   ChainId: 9001
-  Deployer address: 0x62817523F3B94182B9DF911a8071764F998f11a4
+  Deployer address:
 
 
 ⛏️  Mine contracts
   Voting.sol
-    - proxy at 0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4
-    - implementation at 0x383f9f442011496c2555084bba160182b77a8a19
+    - proxy at
+    - implementation at
 
   ShareholderRegistry.sol
-    - proxy at 0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f
-    - implementation at 0x295a147c13951c9c9b0270355bf580d8dd1eedb0
+    - proxy at
+    - implementation at
 
-  TelediskoToken.sol
-    - proxy at 0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B
-    - implementation at 0x0b63681e44524ebc7632aa86df31094ad0c6c002
+  NeokingdomToken.sol
+    - proxy at
+    - implementation at
 
   ResolutionManager.sol
-    - proxy at 0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7
-    - implementation at 0xa0497e979a05e2c3238a50854409ad3e1487eda3
+    - proxy at
+    - implementation at
 ```
 
-- [Voting](https://evm.evmos.org/address/0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4) `0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4`
-- [ShareholderRegistry](https://evm.evmos.org/address/0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f) `0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f`
-- [TelediskoToken](https://evm.evmos.org/address/0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B) `0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B`
-- [ResolutionManager](https://evm.evmos.org/address/0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7) `0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7`
-- [Treasury (Safe) on EVMOS](https://safe.evmos.org/evmos:0xBa4e22770217342d3a805527e7AfdF5147cA0827) `0xBa4e22770217342d3a805527e7AfdF5147cA0827` or `evmos1hf8zyaczzu6z6w5q25n70t7l29ru5zp8uwepyk`
-- [Treasury (Safe) on Ethereum](https://app.safe.global/eth:0xb850A71e0eB68CAcc0de4BC21bE88577E88548F8) `0xb850A71e0eB68CAcc0de4BC21bE88577E88548F8`
+- [Voting](https://escan.live/address/0x312A36442A7199623C91D219Fe981f1899817305) `0x312A36442A7199623C91D219Fe981f1899817305`
+- [ShareholderRegistry](https://escan.live/address/0xB795d74f9C395332D533cC6c1cb2A9437De1fee3) `0xB795d74f9C395332D533cC6c1cb2A9437De1fee3`
+- [NeokingdomToken](https://escan.live/address/0xA31c18929590B87eC11D854d1424b059f1D94732) `0xA31c18929590B87eC11D854d1424b059f1D94732`
+- [ResolutionManager](https://escan.live/address/0x8ac36631c0C1B630FF50Bb653F5a2edc405873D0) `0x8ac36631c0C1B630FF50Bb653F5a2edc405873D0`
+- [Operator SAFE on EVMOS](https://safe.evmos.org/evmos:0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758) `0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758`
 
 ## Commands
 

@@ -8,8 +8,8 @@ import { readFileSync } from "fs";
 import { task } from "hardhat/config";
 
 import {
+  NeokingdomToken__factory,
   ShareholderRegistry__factory,
-  TelediskoToken__factory,
 } from "../typechain";
 
 import { loadContract } from "./config";
@@ -82,15 +82,15 @@ task("set", "Set the status of an address")
     }
   );
 
-task("mint", "Mint teledisko tokens to an address")
+task("mint", "Mint neokingdom tokens to an address")
   .addParam("account", "The address")
   .addParam("amount", "How many tokens")
   .setAction(
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        TelediskoToken__factory,
-        "TelediskoToken"
+        NeokingdomToken__factory,
+        "NeokingdomToken"
       );
       const tx = await contract.mint(account, parseEther(amount));
       console.log("  Submitted tx", tx.hash);
@@ -99,15 +99,15 @@ task("mint", "Mint teledisko tokens to an address")
     }
   );
 
-task("mint-vesting", "Mint teledisko tokens to an address, vesting")
+task("mint-vesting", "Mint neokingdom tokens to an address, vesting")
   .addParam("account", "The address")
   .addParam("amount", "How many tokens")
   .setAction(
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        TelediskoToken__factory,
-        "TelediskoToken"
+        NeokingdomToken__factory,
+        "NeokingdomToken"
       );
       const tx = await contract.mintVesting(account, parseEther(amount));
       console.log("  Submitted tx", tx.hash);
@@ -121,8 +121,8 @@ task("balance", "Get tt balance")
   .setAction(async ({ account }: { account: string }, hre) => {
     const contract = await loadContract(
       hre,
-      TelediskoToken__factory,
-      "TelediskoToken"
+      NeokingdomToken__factory,
+      "NeokingdomToken"
     );
     const balance = await contract.balanceOf(account);
     console.log(`${account} has ${formatEther(balance)} tokens`);

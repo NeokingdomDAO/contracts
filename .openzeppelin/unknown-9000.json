@@ -815,40 +815,40 @@
             "offset": 0,
             "slot": "101",
             "type": "t_contract(IVoting)5746",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:10"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:10"
           },
           {
             "label": "_shareholderRegistry",
             "offset": 0,
             "slot": "102",
             "type": "t_contract(IShareholderRegistry)3636",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:11"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:11"
           },
           {
             "label": "_vestingBalance",
             "offset": 0,
             "slot": "103",
             "type": "t_mapping(t_address,t_uint256)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:56"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:56"
           },
           {
             "label": "_unlockedBalance",
             "offset": 0,
             "slot": "104",
             "type": "t_mapping(t_address,t_uint256)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:57"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:57"
           },
           {
             "label": "_offers",
             "offset": 0,
             "slot": "105",
             "type": "t_mapping(t_address,t_struct(Offers)4759_storage)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:58"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:58"
           },
           {
             "label": "_currentSnapshotId",
@@ -863,16 +863,16 @@
             "offset": 0,
             "slot": "107",
             "type": "t_mapping(t_address,t_struct(Snapshots)5437_storage)",
-            "contract": "TelediskoTokenSnapshot",
-            "src": "contracts/TelediskoToken/TelediskoTokenSnapshot.sol:17"
+            "contract": "NeokingdomTokenSnapshot",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenSnapshot.sol:17"
           },
           {
             "label": "_totalSupplySnapshots",
             "offset": 0,
             "slot": "108",
             "type": "t_struct(Snapshots)5437_storage",
-            "contract": "TelediskoTokenSnapshot",
-            "src": "contracts/TelediskoToken/TelediskoTokenSnapshot.sol:18"
+            "contract": "NeokingdomTokenSnapshot",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenSnapshot.sol:18"
           },
           {
             "label": "__gap",
@@ -945,11 +945,11 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Offers)4759_storage)": {
-            "label": "mapping(address => struct TelediskoTokenBase.Offers)",
+            "label": "mapping(address => struct NeokingdomTokenBase.Offers)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Snapshots)5437_storage)": {
-            "label": "mapping(address => struct TelediskoTokenSnapshot.Snapshots)",
+            "label": "mapping(address => struct NeokingdomTokenSnapshot.Snapshots)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_uint256)": {
@@ -961,7 +961,7 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint128,t_struct(Offer)4749_storage)": {
-            "label": "mapping(uint128 => struct TelediskoTokenBase.Offer)",
+            "label": "mapping(uint128 => struct NeokingdomTokenBase.Offer)",
             "numberOfBytes": "32"
           },
           "t_string_storage": {
@@ -969,7 +969,7 @@
             "numberOfBytes": "32"
           },
           "t_struct(Offer)4749_storage": {
-            "label": "struct TelediskoTokenBase.Offer",
+            "label": "struct NeokingdomTokenBase.Offer",
             "members": [
               {
                 "label": "expiration",
@@ -987,7 +987,7 @@
             "numberOfBytes": "64"
           },
           "t_struct(Offers)4759_storage": {
-            "label": "struct TelediskoTokenBase.Offers",
+            "label": "struct NeokingdomTokenBase.Offers",
             "members": [
               {
                 "label": "start",
@@ -1029,7 +1029,7 @@
             "numberOfBytes": "64"
           },
           "t_struct(Snapshots)5437_storage": {
-            "label": "struct TelediskoTokenSnapshot.Snapshots",
+            "label": "struct NeokingdomTokenSnapshot.Snapshots",
             "members": [
               {
                 "label": "ids",
@@ -1108,10 +1108,10 @@
             "src": "contracts/ResolutionManager/ResolutionManager.sol:17"
           },
           {
-            "label": "_telediskoToken",
+            "label": "_neokingdomToken",
             "offset": 0,
             "slot": "4",
-            "type": "t_contract(ITelediskoToken)4536",
+            "type": "t_contract(INeokingdomToken)4536",
             "contract": "ResolutionManager",
             "src": "contracts/ResolutionManager/ResolutionManager.sol:18"
           },
@@ -1161,8 +1161,8 @@
             "label": "contract IShareholderRegistry",
             "numberOfBytes": "20"
           },
-          "t_contract(ITelediskoToken)4536": {
-            "label": "contract ITelediskoToken",
+          "t_contract(INeokingdomToken)4536": {
+            "label": "contract INeokingdomToken",
             "numberOfBytes": "20"
           },
           "t_contract(IVoting)5746": {
@@ -1957,40 +1957,40 @@
             "offset": 0,
             "slot": "101",
             "type": "t_contract(IVoting)5746",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:10"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:10"
           },
           {
             "label": "_shareholderRegistry",
             "offset": 0,
             "slot": "102",
             "type": "t_contract(IShareholderRegistry)3636",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:11"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:11"
           },
           {
             "label": "_vestingBalance",
             "offset": 0,
             "slot": "103",
             "type": "t_mapping(t_address,t_uint256)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:56"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:56"
           },
           {
             "label": "_unlockedBalance",
             "offset": 0,
             "slot": "104",
             "type": "t_mapping(t_address,t_uint256)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:57"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:57"
           },
           {
             "label": "_offers",
             "offset": 0,
             "slot": "105",
             "type": "t_mapping(t_address,t_struct(Offers)4759_storage)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:58"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:58"
           },
           {
             "label": "_currentSnapshotId",
@@ -2005,16 +2005,16 @@
             "offset": 0,
             "slot": "107",
             "type": "t_mapping(t_address,t_struct(Snapshots)5437_storage)",
-            "contract": "TelediskoTokenSnapshot",
-            "src": "contracts/TelediskoToken/TelediskoTokenSnapshot.sol:17"
+            "contract": "NeokingdomTokenSnapshot",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenSnapshot.sol:17"
           },
           {
             "label": "_totalSupplySnapshots",
             "offset": 0,
             "slot": "108",
             "type": "t_struct(Snapshots)5437_storage",
-            "contract": "TelediskoTokenSnapshot",
-            "src": "contracts/TelediskoToken/TelediskoTokenSnapshot.sol:18"
+            "contract": "NeokingdomTokenSnapshot",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenSnapshot.sol:18"
           },
           {
             "label": "__gap",
@@ -2087,11 +2087,11 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Offers)4759_storage)": {
-            "label": "mapping(address => struct TelediskoTokenBase.Offers)",
+            "label": "mapping(address => struct NeokingdomTokenBase.Offers)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Snapshots)5437_storage)": {
-            "label": "mapping(address => struct TelediskoTokenSnapshot.Snapshots)",
+            "label": "mapping(address => struct NeokingdomTokenSnapshot.Snapshots)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_uint256)": {
@@ -2103,7 +2103,7 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint128,t_struct(Offer)4749_storage)": {
-            "label": "mapping(uint128 => struct TelediskoTokenBase.Offer)",
+            "label": "mapping(uint128 => struct NeokingdomTokenBase.Offer)",
             "numberOfBytes": "32"
           },
           "t_string_storage": {
@@ -2111,7 +2111,7 @@
             "numberOfBytes": "32"
           },
           "t_struct(Offer)4749_storage": {
-            "label": "struct TelediskoTokenBase.Offer",
+            "label": "struct NeokingdomTokenBase.Offer",
             "members": [
               {
                 "label": "expiration",
@@ -2129,7 +2129,7 @@
             "numberOfBytes": "64"
           },
           "t_struct(Offers)4759_storage": {
-            "label": "struct TelediskoTokenBase.Offers",
+            "label": "struct NeokingdomTokenBase.Offers",
             "members": [
               {
                 "label": "start",
@@ -2171,7 +2171,7 @@
             "numberOfBytes": "64"
           },
           "t_struct(Snapshots)5437_storage": {
-            "label": "struct TelediskoTokenSnapshot.Snapshots",
+            "label": "struct NeokingdomTokenSnapshot.Snapshots",
             "members": [
               {
                 "label": "ids",
@@ -2250,10 +2250,10 @@
             "src": "contracts/ResolutionManager/ResolutionManager.sol:17"
           },
           {
-            "label": "_telediskoToken",
+            "label": "_neokingdomToken",
             "offset": 0,
             "slot": "4",
-            "type": "t_contract(ITelediskoToken)4536",
+            "type": "t_contract(INeokingdomToken)4536",
             "contract": "ResolutionManager",
             "src": "contracts/ResolutionManager/ResolutionManager.sol:18"
           },
@@ -2303,8 +2303,8 @@
             "label": "contract IShareholderRegistry",
             "numberOfBytes": "20"
           },
-          "t_contract(ITelediskoToken)4536": {
-            "label": "contract ITelediskoToken",
+          "t_contract(INeokingdomToken)4536": {
+            "label": "contract INeokingdomToken",
             "numberOfBytes": "20"
           },
           "t_contract(IVoting)5746": {
@@ -2503,10 +2503,10 @@
             "src": "contracts/ResolutionManager/ResolutionManager.sol:17"
           },
           {
-            "label": "_telediskoToken",
+            "label": "_neokingdomToken",
             "offset": 0,
             "slot": "4",
-            "type": "t_contract(ITelediskoToken)4764",
+            "type": "t_contract(INeokingdomToken)4764",
             "contract": "ResolutionManager",
             "src": "contracts/ResolutionManager/ResolutionManager.sol:18"
           },
@@ -2568,8 +2568,8 @@
             "label": "contract IShareholderRegistry",
             "numberOfBytes": "20"
           },
-          "t_contract(ITelediskoToken)4764": {
-            "label": "contract ITelediskoToken",
+          "t_contract(INeokingdomToken)4764": {
+            "label": "contract INeokingdomToken",
             "numberOfBytes": "20"
           },
           "t_contract(IVoting)5974": {
@@ -3382,40 +3382,40 @@
             "offset": 0,
             "slot": "101",
             "type": "t_contract(IVoting)6097",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:10"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:10"
           },
           {
             "label": "_shareholderRegistry",
             "offset": 0,
             "slot": "102",
             "type": "t_contract(IShareholderRegistry)3941",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:11"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:11"
           },
           {
             "label": "_vestingBalance",
             "offset": 0,
             "slot": "103",
             "type": "t_mapping(t_address,t_uint256)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:56"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:56"
           },
           {
             "label": "_unlockedBalance",
             "offset": 0,
             "slot": "104",
             "type": "t_mapping(t_address,t_uint256)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:57"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:57"
           },
           {
             "label": "_offers",
             "offset": 0,
             "slot": "105",
             "type": "t_mapping(t_address,t_struct(Offers)5110_storage)",
-            "contract": "TelediskoTokenBase",
-            "src": "contracts/TelediskoToken/TelediskoTokenBase.sol:58"
+            "contract": "NeokingdomTokenBase",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenBase.sol:58"
           },
           {
             "label": "_currentSnapshotId",
@@ -3430,16 +3430,16 @@
             "offset": 0,
             "slot": "107",
             "type": "t_mapping(t_address,t_struct(Snapshots)5788_storage)",
-            "contract": "TelediskoTokenSnapshot",
-            "src": "contracts/TelediskoToken/TelediskoTokenSnapshot.sol:17"
+            "contract": "NeokingdomTokenSnapshot",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenSnapshot.sol:17"
           },
           {
             "label": "_totalSupplySnapshots",
             "offset": 0,
             "slot": "108",
             "type": "t_struct(Snapshots)5788_storage",
-            "contract": "TelediskoTokenSnapshot",
-            "src": "contracts/TelediskoToken/TelediskoTokenSnapshot.sol:18"
+            "contract": "NeokingdomTokenSnapshot",
+            "src": "contracts/NeokingdomToken/NeokingdomTokenSnapshot.sol:18"
           },
           {
             "label": "__gap",
@@ -3512,11 +3512,11 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Offers)5110_storage)": {
-            "label": "mapping(address => struct TelediskoTokenBase.Offers)",
+            "label": "mapping(address => struct NeokingdomTokenBase.Offers)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Snapshots)5788_storage)": {
-            "label": "mapping(address => struct TelediskoTokenSnapshot.Snapshots)",
+            "label": "mapping(address => struct NeokingdomTokenSnapshot.Snapshots)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_uint256)": {
@@ -3528,7 +3528,7 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint128,t_struct(Offer)5100_storage)": {
-            "label": "mapping(uint128 => struct TelediskoTokenBase.Offer)",
+            "label": "mapping(uint128 => struct NeokingdomTokenBase.Offer)",
             "numberOfBytes": "32"
           },
           "t_string_storage": {
@@ -3536,7 +3536,7 @@
             "numberOfBytes": "32"
           },
           "t_struct(Offer)5100_storage": {
-            "label": "struct TelediskoTokenBase.Offer",
+            "label": "struct NeokingdomTokenBase.Offer",
             "members": [
               {
                 "label": "expiration",
@@ -3554,7 +3554,7 @@
             "numberOfBytes": "64"
           },
           "t_struct(Offers)5110_storage": {
-            "label": "struct TelediskoTokenBase.Offers",
+            "label": "struct NeokingdomTokenBase.Offers",
             "members": [
               {
                 "label": "start",
@@ -3596,7 +3596,7 @@
             "numberOfBytes": "64"
           },
           "t_struct(Snapshots)5788_storage": {
-            "label": "struct TelediskoTokenSnapshot.Snapshots",
+            "label": "struct NeokingdomTokenSnapshot.Snapshots",
             "members": [
               {
                 "label": "ids",
@@ -3675,10 +3675,10 @@
             "src": "contracts/ResolutionManager/ResolutionManager.sol:17"
           },
           {
-            "label": "_telediskoToken",
+            "label": "_neokingdomToken",
             "offset": 0,
             "slot": "4",
-            "type": "t_contract(ITelediskoToken)4887",
+            "type": "t_contract(INeokingdomToken)4887",
             "contract": "ResolutionManager",
             "src": "contracts/ResolutionManager/ResolutionManager.sol:18"
           },
@@ -3740,8 +3740,8 @@
             "label": "contract IShareholderRegistry",
             "numberOfBytes": "20"
           },
-          "t_contract(ITelediskoToken)4887": {
-            "label": "contract ITelediskoToken",
+          "t_contract(INeokingdomToken)4887": {
+            "label": "contract INeokingdomToken",
             "numberOfBytes": "20"
           },
           "t_contract(IVoting)6097": {

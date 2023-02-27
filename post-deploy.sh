@@ -5,18 +5,18 @@ echo "Granting RESOLUTION_ROLE on ResolutionManager"
 cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract ResolutionManager --role RESOLUTION_ROLE --account WALLET --network $NETWORK
 echo "Granting RESOLUTION_ROLE on ShareholderRegistry"
 cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract ShareholderRegistry --role RESOLUTION_ROLE --account WALLET --network $NETWORK
-echo "Granting RESOLUTION_ROLE on TelediskoToken"
-cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract TelediskoToken --role RESOLUTION_ROLE --account WALLET --network $NETWORK
+echo "Granting RESOLUTION_ROLE on NeokingdomToken"
+cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract NeokingdomToken --role RESOLUTION_ROLE --account WALLET --network $NETWORK
 
 echo "Granting OPERATOR_ROLE on ResolutionManager"
 cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract ResolutionManager --role OPERATOR_ROLE --account WALLET --network $NETWORK
 echo "Granting OPERATOR_ROLE on ShareholderRegistry"
 cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract ShareholderRegistry --role OPERATOR_ROLE --account WALLET --network $NETWORK
-echo "Granting OPERATOR_ROLE on TelediskoToken"
-cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract TelediskoToken --role OPERATOR_ROLE --account WALLET --network $NETWORK
+echo "Granting OPERATOR_ROLE on NeokingdomToken"
+cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract NeokingdomToken --role OPERATOR_ROLE --account WALLET --network $NETWORK
 
-echo "Granting ESCROW_ROLE on TelediskoToken"
-cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract TelediskoToken --role ESCROW_ROLE --account WALLET --network $NETWORK
+echo "Granting ESCROW_ROLE on NeokingdomToken"
+cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat grant-role --contract NeokingdomToken --role ESCROW_ROLE --account WALLET --network $NETWORK
 
 echo "Minting shares"
 cat $WALLETS_FILE | xargs -n1 -IWALLET npx hardhat mint-share WALLET --network $NETWORK

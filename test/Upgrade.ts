@@ -6,12 +6,12 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
-  NewTelediskoTokenMock__factory,
+  NeokingdomToken,
+  NeokingdomTokenV2Mock__factory,
+  NewNeokingdomTokenMock__factory,
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
   ShareholderRegistry,
-  TelediskoToken,
-  TelediskoTokenV2Mock__factory,
 } from "../typechain";
 
 import { deployDAO } from "./utils/deploy";
@@ -26,7 +26,7 @@ const DAY = 60 * 60 * 24;
 describe("Upgrade", () => {
   let snapshotId: string;
 
-  let token: TelediskoToken;
+  let token: NeokingdomToken;
   let registry: ShareholderRegistry;
   let resolution: ResolutionManager;
   let managingBoardStatus: string;
@@ -150,7 +150,7 @@ describe("Upgrade", () => {
     });
 
     it("should change contract logic", async () => {
-      // Prevents also shareholder from transfering their tokens on TelediskoToken
+      // Prevents also shareholder from transfering their tokens on NeokingdomToken
       await registry.mint(user1.address, parseEther("1"));
       await registry.setStatus(contributorStatus, user1.address);
       await _mintTokens(user1, 42);
@@ -161,27 +161,27 @@ describe("Upgrade", () => {
 
       await expect(
         token.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("TelediskoToken: contributor cannot transfer");
+      ).revertedWith("NeokingdomToken: contributor cannot transfer");
 
       await token.connect(user2).transfer(user1.address, 1);
 
-      const TelediskoTokenV2MockFactory = (await ethers.getContractFactory(
-        "TelediskoTokenV2Mock"
-      )) as TelediskoTokenV2Mock__factory;
+      const NeokingdomTokenV2MockFactory = (await ethers.getContractFactory(
+        "NeokingdomTokenV2Mock"
+      )) as NeokingdomTokenV2Mock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
         token.address,
-        TelediskoTokenV2MockFactory
+        NeokingdomTokenV2MockFactory
       );
       await tokenV2Contract.deployed();
 
       await expect(
         token.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("TelediskoTokenV2: nopety nope");
+      ).revertedWith("NeokingdomTokenV2: nopety nope");
 
       await expect(
         token.connect(user2).transfer(user1.address, 1)
-      ).revertedWith("TelediskoTokenV2: nopety nope");
+      ).revertedWith("NeokingdomTokenV2: nopety nope");
     });
 
     it("should change events", async () => {
@@ -189,13 +189,13 @@ describe("Upgrade", () => {
         .emit(token, "VestingSet")
         .withArgs(user1.address, 31);
 
-      const NewTelediskoTokenMockFactory = (await ethers.getContractFactory(
-        "NewTelediskoTokenMock"
-      )) as NewTelediskoTokenMock__factory;
+      const NewNeokingdomTokenMockFactory = (await ethers.getContractFactory(
+        "NewNeokingdomTokenMock"
+      )) as NewNeokingdomTokenMock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
         token.address,
-        NewTelediskoTokenMockFactory
+        NewNeokingdomTokenMockFactory
       );
       await tokenV2Contract.deployed();
 

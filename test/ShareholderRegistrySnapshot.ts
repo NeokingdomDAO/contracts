@@ -50,7 +50,7 @@ describe("Shareholder Registry", () => {
 
     registry = (await upgrades.deployProxy(
       ShareholderRegistryFactory,
-      ["TS", "Teledisko Share"],
+      ["NS", "Neokingdom Share"],
       {
         initializer: "initialize",
       }

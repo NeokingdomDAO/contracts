@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
-import "../TelediskoToken/ITelediskoToken.sol";
+import "../NeokingdomToken/INeokingdomToken.sol";
 import "../Voting/IVoting.sol";
 import "../extensions/Roles.sol";
 import "hardhat/console.sol";
@@ -15,7 +15,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
     uint256 internal _currentResolutionId;
 
     IShareholderRegistry internal _shareholderRegistry;
-    ITelediskoToken internal _telediskoToken;
+    INeokingdomToken internal _neokingdomToken;
     IVoting internal _voting;
 
     event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
@@ -80,11 +80,11 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
     function initialize(
         IShareholderRegistry shareholderRegistry,
-        ITelediskoToken telediskoToken,
+        INeokingdomToken neokingdomToken,
         IVoting voting
     ) public initializer {
         _shareholderRegistry = shareholderRegistry;
-        _telediskoToken = telediskoToken;
+        _neokingdomToken = neokingdomToken;
         _voting = voting;
 
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -152,12 +152,12 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         _shareholderRegistry = shareholderRegistry;
     }
 
-    function setTelediskoToken(ITelediskoToken telediskoToken)
+    function setNeokingdomToken(INeokingdomToken neokingdomToken)
         external
         virtual
         onlyRole(Roles.OPERATOR_ROLE)
     {
-        _telediskoToken = telediskoToken;
+        _neokingdomToken = neokingdomToken;
     }
 
     function setVoting(IVoting voting)
@@ -170,7 +170,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
     function _snapshotAll() internal virtual returns (uint256) {
         _shareholderRegistry.snapshot();
-        _telediskoToken.snapshot();
+        _neokingdomToken.snapshot();
         return _voting.snapshot();
     }
 
@@ -355,7 +355,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
             _voting.getDelegateAt(voter, resolution.snapshotId) != voter &&
             hasVoted
         ) {
-            votingPower = _telediskoToken.balanceOfAt(
+            votingPower = _neokingdomToken.balanceOfAt(
                 voter,
                 resolution.snapshotId
             );
@@ -416,9 +416,9 @@ contract ResolutionManager is Initializable, Context, AccessControl {
             resolution.snapshotId
         );
 
-        // If sender has a delegate load voting power from TelediskoToken
+        // If sender has a delegate load voting power from NeokingdomToken
         if (delegate != _msgSender()) {
-            votingPower = _telediskoToken.balanceOfAt(
+            votingPower = _neokingdomToken.balanceOfAt(
                 _msgSender(),
                 resolution.snapshotId
             );

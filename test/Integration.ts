@@ -8,10 +8,10 @@ import { ethers, network } from "hardhat";
 
 import {
   InternalMarket,
+  NeokingdomToken,
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
-  TelediskoToken,
   TokenMock,
   Voting,
 } from "../typechain";
@@ -41,7 +41,7 @@ describe("Integration", async () => {
   let redemptionActivityWindow: number;
 
   let voting: Voting;
-  let token: TelediskoToken;
+  let token: NeokingdomToken;
   let resolution: ResolutionManager;
   let registry: ShareholderRegistry;
   let market: InternalMarket;
@@ -492,7 +492,7 @@ describe("Integration", async () => {
 
       await expect(
         token.connect(user2).transfer(user3.address, 2)
-      ).revertedWith("TelediskoToken: contributor cannot transfer");
+      ).revertedWith("NeokingdomToken: contributor cannot transfer");
 
       await market.connect(user2).makeOffer(2);
       await market.connect(user1).matchOffer(user2.address, 1);

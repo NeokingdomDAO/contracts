@@ -1,52 +1,8 @@
 {
-  "4": {
-    "TelediskoToken": "0x83Fa102a791a2ae88044A6A043e1bCFC50f5b469",
-    "ResolutionManager": "0x21bc56fa89902Ad945413Ed606AfC1Fd8c22fBE2",
-    "ShareholderRegistry": "0x172397ab6868387F8D39697169cbF8E2C47ba46D",
-    "Voting": "0x70b976d7C1aEb25B526031733321C15Ae4ca3A33"
-  },
-  "25": {
-    "Voting": "0xAb9CadDf05CC6533905B555DB8a2D16d4A80E3C8",
-    "ShareholderRegistry": "0x682e7e6BdcD0699D9551fE53DbAe1729bAdbcD56",
-    "TelediskoToken": "0x0D65D30F88499d26939Dc2a7cDD147E043c873E0",
-    "ResolutionManager": "0xC3bb4003b0843508d7Ef05F5B83FbdfE5d637CBc"
-  },
-  "137": {
-    "Voting": "0x612CbF3E7Faeef00F08E499CDa76f5D4d28123Bb",
-    "ShareholderRegistry": "0xAb9CadDf05CC6533905B555DB8a2D16d4A80E3C8",
-    "TelediskoToken": "0x91C7F946C513aEE3AE8484Bc3B4040a45eA8B5e0",
-    "ResolutionManager": "0x5df34741BC1d69605CdBbf9b4ABeF359B90A2622"
-  },
-  "338": {
-    "Voting": "0xF5cB53a25fd808080b57Def998a4AA3Dc7b30bEF",
-    "ShareholderRegistry": "0xD91E3491b707b71C53FEd17F47A16Fa393Bbf05c",
-    "TelediskoToken": "0xB426F074F3BB15cb94E117FE22bc439878E980A0",
-    "ResolutionManager": "0x55999aD7f697FD15A82b8f125752FaBc25cc53B4"
-  },
-  "9000": {
-    "ResolutionManager": "0x0D65D30F88499d26939Dc2a7cDD147E043c873E0",
-    "TelediskoToken": "0x682e7e6BdcD0699D9551fE53DbAe1729bAdbcD56",
-    "ShareholderRegistry": "0x8e9cc3bA014B457C0eF6D51d658CfbC7DDd7C92b",
-    "Voting": "0x5153c164A64BAD1FaC3C6596FA784f587caC26ab",
-    "PriceOracle": "0x5c2a36F8C1be8724ab2525f7d9e6b251a18C7Fb4"
-  },
   "9001": {
-    "Voting": "0x469EF10604015A07dD4CBca3Ff5baeb80B41bfF4",
-    "ShareholderRegistry": "0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f",
-    "TelediskoToken": "0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B",
-    "ResolutionManager": "0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7",
-    "PriceOracle": "0x666CDb721838B1b8C0C234DAa0D9Dbc821103aA5"
-  },
-  "31337": {
-    "ResolutionManager": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-    "TelediskoToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-    "ShareholderRegistry": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "Voting": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
-  },
-  "80001": {
-    "ResolutionManager": "0xB188Fa60ffE57a20E338337D1E35E663C4887B7a",
-    "TelediskoToken": "0x0E4Fd56e110c2B2B746d55c275856459B5093a83",
-    "ShareholderRegistry": "0x94C53B8E4eaafD6d91Ed3aBa6812889086EF1ee5",
-    "Voting": "0xFcd967b6f0d1690D0998C9A15E234695d8B9e667"
+    "Voting": "0x312A36442A7199623C91D219Fe981f1899817305",
+    "ShareholderRegistry": "0xB795d74f9C395332D533cC6c1cb2A9437De1fee3",
+    "NeokingdomToken": "0xA31c18929590B87eC11D854d1424b059f1D94732",
+    "ResolutionManager": "0x8ac36631c0C1B630FF50Bb653F5a2edc405873D0"
   }
 }

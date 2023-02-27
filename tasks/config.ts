@@ -4,14 +4,14 @@ import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
+  NeokingdomToken,
+  NeokingdomToken__factory,
   PriceOracle,
   PriceOracle__factory,
   ResolutionManager,
   ResolutionManager__factory,
   ShareholderRegistry,
   ShareholderRegistry__factory,
-  TelediskoToken,
-  TelediskoToken__factory,
   Voting,
   Voting__factory,
 } from "../typechain";
@@ -21,7 +21,7 @@ export const DEFAULT_LOCALHOST_CONFIG_PATH =
   "./deployments/networks.localhost.json";
 
 export type ContractName =
-  | "TelediskoToken"
+  | "NeokingdomToken"
   | "ResolutionManager"
   | "ShareholderRegistry"
   | "Voting"
@@ -29,7 +29,7 @@ export type ContractName =
   | "PriceOracle";
 
 export type DAOContract =
-  | TelediskoToken
+  | NeokingdomToken
   | ResolutionManager
   | ShareholderRegistry
   | Voting
@@ -96,7 +96,7 @@ export async function exportAddress(
 type ContractFactory =
   | typeof ShareholderRegistry__factory
   | typeof ResolutionManager__factory
-  | typeof TelediskoToken__factory
+  | typeof NeokingdomToken__factory
   | typeof Voting__factory
   | typeof PriceOracle__factory;
 
@@ -151,8 +151,8 @@ export async function loadContractByName(
       return ResolutionManager__factory.connect(address, deployer);
     case "ShareholderRegistry":
       return ShareholderRegistry__factory.connect(address, deployer);
-    case "TelediskoToken":
-      return TelediskoToken__factory.connect(address, deployer);
+    case "NeokingdomToken":
+      return NeokingdomToken__factory.connect(address, deployer);
     case "Voting":
       return Voting__factory.connect(address, deployer);
     default:

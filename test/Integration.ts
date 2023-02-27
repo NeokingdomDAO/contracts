@@ -8,9 +8,16 @@ import {
   TelediskoToken,
   ResolutionManager,
   InternalMarket,
+  RedemptionController,
+  TokenMock,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
+import {
+  setEVMTimestamp,
+  getEVMTimestamp,
+  mineEVMBlock,
+  timeTravel,
+} from "./utils/evm";
 import { roles } from "./utils/roles";
 import { deployDAO } from "./utils/deploy";
 import { parseEther } from "ethers/lib/utils";
@@ -22,32 +29,70 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const DAY = 60 * 60 * 24;
+const INITIAL_USDC = 1000;
 
 describe("Integration", async () => {
   let snapshotId: string;
+  let offerDurationDays: number;
+  let redemptionStartDays: number;
+  let redemptionWindowDays: number;
+  let redemptionMaxDaysInThePast: number;
+  let redemptionActivityWindow: number;
 
   let voting: Voting;
   let token: TelediskoToken;
   let resolution: ResolutionManager;
   let registry: ShareholderRegistry;
   let market: InternalMarket;
+  let redemption: RedemptionController;
+  let usdc: TokenMock;
   let contributorStatus: string;
   let investorStatus: string;
-  let deployer: SignerWithAddress,
-    managingBoard: SignerWithAddress,
-    user1: SignerWithAddress,
-    user2: SignerWithAddress,
-    user3: SignerWithAddress;
+  let deployer: SignerWithAddress;
+  let managingBoard: SignerWithAddress;
+  let reserve: SignerWithAddress;
+  let user1: SignerWithAddress;
+  let user2: SignerWithAddress;
+  let user3: SignerWithAddress;
+  let free1: SignerWithAddress;
+  let free2: SignerWithAddress;
+  let free3: SignerWithAddress;
 
   before(async () => {
-    [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
-    ({ voting, token, registry, resolution, market } = await deployDAO(
+    [
       deployer,
-      managingBoard
-    ));
+      managingBoard,
+      reserve,
+      user1,
+      user2,
+      user3,
+      free1,
+      free2,
+      free3,
+    ] = await ethers.getSigners();
+    ({ voting, token, registry, resolution, market, redemption, usdc } =
+      await deployDAO(deployer, managingBoard, reserve));
 
     contributorStatus = await registry.CONTRIBUTOR_STATUS();
     investorStatus = await registry.INVESTOR_STATUS();
+
+    offerDurationDays = (await market.offerDuration()).toNumber() / DAY;
+    redemptionStartDays = (await redemption.redemptionStart()).toNumber() / DAY;
+    redemptionWindowDays =
+      (await redemption.redemptionWindow()).toNumber() / DAY;
+    redemptionMaxDaysInThePast =
+      (await redemption.maxDaysInThePast()).toNumber() / DAY;
+    redemptionActivityWindow =
+      (await redemption.activityWindow()).toNumber() / DAY;
+
+    await usdc.mint(reserve.address, INITIAL_USDC);
+    await usdc.connect(reserve).approve(market.address, INITIAL_USDC);
+    await usdc.mint(user1.address, INITIAL_USDC);
+    await usdc.connect(user1).approve(market.address, INITIAL_USDC);
+    await usdc.mint(user2.address, INITIAL_USDC);
+    await usdc.connect(user2).approve(market.address, INITIAL_USDC);
+    await usdc.mint(user3.address, INITIAL_USDC);
+    await usdc.connect(user3).approve(market.address, INITIAL_USDC);
   });
 
   beforeEach(async () => {
@@ -449,7 +494,7 @@ describe("Integration", async () => {
       ).revertedWith("TelediskoToken: contributor cannot transfer");
 
       await market.connect(user2).makeOffer(2);
-      await market.matchOffer(user2.address, user1.address, 1);
+      await market.connect(user1).matchOffer(user2.address, 1);
 
       const resolutionId2 = await _prepareResolution(6);
       await _makeVotable(resolutionId2);
@@ -499,7 +544,7 @@ describe("Integration", async () => {
       expect(await voting.getVotingPower(user2.address)).equal(51);
 
       await market.connect(user2).makeOffer(2);
-      await market.matchOffer(user2.address, user1.address, 1);
+      await market.connect(user1).matchOffer(user2.address, 1);
 
       const resolutionId2 = await _prepareResolution(6);
       await _makeVotable(resolutionId2);
@@ -542,11 +587,11 @@ describe("Integration", async () => {
       await _makeContributor(user3, 1);
 
       await market.connect(user2).makeOffer(60);
-      await market.matchOffer(user2.address, user3.address, 10);
-      await market.matchOffer(user2.address, user1.address, 40);
+      await market.connect(user3).matchOffer(user2.address, 10);
+      await market.connect(user1).matchOffer(user2.address, 40);
       await market.connect(user3).makeOffer(5);
       await market.connect(user1).makeOffer(10);
-      await market.matchOffer(user1.address, user2.address, 10);
+      await market.connect(user2).matchOffer(user1.address, 10);
 
       // Two days pass
       let offerExpires = (await getEVMTimestamp()) + 2 * DAY;
@@ -554,7 +599,7 @@ describe("Integration", async () => {
       await mineEVMBlock();
 
       await market.connect(user2).makeOffer(10);
-      await market.matchOffer(user2.address, user3.address, 15);
+      await market.connect(user3).matchOffer(user2.address, 15);
 
       await expect(
         market.connect(user3).withdraw(user1.address, 10)
@@ -660,6 +705,174 @@ describe("Integration", async () => {
       expect(result.noticePeriod).equal(3);
       expect(result.votingPeriod).equal(6);
       expect(result.canBeNegative).equal(false);
+    });
+
+    it("Match offer, move to external wallet, redeem when ready", async () => {
+      // Create three contributors
+      await _makeContributor(user1, 50);
+      await _makeContributor(user2, 100);
+      await _makeContributor(user3, 1);
+
+      await market.connect(user1).makeOffer(10);
+
+      await expect(() =>
+        market.connect(user2).matchOffer(user1.address, 4)
+      ).to.changeTokenBalances(usdc, [user1, user2], [4, -4]);
+
+      await expect(() =>
+        market.connect(user3).matchOffer(user1.address, 2)
+      ).to.changeTokenBalances(usdc, [user1, user3], [2, -2]);
+
+      // Make the tokens redeemable
+      await timeTravel(redemptionStartDays, true);
+
+      expect(await redemption.redeemableBalance(user1.address)).equal(10);
+      expect(await market.withdrawableBalanceOf(user1.address)).equal(4);
+
+      await market.connect(user1).redeem(10);
+      // Chaining two changeTokenBalances seems to execute the "redeem"
+      // function twice. Anyway, this second redeem should fail.
+      /*
+        .to.changeTokenBalances(token, [market, reserve], [-4, 4])
+        .to.changeTokenBalances(usdc, [reserve, user1], [-4, 4]);
+      */
+
+      expect(await token.balanceOf(user1.address)).equal(50 - 4 - 2 - 10);
+      expect(await usdc.balanceOf(user1.address)).equal(
+        INITIAL_USDC + 4 + 2 + 10
+      );
+      expect(await token.balanceOf(reserve.address)).equal(10);
+      expect(await usdc.balanceOf(reserve.address)).equal(INITIAL_USDC - 10);
+      expect(await token.balanceOf(market.address)).equal(10 - 4 - 2 - 4);
+      expect(await usdc.balanceOf(market.address)).equal(0);
+
+      await expect(market.connect(user1).redeem(4)).revertedWith(
+        "Redemption controller: amount exceeds redeemable balance"
+      );
+
+      // User 2 exits all their tokens to the secondary market
+      await market.connect(user2).makeOffer(90);
+      await timeTravel(offerDurationDays, true);
+      await market.connect(user2).withdraw(free2.address, 90);
+      await timeTravel(redemptionStartDays - offerDurationDays, true);
+
+      // then tries to redeem but fails because not enough balance.
+      await expect(market.connect(user2).redeem(90)).revertedWith(
+        "ERC20: transfer amount exceeds balance"
+      );
+
+      // then tries to redeem 6 and succeeds.
+      await market.connect(user2).redeem(6);
+
+      // then 4 after the redeem window and fails
+      await timeTravel(redemptionWindowDays, true);
+
+      await expect(market.connect(user2).redeem(4)).revertedWith(
+        "Redemption controller: amount exceeds redeemable balance"
+      );
+    });
+
+    it("Redemption edge cases", async () => {
+      await _makeContributor(user1, 10);
+      await _makeContributor(user2, 0);
+
+      // pre-conditions
+      expect(await token.balanceOf(user1.address)).equal(10);
+      expect(await token.balanceOf(user2.address)).equal(0);
+      expect(await token.balanceOf(reserve.address)).equal(0);
+
+      expect(await usdc.balanceOf(user1.address)).equal(INITIAL_USDC);
+      expect(await usdc.balanceOf(user2.address)).equal(INITIAL_USDC);
+      expect(await usdc.balanceOf(reserve.address)).equal(INITIAL_USDC);
+
+      let daysSinceMinting = 0;
+      let tokensRedeemed = 0;
+
+      // user1 offers 10 tokens
+      await market.connect(user1).makeOffer(10);
+
+      // user2 buys
+      await market.connect(user2).matchOffer(user1.address, 10);
+
+      // user2 offers 10 tokens and offer expires
+      await market.connect(user2).makeOffer(10);
+      await timeTravel(offerDurationDays, true);
+      daysSinceMinting += offerDurationDays;
+
+      // user2 transfers 10 tokens to user1
+      await market.connect(user2).withdraw(user1.address, 10);
+
+      // 53 days later (60 since beginning) user1 redeems 3 tokens
+      await timeTravel(redemptionStartDays - offerDurationDays, true);
+      daysSinceMinting += redemptionStartDays - offerDurationDays;
+      await market.connect(user1).redeem(3);
+      tokensRedeemed += 3;
+
+      // at the end of the redemption window, redemption of the 7 remaining tokens fails
+      await timeTravel(redemptionWindowDays, true);
+      daysSinceMinting += redemptionWindowDays;
+      await expect(market.connect(user1).redeem(7)).revertedWith(
+        "Redemption controller: amount exceeds redeemable balance"
+      );
+
+      // user1 reoffers 7 the tokens
+      await market.connect(user1).makeOffer(7);
+
+      // after 60 days, user1 redeems 4 tokens
+      await timeTravel(redemptionStartDays, true);
+      daysSinceMinting += redemptionStartDays;
+      await market.connect(user1).redeem(4);
+      tokensRedeemed += 4;
+
+      // redemption window expires
+      await timeTravel(redemptionWindowDays, true);
+      daysSinceMinting += redemptionWindowDays;
+
+      // 30 * 15 days pass (15 more months) pass (only 13 months needed, as two months already passed)
+      await timeTravel(redemptionMaxDaysInThePast - daysSinceMinting);
+
+      // user1 offers 3 remaining tokens (after withdrawing them, as they are still in the vault)
+      await market.connect(user1).withdraw(user1.address, 3);
+      await market.connect(user1).makeOffer(3);
+
+      // 60 days later, redemption fails
+      await timeTravel(redemptionStartDays, true);
+      await expect(market.connect(user1).redeem(3)).revertedWith(
+        "Redemption controller: amount exceeds redeemable balance"
+      );
+
+      // user1 re-withdraws the tokens, sobbing
+      await market.connect(user1).withdraw(user1.address, 3);
+
+      // 13 tokens are minted to user1
+      await _mintTokens(user1, 13);
+      // 3 months pass
+      await timeTravel(redemptionActivityWindow, true);
+      // 1 token is minted to user1
+      await _mintTokens(user1, 1);
+      // 14 tokens are offered
+      await market.connect(user1).makeOffer(14);
+      // 60 days later, 1 token is redeemable
+      await timeTravel(redemptionStartDays, true);
+      expect(await redemption.redeemableBalance(user1.address)).equal(1);
+
+      // user1 redeems their only token and withdraws the others, sobbing again
+      await market.connect(user1).redeem(1);
+      tokensRedeemed += 1;
+      await market.connect(user1).withdraw(user1.address, 13);
+
+      // post-conditions
+      expect(await token.balanceOf(user1.address)).equal(24 - tokensRedeemed);
+      expect(await token.balanceOf(user2.address)).equal(0);
+      expect(await token.balanceOf(reserve.address)).equal(tokensRedeemed);
+
+      expect(await usdc.balanceOf(user1.address)).equal(
+        INITIAL_USDC + 10 + tokensRedeemed
+      );
+      expect(await usdc.balanceOf(user2.address)).equal(INITIAL_USDC - 10);
+      expect(await usdc.balanceOf(reserve.address)).equal(
+        INITIAL_USDC - tokensRedeemed
+      );
     });
   });
 });

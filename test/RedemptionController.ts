@@ -13,13 +13,12 @@ chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const REDEMPTION_PERIOD_DAYS = 10;
-
 describe("RedemptionController", () => {
   let snapshotId: string;
 
   let redemptionController: RedemptionController;
   let deployer: SignerWithAddress, account: SignerWithAddress;
+  let redemptionWindow: number;
 
   let TOKEN_MANAGER_ROLE: string;
 
@@ -39,6 +38,10 @@ describe("RedemptionController", () => {
       await redemptionController.TOKEN_MANAGER_ROLE(),
       deployer.address
     );
+
+    redemptionWindow =
+      (await redemptionController.redemptionWindow()).toNumber() /
+      (60 * 60 * 24);
 
     TOKEN_MANAGER_ROLE = await redemptionController.TOKEN_MANAGER_ROLE();
   });
@@ -169,7 +172,7 @@ describe("RedemptionController", () => {
             });
 
             it("returns 0 after the redemption period passed", async () => {
-              await timeTravel(REDEMPTION_PERIOD_DAYS);
+              await timeTravel(redemptionWindow);
               await mineEVMBlock();
 
               await expectBalance(0);
@@ -292,7 +295,7 @@ describe("RedemptionController", () => {
           });
 
           it("returns 0 after the redemption period passed", async () => {
-            await timeTravel(REDEMPTION_PERIOD_DAYS);
+            await timeTravel(redemptionWindow);
             await mineEVMBlock();
 
             await expectBalance(0);
@@ -331,7 +334,7 @@ describe("RedemptionController", () => {
           });
 
           it("returns 0 after the redemption period passed", async () => {
-            await timeTravel(REDEMPTION_PERIOD_DAYS);
+            await timeTravel(redemptionWindow);
             await mineEVMBlock();
 
             await expectBalance(0);
@@ -545,7 +548,7 @@ describe("RedemptionController", () => {
       await expectBalance(100);
 
       // 60 days pass
-      await timeTravel(REDEMPTION_PERIOD_DAYS);
+      await timeTravel(redemptionWindow);
       await mineEVMBlock();
 
       // Offer 300

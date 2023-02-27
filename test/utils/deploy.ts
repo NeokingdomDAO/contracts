@@ -4,8 +4,14 @@ import { ethers, upgrades } from "hardhat";
 import {
   InternalMarket,
   InternalMarket__factory,
+  PriceOracle,
+  PriceOracle__factory,
+  RedemptionController,
+  RedemptionController__factory,
   ShareholderRegistry,
   TelediskoToken,
+  TokenMock,
+  TokenMock__factory,
   Voting,
 } from "../../typechain";
 import { ResolutionManager } from "../../typechain";
@@ -19,13 +25,20 @@ import { roles } from "./roles";
 
 export async function deployDAO(
   deployer: SignerWithAddress,
-  managingBoard: SignerWithAddress
+  managingBoard: SignerWithAddress,
+  reserve: SignerWithAddress
 ) {
   let voting: Voting;
   let token: TelediskoToken;
+  let usdc: TokenMock;
   let registry: ShareholderRegistry;
   let resolution: ResolutionManager;
   let market: InternalMarket;
+  let redemption: RedemptionController;
+  let oracle: PriceOracle;
+
+  // Load factories
+  ///////////////////
 
   const VotingFactory = (await ethers.getContractFactory(
     "Voting",
@@ -37,11 +50,6 @@ export async function deployDAO(
     deployer
   )) as TelediskoToken__factory;
 
-  const InternalMarketFactory = (await ethers.getContractFactory(
-    "InternalMarket",
-    deployer
-  )) as InternalMarket__factory;
-
   const ShareholderRegistryFactory = (await ethers.getContractFactory(
     "ShareholderRegistry",
     deployer
@@ -51,6 +59,29 @@ export async function deployDAO(
     "ResolutionManager",
     deployer
   )) as ResolutionManager__factory;
+
+  const InternalMarketFactory = (await ethers.getContractFactory(
+    "InternalMarket",
+    deployer
+  )) as InternalMarket__factory;
+
+  const RedemptionControllerFactory = (await ethers.getContractFactory(
+    "RedemptionController",
+    deployer
+  )) as RedemptionController__factory;
+
+  const PriceOracleFactory = (await ethers.getContractFactory(
+    "PriceOracle",
+    deployer
+  )) as PriceOracle__factory;
+
+  const TokenMockFactory = (await ethers.getContractFactory(
+    "TokenMock",
+    deployer
+  )) as TokenMock__factory;
+
+  // Deploy and initialize contacts
+  ///////////////////////////////////
 
   voting = (await upgrades.deployProxy(VotingFactory, {
     initializer: "initialize",
@@ -64,7 +95,23 @@ export async function deployDAO(
   )) as TelediskoToken;
   await token.deployed();
 
-  market = await InternalMarketFactory.deploy(token.address);
+  usdc = await TokenMockFactory.deploy();
+  await usdc.deployed();
+
+  oracle = await PriceOracleFactory.deploy();
+  await oracle.deployed();
+
+  await oracle.relay(["eur", "usd"], [1, 1], [1, 1]);
+  await oracle.relay(["usdc", "usd"], [1, 1], [1, 1]);
+
+  redemption = (await upgrades.deployProxy(RedemptionControllerFactory, {
+    initializer: "initialize",
+  })) as RedemptionController;
+  await redemption.deployed();
+
+  market = (await upgrades.deployProxy(InternalMarketFactory, [
+    token.address,
+  ])) as InternalMarket;
   await market.deployed();
 
   registry = (await upgrades.deployProxy(
@@ -76,10 +123,22 @@ export async function deployDAO(
   )) as ShareholderRegistry;
   await registry.deployed();
 
+  resolution = (await upgrades.deployProxy(
+    ResolutionFactory,
+    [registry.address, token.address, voting.address],
+    {
+      initializer: "initialize",
+    }
+  )) as ResolutionManager;
+  await resolution.deployed();
+
+  // Set ACLs and other interdependencies
+  /////////////////////////////////////////
+
   const operatorRole = await roles.OPERATOR_ROLE();
   const resolutionRole = await roles.RESOLUTION_ROLE();
   const shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
-  const escrowRole = await roles.ESCROW_ROLE();
+  const tokenManagerRole = await roles.TOKEN_MANAGER_ROLE();
 
   await registry.grantRole(operatorRole, deployer.address);
   await registry.grantRole(resolutionRole, deployer.address);
@@ -91,7 +150,7 @@ export async function deployDAO(
   await token.grantRole(operatorRole, deployer.address);
   await token.grantRole(resolutionRole, deployer.address);
 
-  await market.grantRole(escrowRole, deployer.address);
+  await market.grantRole(resolutionRole, deployer.address);
 
   await voting.setShareholderRegistry(registry.address);
   await voting.setToken(token.address);
@@ -101,26 +160,35 @@ export async function deployDAO(
 
   await registry.setVoting(voting.address);
 
-  await token.setInternalMarket(market.address);
+  await redemption.grantRole(tokenManagerRole, token.address);
+  await redemption.grantRole(tokenManagerRole, market.address);
+  await redemption.grantRole(tokenManagerRole, market.address);
 
-  resolution = (await upgrades.deployProxy(
-    ResolutionFactory,
-    [registry.address, token.address, voting.address],
-    {
-      initializer: "initialize",
-    }
-  )) as ResolutionManager;
-  await resolution.deployed();
+  await token.setInternalMarket(market.address);
+  await token.setRedemptionController(redemption.address);
 
   await registry.grantRole(resolutionRole, resolution.address);
   await voting.grantRole(resolutionRole, resolution.address);
   await token.grantRole(resolutionRole, resolution.address);
   await resolution.grantRole(resolutionRole, resolution.address);
 
-  var managingBoardStatus = await registry.MANAGING_BOARD_STATUS();
+  const managingBoardStatus = await registry.MANAGING_BOARD_STATUS();
 
   await registry.mint(managingBoard.address, parseEther("1"));
   await registry.setStatus(managingBoardStatus, managingBoard.address);
 
-  return { voting, token, registry, resolution, market };
+  await market.setRedemptionController(redemption.address);
+  await market.setExchangePair(usdc.address, oracle.address);
+  // FIXME
+  await market.setReserve(reserve.address);
+
+  return {
+    voting,
+    token,
+    registry,
+    resolution,
+    market,
+    redemption,
+    usdc,
+  };
 }

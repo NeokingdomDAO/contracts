@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "../RedemptionController/IRedemptionController.sol";
 import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
@@ -11,6 +12,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     IVoting internal _voting;
     InternalMarket internal _internalMarket;
     IShareholderRegistry internal _shareholderRegistry;
+    IRedemptionController internal _redemptionController;
 
     function initialize(
         string memory name,
@@ -27,7 +29,9 @@ contract TelediskoTokenBase is ERC20Upgradeable {
 
     // mapping(address => uint256) internal _unlockedBalance;
 
-    function _setInternalMarket(InternalMarket internalMarket) internal {
+    function _setInternalMarket(
+        InternalMarket internalMarket
+    ) internal virtual {
         _internalMarket = internalMarket;
     }
 
@@ -39,6 +43,12 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         IShareholderRegistry shareholderRegistry
     ) internal virtual {
         _shareholderRegistry = shareholderRegistry;
+    }
+
+    function _setRedemptionController(
+        IRedemptionController redemptionController
+    ) internal virtual {
+        _redemptionController = redemptionController;
     }
 
     function _beforeTokenTransfer(
@@ -65,6 +75,10 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     ) internal virtual override {
         super._afterTokenTransfer(from, to, amount);
         _voting.afterTokenTransfer(from, to, amount);
+
+        if (from == address(0)) {
+            _redemptionController.afterMint(to, amount);
+        }
 
         // Invariants
         require(

@@ -9,9 +9,11 @@ import {
   ShareholderRegistryMock__factory,
   VotingMock,
   VotingMock__factory,
+  IRedemptionController,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { roles } from "./utils/roles";
+import { FakeContract, smock } from "@defi-wonderland/smock";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -22,6 +24,7 @@ describe("TelediskoTokenSnapshot", () => {
 
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
   let telediskoToken: TelediskoToken;
+  let redemption: FakeContract<IRedemptionController>;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
   let deployer: SignerWithAddress,
@@ -33,6 +36,8 @@ describe("TelediskoTokenSnapshot", () => {
   before(async () => {
     [deployer, account, contributor, contributor2, nonContributor] =
       await ethers.getSigners();
+
+    redemption = await smock.fake("IRedemptionController");
 
     const TelediskoTokenFactory = (await ethers.getContractFactory(
       "TelediskoToken",
@@ -78,6 +83,7 @@ describe("TelediskoTokenSnapshot", () => {
 
     await telediskoToken.setVoting(voting.address);
     await telediskoToken.setShareholderRegistry(shareholderRegistry.address);
+    await telediskoToken.setRedemptionController(redemption.address);
 
     const contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     const shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();

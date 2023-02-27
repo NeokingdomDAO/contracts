@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { Roles } from "./extensions/Roles.sol";
-import "hardhat/console.sol";
+import { Roles } from "../extensions/Roles.sol";
+import "./IRedemptionController.sol";
 
 // Redeemable tokens are decided on Offer
 // - when user offers, we check how many tokens are eligible for redemption (3 months, 15 months rule)
@@ -19,18 +19,28 @@ import "hardhat/console.sol";
 // - when the 10 days expire
 //    -
 
-// The contract has to tell how many tokens are redeemable today
-//
-contract RedemptionController is Initializable, AccessControlUpgradeable {
-    uint256 constant TIME_TO_REDEMPTION = 60 days;
-    uint256 redemptionPeriod;
+// The contract tells how many tokens are redeemable by Contributors
+
+contract RedemptionController is
+    IRedemptionController,
+    Initializable,
+    AccessControlUpgradeable
+{
+    uint256 public redemptionStart;
+    uint256 public redemptionWindow;
+
+    uint256 public maxDaysInThePast;
+    uint256 public activityWindow;
 
     bytes32 public constant TOKEN_MANAGER_ROLE =
         keccak256("TOKEN_MANAGER_ROLE");
 
     function initialize() public initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        redemptionPeriod = 10 days;
+        redemptionStart = 60 days;
+        redemptionWindow = 10 days;
+        maxDaysInThePast = 30 days * 15;
+        activityWindow = 30 days * 3;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -56,10 +66,12 @@ contract RedemptionController is Initializable, AccessControlUpgradeable {
     mapping(address => uint256) internal _mintBudgetsStartIndex;
 
     function afterMint(
-        address account,
+        address to,
         uint256 amount
     ) external onlyRole(TOKEN_MANAGER_ROLE) {
-        _mintBudgets[account].push(MintBudget(block.timestamp, amount));
+        // FIXME: should we check if the user is a contributor? Worst case we end up having
+        // minting entries that will never be used.
+        _mintBudgets[to].push(MintBudget(block.timestamp, amount));
     }
 
     function _addRedeemable(
@@ -72,7 +84,7 @@ contract RedemptionController is Initializable, AccessControlUpgradeable {
             amount,
             mintTimestamp,
             redemptionStarts,
-            redemptionStarts + redemptionPeriod
+            redemptionStarts + redemptionWindow
         );
         _redeemables[account].push(offerRedeemable);
     }
@@ -91,9 +103,9 @@ contract RedemptionController is Initializable, AccessControlUpgradeable {
         ].timestamp;
 
         // User can redeem tokens minted within 3 months since last activity
-        uint256 thresholdActivity = lastActivity - 30 days * 3;
+        uint256 thresholdActivity = lastActivity - activityWindow;
         // User cannot redeem tokens that were minted earlier than 15 months ago
-        uint256 earliestTimestamp = block.timestamp - 30 days * 15;
+        uint256 earliestTimestamp = block.timestamp - maxDaysInThePast;
 
         // If thresholdActivity falls behind the 15 months threshold, we apply a
         // cutoff.
@@ -103,7 +115,7 @@ contract RedemptionController is Initializable, AccessControlUpgradeable {
 
         // Calculate when the next redemption starts, that is today plus the
         // time a contributor has to wait to redeem the tokens
-        uint256 redemptionStarts = block.timestamp + TIME_TO_REDEMPTION;
+        uint256 redemptionStarts = block.timestamp + redemptionStart;
 
         // Load the mint budgets for that account
         MintBudget[] storage mintBudgets = _mintBudgets[account];

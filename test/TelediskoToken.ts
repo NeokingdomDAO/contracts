@@ -9,10 +9,13 @@ import {
   ShareholderRegistryMock__factory,
   VotingMock,
   VotingMock__factory,
+  IRedemptionController,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { roles } from "./utils/roles";
+import { FakeContract, smock } from "@defi-wonderland/smock";
 
+chai.use(smock.matchers);
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -26,15 +29,18 @@ describe("TelediskoToken", () => {
   let telediskoToken: TelediskoToken;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
-  let deployer: SignerWithAddress,
-    account: SignerWithAddress,
-    contributor: SignerWithAddress,
-    contributor2: SignerWithAddress,
-    nonContributor: SignerWithAddress;
+  let redemption: FakeContract<IRedemptionController>;
+  let deployer: SignerWithAddress;
+  let contributor: SignerWithAddress;
+  let contributor2: SignerWithAddress;
+  let account: SignerWithAddress;
+  let account2: SignerWithAddress;
 
   before(async () => {
-    [deployer, account, contributor, contributor2, nonContributor] =
+    [deployer, contributor, contributor2, account, account2] =
       await ethers.getSigners();
+
+    redemption = await smock.fake("IRedemptionController");
 
     const TelediskoTokenFactory = (await ethers.getContractFactory(
       "TelediskoToken",
@@ -80,6 +86,7 @@ describe("TelediskoToken", () => {
 
     await telediskoToken.setVoting(voting.address);
     await telediskoToken.setShareholderRegistry(shareholderRegistry.address);
+    await telediskoToken.setRedemptionController(redemption.address);
 
     const contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     const shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
@@ -109,6 +116,7 @@ describe("TelediskoToken", () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
+    redemption.afterMint.reset();
   });
 
   afterEach(async () => {
@@ -125,10 +133,24 @@ describe("TelediskoToken", () => {
     it("should call the Voting hook after a token transfer", async () => {
       telediskoToken.mint(account.address, 10);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 10)
+        telediskoToken.connect(account).transfer(account2.address, 10)
       )
         .emit(voting, "AfterTokenTransferCalled")
-        .withArgs(account.address, nonContributor.address, 10);
+        .withArgs(account.address, account2.address, 10);
+    });
+
+    it("should call the RedemptionController hook when mint", async () => {
+      await telediskoToken.mint(account.address, 10);
+      expect(redemption.afterMint).calledWith(account.address, 10);
+    });
+
+    it("should not call the RedemptionController hook when transfer", async () => {
+      await telediskoToken.mint(account.address, 10);
+      redemption.afterMint.reset();
+
+      await telediskoToken.connect(account).transfer(account2.address, 10);
+
+      expect(redemption.afterMint).callCount(0);
     });
   });
 
@@ -188,7 +210,7 @@ describe("TelediskoToken", () => {
     it("should not allow balance in vesting to be transferred", async () => {
       await telediskoToken.mintVesting(account.address, 100);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 50)
+        telediskoToken.connect(account).transfer(account2.address, 50)
       ).revertedWith("TelediskoToken: transfer amount exceeds vesting");
     });
 
@@ -212,12 +234,12 @@ describe("TelediskoToken", () => {
       await telediskoToken.mint(account.address, 10);
       await telediskoToken.mintVesting(account.address, 100);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 10)
+        telediskoToken.connect(account).transfer(account2.address, 10)
       )
         .emit(telediskoToken, "Transfer")
-        .withArgs(account.address, nonContributor.address, 10);
+        .withArgs(account.address, account2.address, 10);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 1)
+        telediskoToken.connect(account).transfer(account2.address, 1)
       ).revertedWith("TelediskoToken: transfer amount exceeds vesting");
     });
 

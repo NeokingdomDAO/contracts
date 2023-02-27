@@ -3,7 +3,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
+import "../RedemptionController/IRedemptionController.sol";
+import "../PriceOracle/IStdReference.sol";
 
 contract InternalMarketBase {
     struct Offer {
@@ -26,12 +27,26 @@ contract InternalMarketBase {
 
     event OfferMatched(uint128 id, address from, address to, uint256 amount);
 
-    IERC20 public erc20;
-    uint256 public offerDuration = 7 days;
+    IERC20 public daoToken;
+    IERC20 public exchangeToken;
+
+    IRedemptionController public redemptionController;
+    IStdReference public priceOracle;
+
+    address public reserve;
+    uint256 public offerDuration;
 
     mapping(address => Offers) internal _offers;
 
     mapping(address => uint256) internal _vaultContributors;
+
+    function _initialize(
+        IERC20 _daoToken,
+        uint256 _offerDuration
+    ) internal virtual {
+        daoToken = _daoToken;
+        offerDuration = _offerDuration;
+    }
 
     function _enqueue(
         Offers storage offers,
@@ -41,8 +56,26 @@ contract InternalMarketBase {
         return offers.end++;
     }
 
-    function _setERC20(IERC20 erc20_) internal virtual {
-        erc20 = erc20_;
+    function _setDaoToken(IERC20 token) internal virtual {
+        daoToken = token;
+    }
+
+    function _setExchangePair(
+        IERC20 token,
+        IStdReference oracle
+    ) internal virtual {
+        exchangeToken = token;
+        priceOracle = oracle;
+    }
+
+    function _setReserve(address reserve_) internal virtual {
+        reserve = reserve_;
+    }
+
+    function _setRedemptionController(
+        IRedemptionController redemptionController_
+    ) internal virtual {
+        redemptionController = redemptionController_;
     }
 
     function _setOfferDuration(uint duration) internal virtual {
@@ -50,12 +83,14 @@ contract InternalMarketBase {
     }
 
     function _makeOffer(address from, uint256 amount) internal virtual {
-        erc20.transferFrom(from, address(this), amount);
+        daoToken.transferFrom(from, address(this), amount);
 
         uint256 expiredAt = block.timestamp + offerDuration;
         uint128 id = _enqueue(_offers[from], Offer(expiredAt, amount));
 
         _vaultContributors[from] += amount;
+
+        redemptionController.afterOffer(from, amount);
 
         emit OfferCreated(id, from, amount, expiredAt);
     }
@@ -67,7 +102,8 @@ contract InternalMarketBase {
             Offer storage offer = offers.offer[i];
 
             if (block.timestamp > offer.expiredAt) {
-                if (amount > offer.amount) {
+                // FIXME it was > not >=
+                if (amount >= offer.amount) {
                     amount -= offer.amount;
                     _vaultContributors[from] -= offer.amount;
                     delete offers.offer[offers.start++];
@@ -124,7 +160,7 @@ contract InternalMarketBase {
         uint256 amount
     ) internal virtual {
         _beforeWithdraw(from, amount);
-        erc20.transfer(to, amount);
+        daoToken.transfer(to, amount);
     }
 
     function _matchOffer(
@@ -133,7 +169,28 @@ contract InternalMarketBase {
         uint256 amount
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
-        erc20.transfer(to, amount);
+        daoToken.transfer(to, amount);
+        exchangeToken.transferFrom(to, from, _convertToUSDC(amount));
+    }
+
+    function _redeem(address from, uint256 amount) internal virtual {
+        uint256 withdrawableBalance = withdrawableBalanceOf(from);
+        if (withdrawableBalance < amount) {
+            uint256 difference = amount - withdrawableBalance;
+            daoToken.transferFrom(from, reserve, difference);
+            _withdraw(from, reserve, withdrawableBalance);
+        } else {
+            _withdraw(from, reserve, amount);
+        }
+
+        exchangeToken.transferFrom(reserve, from, _convertToUSDC(amount));
+        redemptionController.afterRedeem(from, amount);
+    }
+
+    function _convertToUSDC(uint256 eurAmount) internal view returns (uint256) {
+        uint256 eurUsd = priceOracle.getReferenceData("eur", "usd").rate;
+        uint256 usdUsdc = priceOracle.getReferenceData("usdc", "usd").rate;
+        return (eurAmount * eurUsd) / usdUsdc;
     }
 
     function _calculateOffersOf(

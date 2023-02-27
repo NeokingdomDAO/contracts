@@ -8,4 +8,6 @@ library Roles {
     bytes32 public constant ESCROW_ROLE = keccak256("ESCROW_ROLE");
     bytes32 public constant SHAREHOLDER_REGISTRY_ROLE =
         keccak256("SHAREHOLDER_REGISTRY_ROLE");
+    bytes32 public constant TOKEN_MANAGER_ROLE =
+        keccak256("TOKEN_MANAGER_ROLE");
 }

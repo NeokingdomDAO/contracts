@@ -32,16 +32,19 @@ describe("Upgrade", () => {
   let shareholderStatus: string;
   let investorStatus: string;
   let deployer: SignerWithAddress;
+  let reserve: SignerWithAddress;
   let managingBoard: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
   let user3: SignerWithAddress;
 
   before(async () => {
-    [deployer, managingBoard, user1, user2, user3] = await ethers.getSigners();
+    [deployer, reserve, managingBoard, user1, user2, user3] =
+      await ethers.getSigners();
     ({ token, registry, resolution } = await deployDAO(
       deployer,
-      managingBoard
+      managingBoard,
+      reserve
     ));
 
     managingBoardStatus = await registry.MANAGING_BOARD_STATUS();

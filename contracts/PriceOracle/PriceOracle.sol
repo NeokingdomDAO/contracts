@@ -17,6 +17,7 @@ contract PriceOracle is IStdReference, AccessControl {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        // TODO: leave this out
         _setupRole(RELAYER_ROLE, msg.sender);
     }
 
@@ -37,12 +38,10 @@ contract PriceOracle is IStdReference, AccessControl {
         }
     }
 
-    function getReferenceData(string memory _base, string memory _quote)
-        public
-        view
-        override
-        returns (ReferenceData memory)
-    {
+    function getReferenceData(
+        string memory _base,
+        string memory _quote
+    ) public view override returns (ReferenceData memory) {
         (uint256 baseRate, uint256 baseLastUpdate) = _getRefData(_base);
         (uint256 quoteRate, uint256 quoteLastUpdate) = _getRefData(_quote);
         return
@@ -53,20 +52,16 @@ contract PriceOracle is IStdReference, AccessControl {
             });
     }
 
-    function getReferenceDataBulk(string[] memory, string[] memory)
-        public
-        pure
-        override
-        returns (ReferenceData[] memory)
-    {
+    function getReferenceDataBulk(
+        string[] memory,
+        string[] memory
+    ) public pure override returns (ReferenceData[] memory) {
         revert("NOT_IMPLEMENTED");
     }
 
-    function _getRefData(string memory _symbol)
-        internal
-        view
-        returns (uint256 rate, uint256 lastUpdate)
-    {
+    function _getRefData(
+        string memory _symbol
+    ) internal view returns (uint256 rate, uint256 lastUpdate) {
         if (keccak256(bytes(_symbol)) == keccak256(bytes("USD"))) {
             return (1e9, block.timestamp);
         }

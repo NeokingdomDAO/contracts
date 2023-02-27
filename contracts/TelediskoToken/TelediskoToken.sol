@@ -52,6 +52,12 @@ contract TelediskoToken is
         _setShareholderRegistry(shareholderRegistry);
     }
 
+    function setRedemptionController(
+        IRedemptionController redemption
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+        _setRedemptionController(redemption);
+    }
+
     function mint(
         address to,
         uint256 amount

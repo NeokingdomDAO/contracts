@@ -35,7 +35,7 @@
     "ShareholderRegistry": "0xeB13EBE7613f9FC03A4ac091574Dc04ceb45562f",
     "TelediskoToken": "0x64Fd2411C9b6c0d2F6F70dAA77Bac63E93D6AB2B",
     "ResolutionManager": "0xA65d12De252c60EBD251b3aE45d6029e9eBCA5E7",
-    "PriceOracle": "0x547b5195cc2e20691404091fA779BC3101e21329"
+    "PriceOracle": "0x666CDb721838B1b8C0C234DAa0D9Dbc821103aA5"
   },
   "31337": {
     "ResolutionManager": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",

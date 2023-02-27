@@ -5,6 +5,7 @@ import { solidity } from "ethereum-waffle";
 import { PriceOracle, PriceOracle__factory } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
+import { parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -89,14 +90,9 @@ describe("PriceOracle", async () => {
     });
 
     it("should return ratio in reference data", async () => {
-      const eeurUsd = 0.975286;
-      const eurUsd = 1.032572;
-      const decimalPositions = 1e9;
-      await priceOracle.relay(
-        ["EEUR", "EUR"],
-        [eeurUsd * decimalPositions, eurUsd * decimalPositions],
-        [43, 44]
-      );
+      const eeurUsd = parseEther("0.975286");
+      const eurUsd = parseEther("1.032572");
+      await priceOracle.relay(["EEUR", "EUR"], [eeurUsd, eurUsd], [43, 44]);
 
       const result = await priceOracle.getReferenceData("EEUR", "EUR");
 
@@ -106,9 +102,8 @@ describe("PriceOracle", async () => {
     });
 
     it("should return same when _quote is USD", async () => {
-      const eeurUsd = 0.975286;
-      const decimalPositions = 1e9;
-      await priceOracle.relay(["EEUR"], [eeurUsd * decimalPositions], [43]);
+      const eeurUsd = parseEther("0.975286");
+      await priceOracle.relay(["EEUR"], [eeurUsd], [43]);
 
       const result = await priceOracle.getReferenceData("EEUR", "USD");
 
@@ -116,9 +111,8 @@ describe("PriceOracle", async () => {
     });
 
     it("should return 1 / _quote when _base is USD", async () => {
-      const eeurUsd = 0.975286;
-      const decimalPositions = 1e9;
-      await priceOracle.relay(["EEUR"], [eeurUsd * decimalPositions], [43]);
+      const eeurUsd = parseEther("0.975286");
+      await priceOracle.relay(["EEUR"], [eeurUsd], [43]);
 
       const result = await priceOracle.getReferenceData("USD", "EEUR");
 

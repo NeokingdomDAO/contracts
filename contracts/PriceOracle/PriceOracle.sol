@@ -8,7 +8,7 @@ contract PriceOracle is IStdReference, AccessControl {
     event RefDataUpdate(string symbol, uint64 rate, uint64 resolveTime);
 
     struct RefData {
-        uint64 rate; // USD-rate, multiplied by 1e9.
+        uint64 rate; // USD-rate, multiplied by 1e18.
         uint64 resolveTime; // UNIX epoch when data is last resolved.
     }
 
@@ -63,7 +63,7 @@ contract PriceOracle is IStdReference, AccessControl {
         string memory _symbol
     ) internal view returns (uint256 rate, uint256 lastUpdate) {
         if (keccak256(bytes(_symbol)) == keccak256(bytes("USD"))) {
-            return (1e9, block.timestamp);
+            return (1e18, block.timestamp);
         }
         RefData storage refData = refs[_symbol];
         require(refData.resolveTime > 0, "REF_DATA_NOT_AVAILABLE");

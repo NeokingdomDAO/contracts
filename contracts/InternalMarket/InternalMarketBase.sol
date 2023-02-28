@@ -188,6 +188,7 @@ contract InternalMarketBase {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
+            // daoToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
             require(
                 daoToken.transferFrom(from, reserve, difference),

@@ -17,11 +17,10 @@ contract ShareholderRegistry is
     // next.
     // This is what zodiac calls "incremental decentralization".
 
-    function initialize(string memory name, string memory symbol)
-        public
-        override
-        initializer
-    {
+    function initialize(
+        string memory name,
+        string memory symbol
+    ) public override initializer {
         super.initialize(name, symbol);
         __AccessControl_init();
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -40,43 +39,36 @@ contract ShareholderRegistry is
         return _snapshot();
     }
 
-    function setStatus(bytes32 status, address account)
-        public
-        virtual
-        onlyRole(Roles.RESOLUTION_ROLE)
-    {
+    function setStatus(
+        bytes32 status,
+        address account
+    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
         _setStatus(status, account);
     }
 
-    function setVoting(IVoting voting)
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setVoting(
+        IVoting voting
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         _setVoting(voting);
     }
 
-    function mint(address account, uint256 amount)
-        public
-        virtual
-        onlyRole(Roles.RESOLUTION_ROLE)
-    {
+    function mint(
+        address account,
+        uint256 amount
+    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
         _mint(account, amount);
     }
 
-    function burn(address account, uint256 amount)
-        external
-        virtual
-        onlyRole(Roles.RESOLUTION_ROLE)
-    {
+    function burn(
+        address account,
+        uint256 amount
+    ) external virtual onlyRole(Roles.RESOLUTION_ROLE) {
         _burn(account, amount);
     }
 
-    function batchTransferFromDAO(address[] memory recipients)
-        public
-        virtual
-        onlyRole(Roles.RESOLUTION_ROLE)
-    {
+    function batchTransferFromDAO(
+        address[] memory recipients
+    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
         super._batchTransferFromDAO(recipients);
     }
 
@@ -89,13 +81,10 @@ contract ShareholderRegistry is
         return true;
     }
 
-    function transfer(address to, uint256 amount)
-        public
-        virtual
-        override
-        onlyRole(Roles.RESOLUTION_ROLE)
-        returns (bool)
-    {
+    function transfer(
+        address to,
+        uint256 amount
+    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) returns (bool) {
         return super.transfer(to, amount);
     }
 }

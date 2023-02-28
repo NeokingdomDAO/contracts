@@ -9,15 +9,13 @@ import "../Voting/Voting.sol";
 contract ERC20Mock is Initializable, ERC20Upgradeable {
     Voting _voting;
 
-    
     function initialize(Voting voting) public initializer {
         _voting = voting;
         __ERC20_init("Mock", "MOCK");
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {
-    }
+    constructor() initializer {}
 
     function mint(address account, uint256 amount) public {
         _mint(account, amount);

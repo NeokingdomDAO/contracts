@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -14,8 +14,8 @@ contract InternalMarket is
     InternalMarketBase,
     AccessControlUpgradeable
 {
-    function initialize(IERC20 daoToken) public initializer {
-        _initialize(daoToken, 7 days);
+    function initialize(IERC20 daoToken_) public initializer {
+        _initialize(daoToken_, 7 days);
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
@@ -50,15 +50,15 @@ contract InternalMarket is
     }
 
     function setReserve(
-        address reserve
+        address reserve_
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
-        _setReserve(reserve);
+        _setReserve(reserve_);
     }
 
     function setRedemptionController(
-        IRedemptionController redemptionController
+        IRedemptionController redemptionController_
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
-        _setRedemptionController(redemptionController);
+        _setRedemptionController(redemptionController_);
     }
 
     function setOfferDuration(

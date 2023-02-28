@@ -3,7 +3,7 @@
 // TODO: update _statuses when account has no shares
 // TODO: check who can move shares
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../Voting/IVoting.sol";
@@ -45,10 +45,11 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
             "ShareholderRegistry: address has no tokens"
         );
         bytes32 previous = _statuses[account];
-        _beforeSetStatus(account, previous, status);
-        _statuses[account] = status;
-        _afterSetStatus(account, previous, status);
         emit StatusChanged(account, previous, status);
+        _statuses[account] = status;
+
+        _beforeSetStatus(account, previous, status);
+        _afterSetStatus(account, previous, status);
     }
 
     function getStatus(address account) public view virtual returns (bytes32) {

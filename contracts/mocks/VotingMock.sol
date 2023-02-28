@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 contract VotingMock {
     event AfterTokenTransferCalled(address from, address to, uint256 amount);

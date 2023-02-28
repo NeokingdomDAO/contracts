@@ -25,35 +25,27 @@ contract Voting is VotingSnapshot, AccessControl, Initializable {
         return _snapshot();
     }
 
-    function setToken(IERC20Upgradeable token)
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setToken(
+        IERC20Upgradeable token
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         super._setToken(token);
     }
 
-    function beforeRemoveContributor(address account)
-        external
-        virtual
-        onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE)
-    {
+    function beforeRemoveContributor(
+        address account
+    ) external virtual onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE) {
         super._beforeRemoveContributor(account);
     }
 
-    function afterAddContributor(address account)
-        external
-        virtual
-        onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE)
-    {
+    function afterAddContributor(
+        address account
+    ) external virtual onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE) {
         super._afterAddContributor(account);
     }
 
-    function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         super._setShareholderRegistry(shareholderRegistry);
     }
 }

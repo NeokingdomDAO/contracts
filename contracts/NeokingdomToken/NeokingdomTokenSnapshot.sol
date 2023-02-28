@@ -6,7 +6,10 @@ import "@openzeppelin/contracts/utils/Arrays.sol";
 import "./NeokingdomTokenBase.sol";
 import "../extensions/Snapshottable.sol";
 
-abstract contract NeokingdomTokenSnapshot is NeokingdomTokenBase, Snapshottable {
+abstract contract NeokingdomTokenSnapshot is
+    NeokingdomTokenBase,
+    Snapshottable
+{
     using Arrays for uint256[];
 
     struct Snapshots {
@@ -20,12 +23,10 @@ abstract contract NeokingdomTokenSnapshot is NeokingdomTokenBase, Snapshottable 
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.
      */
-    function balanceOfAt(address account, uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function balanceOfAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (uint256) {
         (bool snapshotted, uint256 value) = _valueAt(
             snapshotId,
             _accountBalanceSnapshots[account]
@@ -37,12 +38,9 @@ abstract contract NeokingdomTokenSnapshot is NeokingdomTokenBase, Snapshottable 
     /**
      * @dev Retrieves the total supply at the time `snapshotId` was created.
      */
-    function totalSupplyAt(uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function totalSupplyAt(
+        uint256 snapshotId
+    ) public view virtual returns (uint256) {
         (bool snapshotted, uint256 value) = _valueAt(
             snapshotId,
             _totalSupplySnapshots
@@ -75,12 +73,10 @@ abstract contract NeokingdomTokenSnapshot is NeokingdomTokenBase, Snapshottable 
         }
     }
 
-    function _valueAt(uint256 snapshotId, Snapshots storage snapshots)
-        internal
-        view
-        virtual
-        returns (bool snapshotted, uint256 value)
-    {
+    function _valueAt(
+        uint256 snapshotId,
+        Snapshots storage snapshots
+    ) internal view virtual returns (bool snapshotted, uint256 value) {
         uint256 index;
         (snapshotted, index) = _indexAt(snapshotId, snapshots.ids);
 
@@ -97,10 +93,10 @@ abstract contract NeokingdomTokenSnapshot is NeokingdomTokenBase, Snapshottable 
         _updateSnapshot(_totalSupplySnapshots, totalSupply());
     }
 
-    function _updateSnapshot(Snapshots storage snapshots, uint256 currentValue)
-        internal
-        virtual
-    {
+    function _updateSnapshot(
+        Snapshots storage snapshots,
+        uint256 currentValue
+    ) internal virtual {
         uint256 currentId = getCurrentSnapshotId();
         if (_lastSnapshotId(snapshots.ids) < currentId) {
             snapshots.ids.push(currentId);

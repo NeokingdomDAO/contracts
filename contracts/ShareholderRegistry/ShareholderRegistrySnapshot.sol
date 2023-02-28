@@ -33,12 +33,9 @@ abstract contract ShareholderRegistrySnapshot is
     /**
      * @dev Retrieves the total supply at the time `snapshotId` was created.
      */
-    function totalSupplyAt(uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function totalSupplyAt(
+        uint256 snapshotId
+    ) public view virtual returns (uint256) {
         (bool snapshotted, uint256 index) = _indexAt(
             snapshotId,
             _totalSupplySnapshots.ids
@@ -51,32 +48,26 @@ abstract contract ShareholderRegistrySnapshot is
     /**
      * @dev Retrieves the balance of `account` at the time `snapshotId` was created.
      */
-    function balanceOfAt(address account, uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256 balance)
-    {
+    function balanceOfAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (uint256 balance) {
         (balance, ) = getBalanceAndStatusAt(account, snapshotId);
         return balance;
     }
 
-    function getStatusAt(address account, uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (bytes32 status)
-    {
+    function getStatusAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (bytes32 status) {
         (, status) = getBalanceAndStatusAt(account, snapshotId);
         return status;
     }
 
-    function getBalanceAndStatusAt(address account, uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256, bytes32)
-    {
+    function getBalanceAndStatusAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (uint256, bytes32) {
         StatusAndBalanceSnapshots
             storage snapshots = _accountStatusAndBalanceSnapshots[account];
         (bool snapshotted, uint256 index) = _indexAt(snapshotId, snapshots.ids);

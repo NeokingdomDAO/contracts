@@ -92,7 +92,6 @@ contract InternalMarketBase {
 
         daoToken.transferFrom(from, address(this), amount);
         redemptionController.afterOffer(from, amount);
-
     }
 
     function _beforeWithdraw(address from, uint256 amount) internal virtual {

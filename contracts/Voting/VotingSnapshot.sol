@@ -22,26 +22,26 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     mapping(address => SnapshotsValues) internal _votingPowerSnapshots;
     SnapshotsValues internal _totalVotingPowerSnapshots;
 
-    function snapshot() public override(Snapshottable, ISnapshot) virtual returns (uint256);
-
-    function getDelegateAt(address account, uint256 snapshotId)
+    function snapshot()
         public
-        view
         virtual
-        returns (address)
-    {
+        override(Snapshottable, ISnapshot)
+        returns (uint256);
+
+    function getDelegateAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (address) {
         SnapshotsDelegates storage snapshots = _delegationSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
         return valid ? snapshots.delegates[index] : getDelegate(account);
     }
 
-    function canVoteAt(address account, uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (bool)
-    {
+    function canVoteAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (bool) {
         SnapshotsDelegates storage snapshots = _delegationSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
@@ -49,24 +49,19 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
             valid ? snapshots.delegates[index] != address(0) : canVote(account);
     }
 
-    function getVotingPowerAt(address account, uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function getVotingPowerAt(
+        address account,
+        uint256 snapshotId
+    ) public view virtual returns (uint256) {
         SnapshotsValues storage snapshots = _votingPowerSnapshots[account];
         (bool valid, uint256 index) = _indexAt(snapshotId, snapshots.ids);
 
         return valid ? snapshots.values[index] : getVotingPower(account);
     }
 
-    function getTotalVotingPowerAt(uint256 snapshotId)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function getTotalVotingPowerAt(
+        uint256 snapshotId
+    ) public view virtual returns (uint256) {
         (bool valid, uint256 index) = _indexAt(
             snapshotId,
             _totalVotingPowerSnapshots.ids

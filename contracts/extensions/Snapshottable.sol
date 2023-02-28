@@ -22,11 +22,10 @@ abstract contract Snapshottable {
         return _currentSnapshotId;
     }
 
-    function _indexAt(uint256 snapshotId, uint256[] storage ids)
-        internal
-        view
-        returns (bool, uint256)
-    {
+    function _indexAt(
+        uint256 snapshotId,
+        uint256[] storage ids
+    ) internal view returns (bool, uint256) {
         require(snapshotId > 0, "Snapshottable: id is 0");
         require(
             snapshotId <= getCurrentSnapshotId(),
@@ -42,11 +41,9 @@ abstract contract Snapshottable {
         }
     }
 
-    function _lastSnapshotId(uint256[] storage ids)
-        internal
-        view
-        returns (uint256)
-    {
+    function _lastSnapshotId(
+        uint256[] storage ids
+    ) internal view returns (uint256) {
         if (ids.length == 0) {
             return 0;
         } else {

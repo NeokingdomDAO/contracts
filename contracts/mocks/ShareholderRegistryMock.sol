@@ -33,29 +33,22 @@ contract ShareholderRegistryMock is Initializable, IShareholderRegistry {
         mockResult_isAtLeast[status][account] = value;
     }
 
-    function isAtLeast(bytes32 status, address account)
-        public
-        view
-        override
-        returns (bool)
-    {
+    function isAtLeast(
+        bytes32 status,
+        address account
+    ) public view override returns (bool) {
         return mockResult_isAtLeast[status][account];
     }
 
     // Unneeded for testing
-    function getStatus(address account)
-        public
-        view
-        override
-        returns (bytes32)
-    {}
+    function getStatus(
+        address account
+    ) public view override returns (bytes32) {}
 
-    function getStatusAt(address account, uint256 snapshotId)
-        public
-        view
-        override
-        returns (bytes32)
-    {}
+    function getStatusAt(
+        address account,
+        uint256 snapshotId
+    ) public view override returns (bytes32) {}
 
     function isAtLeastAt(
         bytes32 status,
@@ -63,26 +56,18 @@ contract ShareholderRegistryMock is Initializable, IShareholderRegistry {
         uint256 snapshotId
     ) public view override returns (bool) {}
 
-    function balanceOfAt(address account, uint256 snapshotId)
-        public
-        view
-        override
-        returns (uint256)
-    {}
+    function balanceOfAt(
+        address account,
+        uint256 snapshotId
+    ) public view override returns (uint256) {}
 
-    function balanceOf(address account)
-        public
-        view
-        override
-        returns (uint256)
-    {}
+    function balanceOf(
+        address account
+    ) public view override returns (uint256) {}
 
-    function totalSupplyAt(uint256 snapshotId)
-        public
-        view
-        override
-        returns (uint256)
-    {}
+    function totalSupplyAt(
+        uint256 snapshotId
+    ) public view override returns (uint256) {}
 
     function totalSupply() public view override returns (uint256) {}
 }

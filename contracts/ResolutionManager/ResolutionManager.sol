@@ -144,34 +144,33 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         );
     }
 
-    function setShareholderRegistry(IShareholderRegistry shareholderRegistry)
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         _shareholderRegistry = shareholderRegistry;
     }
 
-    function setNeokingdomToken(INeokingdomToken neokingdomToken)
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setNeokingdomToken(
+        INeokingdomToken neokingdomToken
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         _neokingdomToken = neokingdomToken;
     }
 
-    function setVoting(IVoting voting)
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-    {
+    function setVoting(
+        IVoting voting
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         _voting = voting;
     }
 
     function _snapshotAll() internal virtual returns (uint256) {
-        _shareholderRegistry.snapshot();
-        _neokingdomToken.snapshot();
-        return _voting.snapshot();
+        uint256 snapshotId = _shareholderRegistry.snapshot();
+        require(
+            _neokingdomToken.snapshot() == snapshotId &&
+                _voting.snapshot() == snapshotId,
+            "ResolutionManager: snapshot ids are inconsistent"
+        );
+
+        return snapshotId;
     }
 
     function createResolution(
@@ -201,7 +200,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         );
         uint256 resolutionId = _currentResolutionId++;
         emit ResolutionCreated(_msgSender(), resolutionId);
-        
+
         Resolution storage resolution = resolutions[resolutionId];
 
         resolution.dataURI = dataURI;
@@ -213,12 +212,9 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         return resolutionId;
     }
 
-    function approveResolution(uint256 resolutionId)
-        public
-        virtual
-        onlyPending(resolutionId)
-        exists(resolutionId)
-    {
+    function approveResolution(
+        uint256 resolutionId
+    ) public virtual onlyPending(resolutionId) exists(resolutionId) {
         emit ResolutionApproved(_msgSender(), resolutionId);
         require(
             _shareholderRegistry.isAtLeast(
@@ -230,18 +226,15 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
         Resolution storage resolution = resolutions[resolutionId];
         resolution.approveTimestamp = block.timestamp;
-        
+
         resolution.snapshotId = _snapshotAll();
     }
 
-    function rejectResolution(uint256 resolutionId)
-        public
-        virtual
-        onlyPending(resolutionId)
-        exists(resolutionId)
-    {
+    function rejectResolution(
+        uint256 resolutionId
+    ) public virtual onlyPending(resolutionId) exists(resolutionId) {
         emit ResolutionRejected(_msgSender(), resolutionId);
-        
+
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -264,7 +257,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         bytes[] memory executionData
     ) public virtual onlyPending(resolutionId) {
         emit ResolutionUpdated(_msgSender(), resolutionId);
-        
+
         Resolution storage resolution = resolutions[resolutionId];
         require(
             executionTo.length == executionData.length,
@@ -292,12 +285,11 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         resolution.isNegative = isNegative;
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
-
     }
 
     function executeResolution(uint256 resolutionId) public virtual {
         emit ResolutionExecuted(_msgSender(), resolutionId);
-        
+
         Resolution storage resolution = resolutions[resolutionId];
         require(
             resolution.executionTo.length > 0,
@@ -330,25 +322,22 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         // slither-disable-end calls-loop
     }
 
-    function getExecutionDetails(uint256 resolutionId)
-        public
-        view
-        returns (address[] memory, bytes[] memory)
-    {
+    function getExecutionDetails(
+        uint256 resolutionId
+    ) public view returns (address[] memory, bytes[] memory) {
         Resolution storage resolution = resolutions[resolutionId];
 
         return (resolution.executionTo, resolution.executionData);
     }
 
-    function getVoterVote(uint256 resolutionId, address voter)
+    function getVoterVote(
+        uint256 resolutionId,
+        address voter
+    )
         public
         view
         virtual
-        returns (
-            bool isYes,
-            bool hasVoted,
-            uint256 votingPower
-        )
+        returns (bool isYes, bool hasVoted, uint256 votingPower)
     {
         Resolution storage resolution = resolutions[resolutionId];
         require(
@@ -374,12 +363,9 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         }
     }
 
-    function getResolutionResult(uint256 resolutionId)
-        public
-        view
-        virtual
-        returns (bool)
-    {
+    function getResolutionResult(
+        uint256 resolutionId
+    ) public view virtual returns (bool) {
         Resolution storage resolution = resolutions[resolutionId];
         ResolutionType storage resolutionType = resolutionTypes[
             resolution.resolutionTypeId
@@ -462,12 +448,9 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         resolution.hasVotedYes[_msgSender()] = isYes;
     }
 
-    function _votingWindow(Resolution storage resolution)
-        internal
-        view
-        virtual
-        returns (uint256 _votingStart, uint256 _votingEnd)
-    {
+    function _votingWindow(
+        Resolution storage resolution
+    ) internal view virtual returns (uint256 _votingStart, uint256 _votingEnd) {
         ResolutionType storage resolutionType = resolutionTypes[
             resolution.resolutionTypeId
         ];

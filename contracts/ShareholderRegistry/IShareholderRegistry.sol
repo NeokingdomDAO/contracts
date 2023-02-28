@@ -15,15 +15,15 @@ interface IShareholderRegistry is ISnapshot {
 
     function getStatus(address account) external view returns (bytes32);
 
-    function getStatusAt(address account, uint256 snapshotId)
-        external
-        view
-        returns (bytes32);
+    function getStatusAt(
+        address account,
+        uint256 snapshotId
+    ) external view returns (bytes32);
 
-    function isAtLeast(bytes32 status, address account)
-        external
-        view
-        returns (bool);
+    function isAtLeast(
+        bytes32 status,
+        address account
+    ) external view returns (bool);
 
     function isAtLeastAt(
         bytes32 status,
@@ -31,10 +31,10 @@ interface IShareholderRegistry is ISnapshot {
         uint256 snapshotId
     ) external view returns (bool);
 
-    function balanceOfAt(address account, uint256 snapshotId)
-        external
-        view
-        returns (uint256);
+    function balanceOfAt(
+        address account,
+        uint256 snapshotId
+    ) external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
 

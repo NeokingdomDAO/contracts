@@ -24,10 +24,10 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
 
     mapping(address => bytes32) internal _statuses;
 
-    function initialize(string memory name, string memory symbol)
-        public
-        virtual
-    {
+    function initialize(
+        string memory name,
+        string memory symbol
+    ) public virtual {
         __ERC20_init(name, symbol);
         SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
         INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
@@ -55,19 +55,16 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         return _statuses[account];
     }
 
-    function isAtLeast(bytes32 status, address account)
-        public
-        view
-        virtual
-        returns (bool)
-    {
+    function isAtLeast(
+        bytes32 status,
+        address account
+    ) public view virtual returns (bool) {
         return _isAtLeast(balanceOf(account), _statuses[account], status);
     }
 
-    function _batchTransferFromDAO(address[] memory recipients)
-        internal
-        virtual
-    {
+    function _batchTransferFromDAO(
+        address[] memory recipients
+    ) internal virtual {
         uint256 recipientLength = recipients.length;
 
         for (uint256 i = 0; i < recipientLength; ) {

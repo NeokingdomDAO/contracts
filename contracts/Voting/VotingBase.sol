@@ -45,10 +45,9 @@ abstract contract VotingBase is IVoting {
         _token = token;
     }
 
-    function _setShareholderRegistry(IShareholderRegistry shareholderRegistry)
-        internal
-        virtual
-    {
+    function _setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) internal virtual {
         _shareholderRegistry = shareholderRegistry;
         _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
     }
@@ -90,12 +89,9 @@ abstract contract VotingBase is IVoting {
     /// @dev Returns the account's current delegate
     /// @param account The account whose delegate is requested
     /// @return Account's voting power
-    function getDelegate(address account)
-        public
-        view
-        virtual
-        returns (address)
-    {
+    function getDelegate(
+        address account
+    ) public view virtual returns (address) {
         return _delegates[account];
     }
 
@@ -104,12 +100,9 @@ abstract contract VotingBase is IVoting {
     /// @notice An address that has not delegated at least itself, will have always 0 voting power
     /// @param account The account whose voting power is requested
     /// @return Account's voting power
-    function getVotingPower(address account)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function getVotingPower(
+        address account
+    ) public view virtual returns (uint256) {
         return _votingPower[account];
     }
 
@@ -128,10 +121,10 @@ abstract contract VotingBase is IVoting {
         _delegate(msg.sender, newDelegate);
     }
 
-    function _delegate(address delegator, address newDelegate)
-        internal
-        virtual
-    {
+    function _delegate(
+        address delegator,
+        address newDelegate
+    ) internal virtual {
         address currentDelegate = getDelegate(delegator);
         address newDelegateDelegate = getDelegate(newDelegate);
         uint256 countDelegatorDelegators = _delegators[delegator];

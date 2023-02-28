@@ -45,11 +45,10 @@ contract VotingMock {
         mockResult_canVoteAt[account] = mockResult;
     }
 
-    function getDelegateAt(address account, uint256)
-        public
-        view
-        returns (address)
-    {
+    function getDelegateAt(
+        address account,
+        uint256
+    ) public view returns (address) {
         return mockResult_getDelegateAt[account];
     }
 
@@ -57,11 +56,10 @@ contract VotingMock {
         return mockResult_canVoteAt[account];
     }
 
-    function getVotingPowerAt(address account, uint256)
-        public
-        view
-        returns (uint256)
-    {
+    function getVotingPowerAt(
+        address account,
+        uint256
+    ) public view returns (uint256) {
         return mockResult_getVotingPowerAt[account];
     }
 

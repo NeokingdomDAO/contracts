@@ -147,6 +147,12 @@ describe("InternalMarket", async () => {
   });
 
   describe("makeOffer", async () => {
+    beforeEach(async () => {
+      token.transferFrom.returns(true);
+      token.transfer.returns(true);
+      usdc.transferFrom.returns(true);
+    });
+
     it("should emit an OfferCreated event", async () => {
       await expect(internalMarket.makeOffer(1000))
         .to.emit(internalMarket, "OfferCreated")

@@ -3,11 +3,12 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
+import "hardhat/console.sol";
 
-contract InternalMarketBase is ReentrancyGuard {
+contract InternalMarketBase is ReentrancyGuardUpgradeable {
     struct Offer {
         uint256 expiredAt;
         uint256 amount;

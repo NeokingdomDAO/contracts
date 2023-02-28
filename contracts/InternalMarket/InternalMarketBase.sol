@@ -3,11 +3,10 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
 
-contract InternalMarketBase is ReentrancyGuardUpgradeable {
+contract InternalMarketBase {
     struct Offer {
         uint256 expiredAt;
         uint256 amount;
@@ -185,11 +184,7 @@ contract InternalMarketBase is ReentrancyGuardUpgradeable {
         );
     }
 
-    // Add reentrancy guard to avoid any misues of the sequence 184-185
-    function _redeem(
-        address from,
-        uint256 amount
-    ) internal virtual nonReentrant {
+    function _redeem(address from, uint256 amount) internal virtual {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;

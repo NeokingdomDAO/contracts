@@ -314,7 +314,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         resolution.executionTimestamp = block.timestamp;
 
         // slither-disable-start calls-loop
-        for (uint256 i; i < to.length; i++) {
+        for (uint256 i = 0; i < to.length; i++) {
             // slither-disable-next-line low-level-calls
             (bool success, ) = to[i].call(data[i]);
             require(success, "Resolution: execution failed");

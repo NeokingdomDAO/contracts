@@ -3,10 +3,11 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
 
-contract InternalMarketBase {
+contract InternalMarketBase is ReentrancyGuard {
     struct Offer {
         uint256 expiredAt;
         uint256 amount;
@@ -172,12 +173,18 @@ contract InternalMarketBase {
         exchangeToken.transferFrom(to, from, _convertToUSDC(amount));
     }
 
-    function _redeem(address from, uint256 amount) internal virtual {
+    // Add reentrancy guard to avoid any misues of the sequence 184-185
+    function _redeem(
+        address from,
+        uint256 amount
+    ) internal virtual nonReentrant {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
+            // slither-disable-start reentrancy-no-eth
             daoToken.transferFrom(from, reserve, difference);
             _withdraw(from, reserve, withdrawableBalance);
+            // slither-disable-end reentrancy-no-eth
         } else {
             _withdraw(from, reserve, amount);
         }
@@ -198,7 +205,7 @@ contract InternalMarketBase {
         Offers storage offers = _offers[account];
 
         uint256 vault = _vaultContributors[account];
-        uint256 unlocked;
+        uint256 unlocked = 0;
 
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];

@@ -1,4 +1,4 @@
-.openzeppelin/unknown-31337.json
+.openzeppelin/*.json
 deployments/networks.localhost.json
 node_modules/
 cache/
@@ -8,3 +8,7 @@ artifacts/
 coverage*
 .env
 .vscode/
+temp/*
+dist/*
+reports/*
+.DS_Store

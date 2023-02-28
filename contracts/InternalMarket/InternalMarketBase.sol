@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../RedemptionController/IRedemptionController.sol";
@@ -83,16 +83,16 @@ contract InternalMarketBase {
     }
 
     function _makeOffer(address from, uint256 amount) internal virtual {
-        daoToken.transferFrom(from, address(this), amount);
+        _vaultContributors[from] += amount;
 
         uint256 expiredAt = block.timestamp + offerDuration;
         uint128 id = _enqueue(_offers[from], Offer(expiredAt, amount));
 
-        _vaultContributors[from] += amount;
+        emit OfferCreated(id, from, amount, expiredAt);
 
+        daoToken.transferFrom(from, address(this), amount);
         redemptionController.afterOffer(from, amount);
 
-        emit OfferCreated(id, from, amount, expiredAt);
     }
 
     function _beforeWithdraw(address from, uint256 amount) internal virtual {

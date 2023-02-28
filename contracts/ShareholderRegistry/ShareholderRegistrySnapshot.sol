@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/extensions/ERC20Snapshot.sol)
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "./ShareholderRegistryBase.sol";
 import "../extensions/Snapshottable.sol";
@@ -152,7 +152,7 @@ abstract contract ShareholderRegistrySnapshot is
         bytes32 statusBefore,
         bytes32 statusAfter
     ) internal virtual override {
-        super._beforeSetStatus(account, statusBefore, statusAfter);
         _updateAccountSnapshot(account);
+        super._beforeSetStatus(account, statusBefore, statusAfter);
     }
 }

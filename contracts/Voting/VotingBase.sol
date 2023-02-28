@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
-contract VotingBase {
+abstract contract VotingBase is IVoting {
     IShareholderRegistry internal _shareholderRegistry;
     IERC20Upgradeable internal _token;
 

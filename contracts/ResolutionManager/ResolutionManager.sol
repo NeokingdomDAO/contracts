@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -200,6 +200,8 @@ contract ResolutionManager is Initializable, Context, AccessControl {
             "Resolution: length mismatch"
         );
         uint256 resolutionId = _currentResolutionId++;
+        emit ResolutionCreated(_msgSender(), resolutionId);
+        
         Resolution storage resolution = resolutions[resolutionId];
 
         resolution.dataURI = dataURI;
@@ -208,7 +210,6 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
 
-        emit ResolutionCreated(_msgSender(), resolutionId);
         return resolutionId;
     }
 
@@ -218,6 +219,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         onlyPending(resolutionId)
         exists(resolutionId)
     {
+        emit ResolutionApproved(_msgSender(), resolutionId);
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -228,8 +230,8 @@ contract ResolutionManager is Initializable, Context, AccessControl {
 
         Resolution storage resolution = resolutions[resolutionId];
         resolution.approveTimestamp = block.timestamp;
+        
         resolution.snapshotId = _snapshotAll();
-        emit ResolutionApproved(_msgSender(), resolutionId);
     }
 
     function rejectResolution(uint256 resolutionId)
@@ -238,6 +240,8 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         onlyPending(resolutionId)
         exists(resolutionId)
     {
+        emit ResolutionRejected(_msgSender(), resolutionId);
+        
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -249,7 +253,6 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         Resolution storage resolution = resolutions[resolutionId];
 
         resolution.rejectionTimestamp = block.timestamp;
-        emit ResolutionRejected(_msgSender(), resolutionId);
     }
 
     function updateResolution(
@@ -260,6 +263,8 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         address[] memory executionTo,
         bytes[] memory executionData
     ) public virtual onlyPending(resolutionId) {
+        emit ResolutionUpdated(_msgSender(), resolutionId);
+        
         Resolution storage resolution = resolutions[resolutionId];
         require(
             executionTo.length == executionData.length,
@@ -288,10 +293,11 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
 
-        emit ResolutionUpdated(_msgSender(), resolutionId);
     }
 
     function executeResolution(uint256 resolutionId) public virtual {
+        emit ResolutionExecuted(_msgSender(), resolutionId);
+        
         Resolution storage resolution = resolutions[resolutionId];
         require(
             resolution.executionTo.length > 0,
@@ -315,11 +321,13 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         // Set timestamp before execution as a re-entrancy guard.
         resolution.executionTimestamp = block.timestamp;
 
+        // slither-disable-start calls-loop
         for (uint256 i; i < to.length; i++) {
+            // slither-disable-next-line low-level-calls
             (bool success, ) = to[i].call(data[i]);
             require(success, "Resolution: execution failed");
         }
-        emit ResolutionExecuted(_msgSender(), resolutionId);
+        // slither-disable-end calls-loop
     }
 
     function getExecutionDetails(uint256 resolutionId)

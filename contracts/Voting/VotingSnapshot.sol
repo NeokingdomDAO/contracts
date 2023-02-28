@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/utils/Arrays.sol";
 import "../extensions/Snapshottable.sol";
@@ -21,6 +21,8 @@ abstract contract VotingSnapshot is VotingBase, Snapshottable {
     mapping(address => SnapshotsDelegates) internal _delegationSnapshots;
     mapping(address => SnapshotsValues) internal _votingPowerSnapshots;
     SnapshotsValues internal _totalVotingPowerSnapshots;
+
+    function snapshot() public override(Snapshottable, ISnapshot) virtual returns (uint256);
 
     function getDelegateAt(address account, uint256 snapshotId)
         public

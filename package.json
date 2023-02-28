@@ -8,7 +8,7 @@
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
-    "format": "prettier --write .",
+    "format": "prettier --write '**/*.*' --ignore-unknown",
     "coverage": "npm run build && npx hardhat coverage",
     "prepare": "husky install"
   },

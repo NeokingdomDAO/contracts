@@ -91,7 +91,10 @@ contract InternalMarketBase is ReentrancyGuard {
 
         emit OfferCreated(id, from, amount, expiredAt);
 
-        daoToken.transferFrom(from, address(this), amount);
+        require(
+            daoToken.transferFrom(from, address(this), amount),
+            "InternalMarketBase: transfer failed"
+        );
         redemptionController.afterOffer(from, amount);
     }
 
@@ -160,7 +163,10 @@ contract InternalMarketBase is ReentrancyGuard {
         uint256 amount
     ) internal virtual {
         _beforeWithdraw(from, amount);
-        daoToken.transfer(to, amount);
+        require(
+            daoToken.transfer(to, amount),
+            "InternalMarketBase: transfer failed"
+        );
     }
 
     function _matchOffer(
@@ -169,8 +175,14 @@ contract InternalMarketBase is ReentrancyGuard {
         uint256 amount
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
-        daoToken.transfer(to, amount);
-        exchangeToken.transferFrom(to, from, _convertToUSDC(amount));
+        require(
+            daoToken.transfer(to, amount),
+            "InternalMarketBase: transfer failed"
+        );
+        require(
+            exchangeToken.transferFrom(to, from, _convertToUSDC(amount)),
+            "InternalMarketBase: transfer failed"
+        );
     }
 
     // Add reentrancy guard to avoid any misues of the sequence 184-185
@@ -182,14 +194,22 @@ contract InternalMarketBase is ReentrancyGuard {
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
             // slither-disable-start reentrancy-no-eth
-            daoToken.transferFrom(from, reserve, difference);
+            require(
+                daoToken.transferFrom(from, reserve, difference),
+                "InternalMarketBase: transfer failed"
+            );
             _withdraw(from, reserve, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {
             _withdraw(from, reserve, amount);
         }
 
-        exchangeToken.transferFrom(reserve, from, _convertToUSDC(amount));
+        // The "from" value is always the msg.sender according to the public implementation (see InternalMarket.sol)
+        // slither-disable-next-line arbitrary-send-erc20
+        require(
+            exchangeToken.transferFrom(reserve, from, _convertToUSDC(amount)),
+            "InternalMarketBase: transfer failed"
+        );
         redemptionController.afterRedeem(from, amount);
     }
 

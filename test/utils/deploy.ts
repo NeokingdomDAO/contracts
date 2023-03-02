@@ -102,8 +102,8 @@ export async function deployDAO(
   oracle = await PriceOracleFactory.deploy();
   await oracle.deployed();
 
-  await oracle.relay(["eur", "usd"], [1, 1], [1, 1]);
-  await oracle.relay(["usdc", "usd"], [1, 1], [1, 1]);
+  await oracle.relay(["EUR", "USD"], [1, 1], [1, 1]);
+  await oracle.relay(["USDC", "USD"], [1, 1], [1, 1]);
 
   redemption = (await upgrades.deployProxy(RedemptionControllerFactory, {
     initializer: "initialize",

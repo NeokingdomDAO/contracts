@@ -6,22 +6,20 @@ import {
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
+  NeokingdomToken__factory,
   PriceOracle,
   PriceOracle__factory,
   RedemptionController,
   RedemptionController__factory,
+  ResolutionManager__factory,
   ShareholderRegistry,
+  ShareholderRegistry__factory,
   TokenMock,
   TokenMock__factory,
   Voting,
-} from "../../typechain";
-import { ResolutionManager } from "../../typechain";
-import {
-  NeokingdomToken__factory,
-  ResolutionManager__factory,
-  ShareholderRegistry__factory,
   Voting__factory,
 } from "../../typechain";
+import { ResolutionManager } from "../../typechain";
 import { roles } from "./roles";
 
 export async function deployDAO(

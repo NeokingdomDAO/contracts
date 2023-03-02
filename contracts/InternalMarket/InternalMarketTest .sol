@@ -9,12 +9,12 @@ import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
 
-contract InternalMarket is
+contract InternalMarketTest is
     Initializable,
     InternalMarketBase,
     AccessControlUpgradeable
 {
-    function initialize(IERC20 daoToken_) public initializer {
+    function initialize(ERC20 daoToken_) public initializer {
         _initialize(daoToken_, 7 days);
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
@@ -38,32 +38,30 @@ contract InternalMarket is
         _redeem(_msgSender(), amount);
     }
 
-    function setDaoToken(IERC20 token) public onlyRole(Roles.RESOLUTION_ROLE) {
+    function setDaoToken(IERC20 token) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setDaoToken(token);
     }
 
     function setExchangePair(
         ERC20 token,
         IStdReference oracle
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setExchangePair(token, oracle);
     }
 
-    function setReserve(
-        address reserve_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    function setReserve(address reserve_) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setReserve(reserve_);
     }
 
     function setRedemptionController(
         IRedemptionController redemptionController_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setRedemptionController(redemptionController_);
     }
 
     function setOfferDuration(
         uint duration
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setOfferDuration(duration);
     }
 }

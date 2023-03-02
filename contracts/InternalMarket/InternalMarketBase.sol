@@ -2,11 +2,14 @@
 
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract InternalMarketBase {
+    using Strings for uint256;
+
     struct Offer {
         uint256 expiredAt;
         uint256 amount;
@@ -28,7 +31,7 @@ contract InternalMarketBase {
     event OfferMatched(uint128 id, address from, address to, uint256 amount);
 
     IERC20 public daoToken;
-    IERC20 public exchangeToken;
+    ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
     IStdReference public priceOracle;
@@ -61,7 +64,7 @@ contract InternalMarketBase {
     }
 
     function _setExchangePair(
-        IERC20 token,
+        ERC20 token,
         IStdReference oracle
     ) internal virtual {
         exchangeToken = token;
@@ -94,7 +97,7 @@ contract InternalMarketBase {
             daoToken.transferFrom(from, address(this), amount),
             "InternalMarketBase: transfer failed"
         );
-        redemptionController.afterOffer(from, amount);
+        //redemptionController.afterOffer(from, amount);
     }
 
     function _beforeWithdraw(address from, uint256 amount) internal virtual {
@@ -178,10 +181,20 @@ contract InternalMarketBase {
             daoToken.transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
-        require(
-            exchangeToken.transferFrom(to, from, _convertToUSDC(amount)),
-            "InternalMarketBase: transfer failed"
-        );
+        uint256 usdcAmount = _convertToUSDC(amount);
+        try exchangeToken.transferFrom(to, from, usdcAmount) returns (bool) {
+            require(true, "Nothing");
+        } catch {
+            require(
+                false,
+                string(
+                    abi.encodePacked(
+                        "InternalMarketBase: transfer failed. Tried to transfer ",
+                        usdcAmount.toString()
+                    )
+                )
+            );
+        }
     }
 
     function _redeem(address from, uint256 amount) internal virtual {
@@ -210,9 +223,12 @@ contract InternalMarketBase {
     }
 
     function _convertToUSDC(uint256 eurAmount) internal view returns (uint256) {
-        uint256 eurUsd = priceOracle.getReferenceData("eur", "usd").rate;
-        uint256 usdUsdc = priceOracle.getReferenceData("usdc", "usd").rate;
-        return (eurAmount * eurUsd) / usdUsdc;
+        uint256 eurUsd = priceOracle.getReferenceData("EUR", "USD").rate;
+        uint256 usdUsdc = priceOracle.getReferenceData("USDC", "USD").rate;
+        return
+            (eurAmount * eurUsd) /
+            usdUsdc /
+            (10 ** (18 - exchangeToken.decimals()));
     }
 
     function _calculateOffersOf(

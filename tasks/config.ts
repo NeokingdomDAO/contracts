@@ -4,6 +4,9 @@ import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
+  InternalMarketTest,
+  InternalMarketTest__factory,
+  NKTest__factory,
   NeokingdomToken,
   NeokingdomToken__factory,
   PriceOracle,
@@ -15,6 +18,7 @@ import {
   Voting,
   Voting__factory,
 } from "../typechain";
+import { NKTest } from "../typechain/contracts/NeokingdomToken";
 
 export const DEFAULT_CONFIG_PATH = "./deployments/networks.json";
 export const DEFAULT_LOCALHOST_CONFIG_PATH =
@@ -26,6 +30,8 @@ export type ContractName =
   | "ShareholderRegistry"
   | "Voting"
   | "VotingV2"
+  | "NKTest"
+  | "InternalMarketTest"
   | "PriceOracle";
 
 export type DAOContract =
@@ -33,6 +39,8 @@ export type DAOContract =
   | ResolutionManager
   | ShareholderRegistry
   | Voting
+  | NKTest
+  | InternalMarketTest
   | PriceOracle;
 
 export type NetworkConfig = {
@@ -98,6 +106,8 @@ type ContractFactory =
   | typeof ResolutionManager__factory
   | typeof NeokingdomToken__factory
   | typeof Voting__factory
+  | typeof NKTest__factory
+  | typeof InternalMarketTest__factory
   | typeof PriceOracle__factory;
 
 export async function loadContract<T extends ContractFactory>(

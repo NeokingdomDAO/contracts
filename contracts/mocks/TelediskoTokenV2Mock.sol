@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "../TelediskoToken/TelediskoToken.sol";
+import "../NeokingdomToken/NeokingdomToken.sol";
 import "../extensions/Roles.sol";
 
-contract TelediskoTokenV2Mock is TelediskoToken {
+contract NeokingdomTokenV2Mock is NeokingdomToken {
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -20,7 +20,7 @@ contract TelediskoTokenV2Mock is TelediskoToken {
             _drainOffers(from, address(0), 0);
             require(
                 amount <= _unlockedBalance[from],
-                "TelediskoToken: transfer amount exceeds unlocked tokens"
+                "NeokingdomToken: transfer amount exceeds unlocked tokens"
             );
         }
     }

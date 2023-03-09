@@ -3,8 +3,8 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import {
-  TelediskoToken,
-  TelediskoToken__factory,
+  NeokingdomToken,
+  NeokingdomToken__factory,
   ShareholderRegistryMock,
   ShareholderRegistryMock__factory,
   VotingMock,
@@ -23,9 +23,9 @@ const AddressZero = ethers.constants.AddressZero;
 const DAY = 60 * 60 * 24;
 const WEEK = DAY * 7;
 
-describe("TelediskoToken", () => {
+describe("NeokingdomToken", () => {
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string, ESCROW_ROLE: string;
-  let telediskoToken: TelediskoToken;
+  let neokingdomToken: NeokingdomToken;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
   let deployer: SignerWithAddress,
@@ -38,10 +38,10 @@ describe("TelediskoToken", () => {
     [deployer, account, contributor, contributor2, nonContributor] =
       await ethers.getSigners();
 
-    const TelediskoTokenFactory = (await ethers.getContractFactory(
-      "TelediskoToken",
+    const NeokingdomTokenFactory = (await ethers.getContractFactory(
+      "NeokingdomToken",
       deployer
-    )) as TelediskoToken__factory;
+    )) as NeokingdomToken__factory;
 
     const VotingMockFactory = (await ethers.getContractFactory(
       "VotingMock",
@@ -53,24 +53,24 @@ describe("TelediskoToken", () => {
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    telediskoToken = (await upgrades.deployProxy(
-      TelediskoTokenFactory,
+    neokingdomToken = (await upgrades.deployProxy(
+      NeokingdomTokenFactory,
       ["Test", "TEST"],
       { initializer: "initialize" }
-    )) as TelediskoToken;
-    await telediskoToken.deployed();
+    )) as NeokingdomToken;
+    await neokingdomToken.deployed();
 
     voting = (await upgrades.deployProxy(VotingMockFactory)) as VotingMock;
     await voting.deployed();
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await telediskoToken.grantRole(RESOLUTION_ROLE, deployer.address);
+    await neokingdomToken.grantRole(RESOLUTION_ROLE, deployer.address);
 
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
-    await telediskoToken.grantRole(OPERATOR_ROLE, deployer.address);
+    await neokingdomToken.grantRole(OPERATOR_ROLE, deployer.address);
 
     ESCROW_ROLE = await roles.ESCROW_ROLE();
-    await telediskoToken.grantRole(ESCROW_ROLE, deployer.address);
+    await neokingdomToken.grantRole(ESCROW_ROLE, deployer.address);
 
     shareholderRegistry = (await upgrades.deployProxy(
       ShareholderRegistryMockFactory,
@@ -80,8 +80,8 @@ describe("TelediskoToken", () => {
     )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
 
-    await telediskoToken.setVoting(voting.address);
-    await telediskoToken.setShareholderRegistry(shareholderRegistry.address);
+    await neokingdomToken.setVoting(voting.address);
+    await neokingdomToken.setShareholderRegistry(shareholderRegistry.address);
 
     const contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
     const shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
@@ -111,15 +111,15 @@ describe("TelediskoToken", () => {
 
   describe("token transfer logic", async () => {
     it("should call the Voting hook after a minting", async () => {
-      await expect(telediskoToken.mint(account.address, 10))
+      await expect(neokingdomToken.mint(account.address, 10))
         .emit(voting, "AfterTokenTransferCalled")
         .withArgs(AddressZero, account.address, 10);
     });
 
     it("should call the Voting hook after a token transfer", async () => {
-      telediskoToken.mint(account.address, 10);
+      neokingdomToken.mint(account.address, 10);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 10)
+        neokingdomToken.connect(account).transfer(nonContributor.address, 10)
       )
         .emit(voting, "AfterTokenTransferCalled")
         .withArgs(account.address, nonContributor.address, 10);
@@ -128,129 +128,129 @@ describe("TelediskoToken", () => {
 
   describe("minting", async () => {
     it("should disable transfer when tokens are minted to a contributor", async () => {
-      telediskoToken.mint(contributor.address, 10);
+      neokingdomToken.mint(contributor.address, 10);
       await expect(
-        telediskoToken.connect(contributor).transfer(contributor2.address, 1)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+        neokingdomToken.connect(contributor).transfer(contributor2.address, 1)
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
     });
 
     it("should allow transfer when tokens are minted to anyone else", async () => {
-      telediskoToken.mint(account.address, 10);
+      neokingdomToken.mint(account.address, 10);
       await expect(
-        telediskoToken.connect(account).transfer(contributor2.address, 1)
+        neokingdomToken.connect(account).transfer(contributor2.address, 1)
       )
-        .emit(telediskoToken, "Transfer")
+        .emit(neokingdomToken, "Transfer")
         .withArgs(account.address, contributor2.address, 1);
     });
   });
 
   describe("burning", async () => {
     it("should disable burn when tokens are minted to a contributor", async () => {
-      telediskoToken.mint(contributor.address, 10);
-      await expect(telediskoToken.burn(contributor.address, 1)).revertedWith(
-        "TelediskoToken: transfer amount exceeds unlocked tokens"
+      neokingdomToken.mint(contributor.address, 10);
+      await expect(neokingdomToken.burn(contributor.address, 1)).revertedWith(
+        "NeokingdomToken: transfer amount exceeds unlocked tokens"
       );
     });
 
     it("should allow burn when tokens are minted to anyone else", async () => {
-      telediskoToken.mint(account.address, 10);
-      await expect(telediskoToken.burn(account.address, 1))
-        .emit(telediskoToken, "Transfer")
+      neokingdomToken.mint(account.address, 10);
+      await expect(neokingdomToken.burn(account.address, 1))
+        .emit(neokingdomToken, "Transfer")
         .withArgs(account.address, AddressZero, 1);
     });
   });
 
   describe("vesting", async () => {
     it("should not allow balance in vesting to be transferred", async () => {
-      await telediskoToken.mintVesting(account.address, 100);
+      await neokingdomToken.mintVesting(account.address, 100);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 50)
-      ).revertedWith("TelediskoToken: transfer amount exceeds vesting");
+        neokingdomToken.connect(account).transfer(nonContributor.address, 50)
+      ).revertedWith("NeokingdomToken: transfer amount exceeds vesting");
     });
 
     it("should update the vesting balance", async () => {
-      await telediskoToken.mintVesting(account.address, 100);
-      expect(await telediskoToken.vestingBalanceOf(account.address)).equal(100);
-      await telediskoToken.mintVesting(account.address, 10);
-      expect(await telediskoToken.vestingBalanceOf(account.address)).equal(110);
+      await neokingdomToken.mintVesting(account.address, 100);
+      expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(100);
+      await neokingdomToken.mintVesting(account.address, 10);
+      expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(110);
     });
 
     it("should emit events on update the vesting balance", async () => {
-      expect(await telediskoToken.mintVesting(account.address, 100))
-        .emit(telediskoToken, "VestingSet")
+      expect(await neokingdomToken.mintVesting(account.address, 100))
+        .emit(neokingdomToken, "VestingSet")
         .withArgs(account.address, 100);
-      expect(await telediskoToken.mintVesting(account.address, 10))
-        .emit(telediskoToken, "VestingSet")
+      expect(await neokingdomToken.mintVesting(account.address, 10))
+        .emit(neokingdomToken, "VestingSet")
         .withArgs(account.address, 110);
     });
 
     it("should allow to transfer balance that is not vesting", async () => {
-      await telediskoToken.mint(account.address, 10);
-      await telediskoToken.mintVesting(account.address, 100);
+      await neokingdomToken.mint(account.address, 10);
+      await neokingdomToken.mintVesting(account.address, 100);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 10)
+        neokingdomToken.connect(account).transfer(nonContributor.address, 10)
       )
-        .emit(telediskoToken, "Transfer")
+        .emit(neokingdomToken, "Transfer")
         .withArgs(account.address, nonContributor.address, 10);
       await expect(
-        telediskoToken.connect(account).transfer(nonContributor.address, 1)
-      ).revertedWith("TelediskoToken: transfer amount exceeds vesting");
+        neokingdomToken.connect(account).transfer(nonContributor.address, 1)
+      ).revertedWith("NeokingdomToken: transfer amount exceeds vesting");
     });
 
     it("should allow to decrease the vesting balance", async () => {
-      await telediskoToken.mintVesting(account.address, 100);
-      await telediskoToken.setVesting(account.address, 90);
-      expect(await telediskoToken.vestingBalanceOf(account.address)).equal(90);
+      await neokingdomToken.mintVesting(account.address, 100);
+      await neokingdomToken.setVesting(account.address, 90);
+      expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(90);
     });
 
     it("should not allow to increase the vesting balance", async () => {
-      await telediskoToken.mintVesting(account.address, 100);
+      await neokingdomToken.mintVesting(account.address, 100);
       await expect(
-        telediskoToken.setVesting(account.address, 110)
-      ).revertedWith("TelediskoToken: vesting can only be decreased");
+        neokingdomToken.setVesting(account.address, 110)
+      ).revertedWith("NeokingdomToken: vesting can only be decreased");
     });
   });
 
   describe("offers", async () => {
     describe("create", async () => {
       it("should allow a contributor to create an offer", async () => {
-        await telediskoToken.mint(contributor.address, 100);
+        await neokingdomToken.mint(contributor.address, 100);
         const ts = (await getEVMTimestamp()) + 1;
         await setEVMTimestamp(ts);
-        await expect(telediskoToken.connect(contributor).createOffer(40))
-          .emit(telediskoToken, "OfferCreated")
+        await expect(neokingdomToken.connect(contributor).createOffer(40))
+          .emit(neokingdomToken, "OfferCreated")
           .withArgs(0, contributor.address, 40, ts + WEEK);
       });
 
       it("should allow a contributor with balance currently vesting to create an offer", async () => {
-        await telediskoToken.mintVesting(contributor.address, 100);
-        await telediskoToken.mint(contributor.address, 100);
+        await neokingdomToken.mintVesting(contributor.address, 100);
+        await neokingdomToken.mint(contributor.address, 100);
         const ts = (await getEVMTimestamp()) + 1;
         await setEVMTimestamp(ts);
-        await expect(telediskoToken.connect(contributor).createOffer(50))
-          .emit(telediskoToken, "OfferCreated")
+        await expect(neokingdomToken.connect(contributor).createOffer(50))
+          .emit(neokingdomToken, "OfferCreated")
           .withArgs(0, contributor.address, 50, ts + WEEK);
       });
       it("should not allow a non contributor to create an offer", async () => {
-        await telediskoToken.mint(nonContributor.address, 100);
+        await neokingdomToken.mint(nonContributor.address, 100);
         await expect(
-          telediskoToken.connect(nonContributor).createOffer(40)
-        ).revertedWith("TelediskoToken: not a contributor");
+          neokingdomToken.connect(nonContributor).createOffer(40)
+        ).revertedWith("NeokingdomToken: not a contributor");
       });
 
       it("should not allow a contributor to offer more tokens than what they have", async () => {
-        await telediskoToken.mint(contributor.address, 100);
+        await neokingdomToken.mint(contributor.address, 100);
         await expect(
-          telediskoToken.connect(contributor).createOffer(110)
-        ).revertedWith("TelediskoToken: offered amount exceeds balance");
+          neokingdomToken.connect(contributor).createOffer(110)
+        ).revertedWith("NeokingdomToken: offered amount exceeds balance");
       });
 
       it("should not allow a contributor to offer more tokens than what they have, including the ones currently vesting", async () => {
-        await telediskoToken.mintVesting(contributor.address, 100);
-        await telediskoToken.mint(contributor.address, 100);
+        await neokingdomToken.mintVesting(contributor.address, 100);
+        await neokingdomToken.mint(contributor.address, 100);
         await expect(
-          telediskoToken.connect(contributor).createOffer(110)
-        ).revertedWith("TelediskoToken: offered amount exceeds balance");
+          neokingdomToken.connect(contributor).createOffer(110)
+        ).revertedWith("NeokingdomToken: offered amount exceeds balance");
       });
     });
 
@@ -263,31 +263,31 @@ describe("TelediskoToken", () => {
         // - An offer made on `ts`
         // - An offer made on `ts + 2 days`
         // - An offer made on `ts + 4 days`
-        await telediskoToken.mintVesting(contributor.address, 1000);
-        await telediskoToken.mint(contributor.address, 100);
-        await telediskoToken.connect(contributor).createOffer(11);
+        await neokingdomToken.mintVesting(contributor.address, 1000);
+        await neokingdomToken.mint(contributor.address, 100);
+        await neokingdomToken.connect(contributor).createOffer(11);
         ts = await getEVMTimestamp();
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 2);
-        await telediskoToken.connect(contributor).createOffer(25);
+        await neokingdomToken.connect(contributor).createOffer(25);
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 4);
-        await telediskoToken.connect(contributor).createOffer(35);
+        await neokingdomToken.connect(contributor).createOffer(35);
       });
 
       it("should match the oldest active offer", async () => {
         await expect(
-          telediskoToken.matchOffer(
+          neokingdomToken.matchOffer(
             contributor.address,
             contributor2.address,
             11
           )
         )
-          .emit(telediskoToken, "OfferMatched")
+          .emit(neokingdomToken, "OfferMatched")
           .withArgs(0, contributor.address, contributor2.address, 11)
-          .emit(telediskoToken, "Transfer")
+          .emit(neokingdomToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 11);
       });
 
@@ -295,58 +295,58 @@ describe("TelediskoToken", () => {
         // Make offer `11` expire
         await setEVMTimestamp(ts + WEEK + DAY);
         await expect(
-          telediskoToken.matchOffer(
+          neokingdomToken.matchOffer(
             contributor.address,
             contributor2.address,
             25
           )
         )
-          .emit(telediskoToken, "OfferExpired")
+          .emit(neokingdomToken, "OfferExpired")
           .withArgs(0, contributor.address, 11)
-          .emit(telediskoToken, "OfferMatched")
+          .emit(neokingdomToken, "OfferMatched")
           .withArgs(1, contributor.address, contributor2.address, 25)
-          .emit(telediskoToken, "Transfer")
+          .emit(neokingdomToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 25);
       });
 
       it("should match multiple active offers from the old one to the new one", async () => {
         await expect(
-          telediskoToken.matchOffer(
+          neokingdomToken.matchOffer(
             contributor.address,
             contributor2.address,
             11 + 25 + 1
           )
         )
-          .emit(telediskoToken, "OfferMatched")
+          .emit(neokingdomToken, "OfferMatched")
           .withArgs(0, contributor.address, contributor2.address, 11)
-          .emit(telediskoToken, "OfferMatched")
+          .emit(neokingdomToken, "OfferMatched")
           .withArgs(1, contributor.address, contributor2.address, 25)
-          .emit(telediskoToken, "OfferMatched")
+          .emit(neokingdomToken, "OfferMatched")
           .withArgs(2, contributor.address, contributor2.address, 1)
-          .emit(telediskoToken, "Transfer")
+          .emit(neokingdomToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 11 + 25 + 1);
       });
 
       it("should not allow to match more than what's available", async () => {
         await expect(
-          telediskoToken.matchOffer(
+          neokingdomToken.matchOffer(
             contributor.address,
             contributor2.address,
             11 + 25 + 36
           )
-        ).revertedWith("TelediskoToken: amount exceeds offer");
+        ).revertedWith("NeokingdomToken: amount exceeds offer");
       });
 
       it("should not allow to match more than what's available when old offers expire", async () => {
         // Make offer `11` and `15` expire
         await setEVMTimestamp(ts + WEEK + DAY * 3);
         await expect(
-          telediskoToken.matchOffer(
+          neokingdomToken.matchOffer(
             contributor.address,
             contributor2.address,
             36
           )
-        ).revertedWith("TelediskoToken: amount exceeds offer");
+        ).revertedWith("NeokingdomToken: amount exceeds offer");
       });
     });
 
@@ -361,29 +361,29 @@ describe("TelediskoToken", () => {
         // - An offer made on `ts`
         // - An offer made on `ts + 2 days`
         // - An offer made on `ts + 4 days`
-        await telediskoToken.mintVesting(contributor.address, 1000);
-        await telediskoToken.mint(contributor.address, 100);
-        await telediskoToken.connect(contributor).createOffer(11);
+        await neokingdomToken.mintVesting(contributor.address, 1000);
+        await neokingdomToken.mint(contributor.address, 100);
+        await neokingdomToken.connect(contributor).createOffer(11);
         ts = await getEVMTimestamp();
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 2);
-        await telediskoToken.connect(contributor).createOffer(25);
+        await neokingdomToken.connect(contributor).createOffer(25);
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 4);
-        await telediskoToken.connect(contributor).createOffer(35);
+        await neokingdomToken.connect(contributor).createOffer(35);
       });
 
       it("should allow to transfer balance from expired offers", async () => {
         // Make offer `11` expire
         await setEVMTimestamp(ts + WEEK + DAY);
         await expect(
-          telediskoToken.connect(contributor).transfer(contributor2.address, 11)
+          neokingdomToken.connect(contributor).transfer(contributor2.address, 11)
         )
-          .emit(telediskoToken, "OfferExpired")
+          .emit(neokingdomToken, "OfferExpired")
           .withArgs(0, contributor.address, 11)
-          .emit(telediskoToken, "Transfer")
+          .emit(neokingdomToken, "Transfer")
           .withArgs(contributor.address, contributor2.address, 11);
       });
 
@@ -391,9 +391,9 @@ describe("TelediskoToken", () => {
         // Make offer `11` expire
         await setEVMTimestamp(ts + WEEK + DAY);
         await expect(
-          telediskoToken.connect(contributor).transfer(contributor2.address, 12)
+          neokingdomToken.connect(contributor).transfer(contributor2.address, 12)
         ).revertedWith(
-          "TelediskoToken: transfer amount exceeds unlocked tokens"
+          "NeokingdomToken: transfer amount exceeds unlocked tokens"
         );
       });
     });
@@ -409,25 +409,25 @@ describe("TelediskoToken", () => {
         // - An offer made on `ts`
         // - An offer made on `ts + 2 days`
         // - An offer made on `ts + 4 days`
-        await telediskoToken.mintVesting(contributor.address, 1000);
-        await telediskoToken.mint(contributor.address, 100);
+        await neokingdomToken.mintVesting(contributor.address, 1000);
+        await neokingdomToken.mint(contributor.address, 100);
         ts = await getEVMTimestamp();
-        await telediskoToken.connect(contributor).createOffer(11);
+        await neokingdomToken.connect(contributor).createOffer(11);
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 2);
-        await telediskoToken.connect(contributor).createOffer(25);
+        await neokingdomToken.connect(contributor).createOffer(25);
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 4);
-        await telediskoToken.connect(contributor).createOffer(35);
+        await neokingdomToken.connect(contributor).createOffer(35);
       });
 
       describe("offeredBalanceOf", async () => {
         it("should be equal to the amount of tokens offered", async () => {
           await mineEVMBlock();
           expect(
-            await telediskoToken
+            await neokingdomToken
               .connect(contributor)
               .offeredBalanceOf(contributor.address)
           ).equal(11 + 25 + 35);
@@ -438,15 +438,15 @@ describe("TelediskoToken", () => {
           await setEVMTimestamp(ts + WEEK + DAY);
           await mineEVMBlock();
           expect(
-            await telediskoToken
+            await neokingdomToken
               .connect(contributor)
               .offeredBalanceOf(contributor.address)
           ).equal(25 + 35);
         });
 
         it("should be equal to 0 for non contributors", async () => {
-          await telediskoToken.mint(nonContributor.address, 100);
-          const result = await telediskoToken.offeredBalanceOf(
+          await neokingdomToken.mint(nonContributor.address, 100);
+          const result = await neokingdomToken.offeredBalanceOf(
             nonContributor.address
           );
 
@@ -458,7 +458,7 @@ describe("TelediskoToken", () => {
         it("should be equal to zero when contributor just started offering their tokens", async () => {
           await mineEVMBlock();
           expect(
-            await telediskoToken
+            await neokingdomToken
               .connect(contributor)
               .unlockedBalanceOf(contributor.address)
           ).equal(0);
@@ -469,15 +469,15 @@ describe("TelediskoToken", () => {
           await setEVMTimestamp(ts + WEEK + DAY * 3);
           await mineEVMBlock();
           expect(
-            await telediskoToken
+            await neokingdomToken
               .connect(contributor)
               .unlockedBalanceOf(contributor.address)
           ).equal(11 + 25);
         });
 
         it("should be equal to balance for non contributors", async () => {
-          await telediskoToken.mint(nonContributor.address, 100);
-          const result = await telediskoToken.unlockedBalanceOf(
+          await neokingdomToken.mint(nonContributor.address, 100);
+          const result = await neokingdomToken.unlockedBalanceOf(
             nonContributor.address
           );
 
@@ -489,7 +489,7 @@ describe("TelediskoToken", () => {
         it("should be equal to owned tokens", async () => {
           await mineEVMBlock();
           expect(
-            await telediskoToken
+            await neokingdomToken
               .connect(contributor)
               .lockedBalanceOf(contributor.address)
           ).equal(1000 + 100);
@@ -500,15 +500,15 @@ describe("TelediskoToken", () => {
           await setEVMTimestamp(ts + WEEK + DAY * 3);
           await mineEVMBlock();
           expect(
-            await telediskoToken
+            await neokingdomToken
               .connect(contributor)
               .lockedBalanceOf(contributor.address)
           ).equal(1000 + 100 - 11 - 25);
         });
 
         it("should be equal to 0 for non contributors", async () => {
-          await telediskoToken.mint(nonContributor.address, 100);
-          const result = await telediskoToken.lockedBalanceOf(
+          await neokingdomToken.mint(nonContributor.address, 100);
+          const result = await neokingdomToken.lockedBalanceOf(
             nonContributor.address
           );
 

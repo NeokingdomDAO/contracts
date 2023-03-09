@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../Voting/IVoting.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 
-contract TelediskoTokenBase is ERC20Upgradeable {
+contract NeokingdomTokenBase is ERC20Upgradeable {
     IVoting internal _voting;
     IShareholderRegistry internal _shareholderRegistry;
 
@@ -76,7 +76,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
                 balanceOf(account) -
                     _vestingBalance[account] -
                     _unlockedBalance[account],
-            "TelediskoToken: offered amount exceeds balance"
+            "NeokingdomToken: offered amount exceeds balance"
         );
         uint256 expiration = block.timestamp + OFFER_EXPIRATION;
         uint128 id = _enqueue(_offers[account], Offer(expiration, amount));
@@ -136,7 +136,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
             }
         }
 
-        require(amount == 0, "TelediskoToken: amount exceeds offer");
+        require(amount == 0, "NeokingdomToken: amount exceeds offer");
     }
 
     function _beforeTokenTransfer(
@@ -155,7 +155,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
             _drainOffers(from, address(0), 0);
             require(
                 amount <= _unlockedBalance[from],
-                "TelediskoToken: transfer amount exceeds unlocked tokens"
+                "NeokingdomToken: transfer amount exceeds unlocked tokens"
             );
         }
     }
@@ -171,7 +171,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
         // Invariants
         require(
             balanceOf(from) >= _vestingBalance[from],
-            "TelediskoToken: transfer amount exceeds vesting"
+            "NeokingdomToken: transfer amount exceeds vesting"
         );
 
         if (
@@ -203,7 +203,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
     function _setVesting(address account, uint256 amount) internal virtual {
         require(
             amount < _vestingBalance[account],
-            "TelediskoToken: vesting can only be decreased"
+            "NeokingdomToken: vesting can only be decreased"
         );
         _vestingBalance[account] = amount;
         emit VestingSet(account, amount);
@@ -215,7 +215,7 @@ contract TelediskoTokenBase is ERC20Upgradeable {
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
                 _msgSender()
             ),
-            "TelediskoToken: not a contributor"
+            "NeokingdomToken: not a contributor"
         );
         _createOffer(_msgSender(), amount);
     }

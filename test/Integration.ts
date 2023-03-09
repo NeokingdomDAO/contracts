@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle";
 import {
   ShareholderRegistry,
   Voting,
-  TelediskoToken,
+  NeokingdomToken,
   ResolutionManager,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -24,7 +24,7 @@ const DAY = 60 * 60 * 24;
 
 describe("Integration", () => {
   let voting: Voting;
-  let token: TelediskoToken;
+  let token: NeokingdomToken;
   let resolution: ResolutionManager;
   let contributorStatus: string;
   let investorStatus: string;
@@ -431,7 +431,7 @@ describe("Integration", () => {
 
       await expect(
         token.connect(user2).transfer(user3.address, 2)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
 
       await token.connect(user2).createOffer(2);
       await token.matchOffer(user2.address, user1.address, 1);
@@ -456,7 +456,7 @@ describe("Integration", () => {
       // Tries first to transfer 2 tokens (becuase the user forgot that 1 was sold to user 1)
       await expect(
         token.connect(user2).transfer(user3.address, 2)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
       // Tries now to transfer the right amount
       await token.connect(user2).transfer(user3.address, 1);
       // The external user transfers the token back to user 1, because they can
@@ -514,7 +514,7 @@ describe("Integration", () => {
 
       await expect(
         token.connect(user3).transfer(user1.address, 10)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
 
       // 5 days pass (first offer expires)
       offerExpires = (await getEVMTimestamp()) + 5 * DAY;
@@ -524,7 +524,7 @@ describe("Integration", () => {
       // Still fails, because first offers was already drained
       await expect(
         token.connect(user2).transfer(user3.address, 5)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
 
       expect((await token.lockedBalanceOf(user1.address)).toNumber()).equal(80);
       expect((await token.balanceOf(user1.address)).toNumber()).equal(80);
@@ -555,7 +555,7 @@ describe("Integration", () => {
       // first tries wrong amount
       await expect(
         token.connect(user2).transfer(user3.address, 10)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
       token.connect(user2).transfer(user3.address, 5);
 
       expect((await token.lockedBalanceOf(user2.address)).toNumber()).equal(40);

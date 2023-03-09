@@ -29,9 +29,10 @@ export async function getWallet(hre: HardhatRuntimeEnvironment) {
     // https://github.com/OpenZeppelin/openzeppelin-upgrades/issues/85#issuecomment-1028435049
     // Here is a possible workaround for ethers.js:
     return {
-      gasPrice: parseEther("0"),
+      gasPrice: fee.gasPrice,
       maxFeePerGas: fee.maxFeePerGas, //parseUnits("10", "gwei"),
       maxPriorityFeePerGas: fee.maxPriorityFeePerGas, //parseUnits("1", "gwei"),
+      lastBaseFeePerGas: fee.lastBaseFeePerGas
     };
   };
 

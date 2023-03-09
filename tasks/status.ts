@@ -3,7 +3,7 @@ import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
 import { loadContract } from "./config";
 import {
   ShareholderRegistry__factory,
-  TelediskoToken__factory,
+  NeokingdomToken__factory,
 } from "../typechain";
 import { readFileSync } from "fs";
 
@@ -65,6 +65,7 @@ task("set", "Set the status of an address")
         "ShareholderRegistry"
       );
       const role = `${status.toUpperCase()}_STATUS`;
+      console.log(keccak256(toUtf8Bytes(role)))
       const tx = await contract.setStatus(
         keccak256(toUtf8Bytes(role)),
         account
@@ -75,15 +76,38 @@ task("set", "Set the status of an address")
     }
   );
 
-task("mint", "Mint teledisko tokens to an address")
+  task("get", "Get the status of an address")
+  .addParam("account", "The account address")
+  .setAction(
+    async (
+      {
+        account,
+      }: {
+        account: string;
+      },
+      hre
+    ) => {
+      const contract = await loadContract(
+        hre,
+        ShareholderRegistry__factory,
+        "ShareholderRegistry"
+      );
+      const status = await contract.getStatus(
+        account
+      );
+      console.log(`Status is ${status}`);
+    }
+  );
+
+task("mint", "Mint neokingdom tokens to an address")
   .addParam("account", "The address")
   .addParam("amount", "How many tokens")
   .setAction(
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        TelediskoToken__factory,
-        "TelediskoToken"
+        NeokingdomToken__factory,
+        "NeokingdomToken"
       );
       const tx = await contract.mint(account, parseEther(amount));
       console.log("  Submitted tx", tx.hash);
@@ -92,15 +116,15 @@ task("mint", "Mint teledisko tokens to an address")
     }
   );
 
-task("mint-vesting", "Mint teledisko tokens to an address, vesting")
+task("mint-vesting", "Mint neokingdom tokens to an address, vesting")
   .addParam("account", "The address")
   .addParam("amount", "How many tokens")
   .setAction(
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        TelediskoToken__factory,
-        "TelediskoToken"
+        NeokingdomToken__factory,
+        "NeokingdomToken"
       );
       const tx = await contract.mintVesting(account, parseEther(amount));
       console.log("  Submitted tx", tx.hash);

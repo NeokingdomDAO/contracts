@@ -1,9 +1,11 @@
+import { deploy } from "@openzeppelin/hardhat-upgrades/dist/utils";
 import { task } from "hardhat/config";
 import {
   Voting,
   ResolutionManager,
   ShareholderRegistry,
-  TelediskoToken,
+  NeokingdomToken,
+  PriceOracle__factory,
 } from "../typechain";
 import { exportAddress } from "./config";
 import { deployProxy, getWallet } from "./utils";
@@ -28,17 +30,17 @@ task("deploy", "Deploy DAO").setAction(async (_, hre) => {
     hre,
     deployer,
     "ShareholderRegistry",
-    ["Teledisko Share", "TS"]
+    ["Neokingdom DAO Share V0", "NS"]
   )) as ShareholderRegistry;
   await exportAddress(hre, shareholderRegistryContract, "ShareholderRegistry");
 
-  const telediskoTokenContract = (await deployProxy(
+  const neokingdomTokenContract = (await deployProxy(
     hre,
     deployer,
-    "TelediskoToken",
-    ["Teledisko Token", "TT"]
-  )) as TelediskoToken;
-  await exportAddress(hre, telediskoTokenContract, "TelediskoToken");
+    "NeokingdomToken",
+    ["Neokingdom DAO Token V0", "NEOK"]
+  )) as NeokingdomToken;
+  await exportAddress(hre, neokingdomTokenContract, "NeokingdomToken");
 
   const resolutionManagerContract = (await deployProxy(
     hre,
@@ -46,7 +48,7 @@ task("deploy", "Deploy DAO").setAction(async (_, hre) => {
     "ResolutionManager",
     [
       shareholderRegistryContract.address,
-      telediskoTokenContract.address,
+      neokingdomTokenContract.address,
       votingContract.address,
     ]
   )) as ResolutionManager;
@@ -55,3 +57,34 @@ task("deploy", "Deploy DAO").setAction(async (_, hre) => {
 
   console.log("\n\nWell done 🐯 time to setup your DAO!");
 });
+
+task("deploy-oracle", "Deploy Oracle")
+  .addParam("relayer", "Relayer address")
+  .setAction(async ({ relayer }: { relayer: string }, hre) => {
+    const deployer = await getWallet(hre);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    console.log("Deploy Oracle");
+    console.log("  Network:", hre.network.name);
+    console.log("  ChainId:", chainId);
+    console.log("  Deployer address:", deployer.address);
+
+    /**
+     * Deploy Oracle
+     */
+    console.log("\n\n⛏️  Mine contract");
+    const PriceOracleFactory = (await hre.ethers.getContractFactory(
+      "PriceOracle",
+      deployer
+    )) as PriceOracle__factory;
+
+    const priceOracleContract = await PriceOracleFactory.deploy();
+    await exportAddress(hre, priceOracleContract, "PriceOracle");
+
+    await priceOracleContract.grantRole(
+      await priceOracleContract.RELAYER_ROLE(),
+      relayer
+    );
+
+    console.log(`\n\nOracle deployed 🔮 You can operate it with ${relayer}`);
+  });

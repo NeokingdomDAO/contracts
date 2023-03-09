@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import { parseEther } from "ethers/lib/utils";
 import { loadContract } from "./config";
-import { TelediskoToken__factory } from "../typechain";
+import { NeokingdomToken__factory } from "../typechain";
 
 task("match-offer", "Match an offer")
   .addPositionalParam("fromAddress", "From address")
@@ -18,8 +18,8 @@ task("match-offer", "Match an offer")
     ) => {
       const contract = await loadContract(
         hre,
-        TelediskoToken__factory,
-        "TelediskoToken"
+        NeokingdomToken__factory,
+        "NeokingdomToken"
       );
 
       const tx = await contract.matchOffer(

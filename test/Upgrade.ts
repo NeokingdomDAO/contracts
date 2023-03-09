@@ -5,11 +5,11 @@ import { solidity } from "ethereum-waffle";
 import {
   ShareholderRegistry,
   Voting,
-  TelediskoToken,
+  NeokingdomToken,
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
-  TelediskoTokenV2Mock__factory,
-  NewTelediskoTokenMock__factory,
+  NeokingdomTokenV2Mock__factory,
+  NewNeokingdomTokenMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { setEVMTimestamp, getEVMTimestamp, mineEVMBlock } from "./utils/evm";
@@ -24,7 +24,7 @@ const DAY = 60 * 60 * 24;
 
 describe("Upgrade", () => {
   let voting: Voting;
-  let token: TelediskoToken;
+  let token: NeokingdomToken;
   let shareholderRegistry: ShareholderRegistry;
   let resolution: ResolutionManager;
   let managingBoardStatus: string,
@@ -137,7 +137,7 @@ describe("Upgrade", () => {
     });
 
     it("should change contract logic", async () => {
-      // Prevents also shareholder from transfering their tokens on TelediskoToken
+      // Prevents also shareholder from transfering their tokens on NeokingdomToken
       await shareholderRegistry.mint(user1.address, parseEther("1"));
       await shareholderRegistry.setStatus(contributorStatus, user1.address);
       await _mintTokens(user1, 42);
@@ -148,27 +148,27 @@ describe("Upgrade", () => {
 
       await expect(
         token.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
 
       await token.connect(user2).transfer(user1.address, 1);
 
-      const TelediskoTokenV2MockFactory = (await ethers.getContractFactory(
-        "TelediskoTokenV2Mock"
-      )) as TelediskoTokenV2Mock__factory;
+      const NeokingdomTokenV2MockFactory = (await ethers.getContractFactory(
+        "NeokingdomTokenV2Mock"
+      )) as NeokingdomTokenV2Mock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
         token.address,
-        TelediskoTokenV2MockFactory
+        NeokingdomTokenV2MockFactory
       );
       await tokenV2Contract.deployed();
 
       await expect(
         token.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
 
       await expect(
         token.connect(user2).transfer(user1.address, 1)
-      ).revertedWith("TelediskoToken: transfer amount exceeds unlocked tokens");
+      ).revertedWith("NeokingdomToken: transfer amount exceeds unlocked tokens");
     });
 
     it("should change events", async () => {
@@ -176,13 +176,13 @@ describe("Upgrade", () => {
         .emit(token, "VestingSet")
         .withArgs(user1.address, 31);
 
-      const NewTelediskoTokenMockFactory = (await ethers.getContractFactory(
-        "NewTelediskoTokenMock"
-      )) as NewTelediskoTokenMock__factory;
+      const NewNeokingdomTokenMockFactory = (await ethers.getContractFactory(
+        "NewNeokingdomTokenMock"
+      )) as NewNeokingdomTokenMock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
         token.address,
-        NewTelediskoTokenMockFactory
+        NewNeokingdomTokenMockFactory
       );
       await tokenV2Contract.deployed();
 

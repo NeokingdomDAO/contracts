@@ -3,10 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Arrays.sol";
-import "./TelediskoTokenBase.sol";
+import "./NeokingdomTokenBase.sol";
 import "../extensions/Snapshottable.sol";
 
-abstract contract TelediskoTokenSnapshot is TelediskoTokenBase, Snapshottable {
+abstract contract NeokingdomTokenSnapshot is NeokingdomTokenBase, Snapshottable {
     using Arrays for uint256[];
 
     struct Snapshots {

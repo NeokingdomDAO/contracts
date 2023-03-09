@@ -1,11 +1,11 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, upgrades } from "hardhat";
-import { ShareholderRegistry, TelediskoToken, Voting } from "../../typechain";
+import { ShareholderRegistry, NeokingdomToken, Voting } from "../../typechain";
 import { ResolutionManager } from "../../typechain";
 import {
   Voting__factory,
-  TelediskoToken__factory,
+  NeokingdomToken__factory,
   ShareholderRegistry__factory,
   ResolutionManager__factory,
 } from "../../typechain";
@@ -14,9 +14,9 @@ import { roles } from "./roles";
 export async function deployDAO(
   deployer: SignerWithAddress,
   managingBoard: SignerWithAddress
-): Promise<[Voting, TelediskoToken, ShareholderRegistry, ResolutionManager]> {
+): Promise<[Voting, NeokingdomToken, ShareholderRegistry, ResolutionManager]> {
   let voting: Voting,
-    token: TelediskoToken,
+    token: NeokingdomToken,
     shareholderRegistry: ShareholderRegistry,
     resolution: ResolutionManager;
 
@@ -25,10 +25,10 @@ export async function deployDAO(
     deployer
   )) as Voting__factory;
 
-  const TelediskoTokenFactory = (await ethers.getContractFactory(
-    "TelediskoToken",
+  const NeokingdomTokenFactory = (await ethers.getContractFactory(
+    "NeokingdomToken",
     deployer
-  )) as TelediskoToken__factory;
+  )) as NeokingdomToken__factory;
 
   const ShareholderRegistryFactory = (await ethers.getContractFactory(
     "ShareholderRegistry",
@@ -46,10 +46,10 @@ export async function deployDAO(
   await voting.deployed();
 
   token = (await upgrades.deployProxy(
-    TelediskoTokenFactory,
+    NeokingdomTokenFactory,
     ["TestToken", "TT"],
     { initializer: "initialize" }
-  )) as TelediskoToken;
+  )) as NeokingdomToken;
   await token.deployed();
 
   shareholderRegistry = (await upgrades.deployProxy(

@@ -7,8 +7,8 @@ import {
   ShareholderRegistryMock__factory,
   VotingMock,
   VotingMock__factory,
-  TelediskoTokenMock,
-  TelediskoTokenMock__factory,
+  NeokingdomTokenMock,
+  NeokingdomTokenMock__factory,
   ResolutionManager,
   ResolutionManager__factory,
   ResolutionExecutorMock,
@@ -32,7 +32,7 @@ describe("Resolution", () => {
   let investorStatus: string;
 
   let voting: VotingMock;
-  let token: TelediskoTokenMock;
+  let token: NeokingdomTokenMock;
   let resolution: ResolutionManager;
   let shareholderRegistry: ShareholderRegistryMock;
   let resolutionExecutorMock: ResolutionExecutorMock;
@@ -51,10 +51,10 @@ describe("Resolution", () => {
       deployer
     )) as VotingMock__factory;
 
-    const TelediskoTokenMockFactory = (await ethers.getContractFactory(
-      "TelediskoTokenMock",
+    const NeokingdomTokenMockFactory = (await ethers.getContractFactory(
+      "NeokingdomTokenMock",
       deployer
-    )) as TelediskoTokenMock__factory;
+    )) as NeokingdomTokenMock__factory;
 
     const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
       "ShareholderRegistryMock",
@@ -75,8 +75,8 @@ describe("Resolution", () => {
     await voting.deployed();
 
     token = (await upgrades.deployProxy(
-      TelediskoTokenMockFactory
-    )) as TelediskoTokenMock;
+      NeokingdomTokenMockFactory
+    )) as NeokingdomTokenMock;
     await token.deployed();
 
     shareholderRegistry = (await upgrades.deployProxy(
@@ -339,9 +339,9 @@ describe("Resolution", () => {
         .setShareholderRegistry(managingBoard.address);
     });
 
-    it("allow the OPERATOR_ROLE to setTelediskoToken", async () => {
+    it("allow the OPERATOR_ROLE to setNeokingdomToken", async () => {
       await resolution.grantRole(await roles.OPERATOR_ROLE(), user1.address);
-      await resolution.connect(user1).setTelediskoToken(managingBoard.address);
+      await resolution.connect(user1).setNeokingdomToken(managingBoard.address);
     });
 
     it("doesn't allow anyone not with OPERATOR_ROLE to setVoting", async () => {
@@ -363,11 +363,11 @@ describe("Resolution", () => {
           `is missing role ${await roles.OPERATOR_ROLE()}`
       );
     });
-    it("doesn't allow anyone not with OPERATOR_ROLE to setTelediskoToken", async () => {
+    it("doesn't allow anyone not with OPERATOR_ROLE to setNeokingdomToken", async () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .setTelediskoToken(managingBoard.address)
+          .setNeokingdomToken(managingBoard.address)
       ).revertedWith(
         `AccessControl: account ${managingBoard.address.toLowerCase()} ` +
           `is missing role ${await roles.OPERATOR_ROLE()}`

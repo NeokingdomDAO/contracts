@@ -161,7 +161,6 @@ export async function deployDAO(
 
   await redemption.grantRole(tokenManagerRole, token.address);
   await redemption.grantRole(tokenManagerRole, market.address);
-  await redemption.grantRole(tokenManagerRole, market.address);
 
   await token.setInternalMarket(market.address);
   await token.setRedemptionController(redemption.address);
@@ -170,6 +169,7 @@ export async function deployDAO(
   await voting.grantRole(resolutionRole, resolution.address);
   await token.grantRole(resolutionRole, resolution.address);
   await resolution.grantRole(resolutionRole, resolution.address);
+  await market.grantRole(resolutionRole, resolution.address);
 
   const managingBoardStatus = await registry.MANAGING_BOARD_STATUS();
 

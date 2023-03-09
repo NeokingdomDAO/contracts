@@ -1,5 +1,5 @@
-import { Contract, Signer } from "ethers";
-import { parseEther } from "ethers/lib/utils";
+import { Contract } from "ethers";
+import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -33,7 +33,7 @@ const FACTORIES = {
   Voting: Voting__factory,
 } as const;
 
-type ContractNames = keyof typeof FACTORIES;
+export type ContractNames = keyof typeof FACTORIES;
 
 type NeokingdomNetworkFile = {
   [key in ContractNames]?: {
@@ -43,23 +43,35 @@ type NeokingdomNetworkFile = {
   };
 };
 
-type NeokingdomContracts = {
-  market?: InternalMarket;
-  token?: NeokingdomToken;
-  oracle?: PriceOracle;
-  redemption?: RedemptionController;
-  resolution?: ResolutionManager;
-  registry?: ShareholderRegistry;
-  usdc?: TokenMock;
-  voting?: Voting;
+export type NeokingdomContracts = {
+  market: InternalMarket;
+  token: NeokingdomToken;
+  oracle: PriceOracle;
+  redemption: RedemptionController;
+  resolution: ResolutionManager;
+  registry: ShareholderRegistry;
+  usdc: TokenMock;
+  voting: Voting;
 };
+
+export const ROLES = {
+  DEFAULT_ADMIN_ROLE:
+    "0x0000000000000000000000000000000000000000000000000000000000000000",
+  OPERATOR_ROLE: keccak256(toUtf8Bytes("OPERATOR_ROLE")),
+  RESOLUTION_ROLE: keccak256(toUtf8Bytes("RESOLUTION_ROLE")),
+  ESCROW_ROLE: keccak256(toUtf8Bytes("ESCROW_ROLE")),
+  SHAREHOLDER_REGISTRY_ROLE: keccak256(
+    toUtf8Bytes("SHAREHOLDER_REGISTRY_ROLE")
+  ),
+  TOKEN_MANAGER_ROLE: keccak256(toUtf8Bytes("TOKEN_MANAGER_ROLE")),
+} as const;
 
 function isContractName(name: string): name is ContractNames {
   return Object.keys(FACTORIES).includes(name);
 }
 
 function getConfigPath(chainId: number) {
-  return `./deployment/${chainId}.network.json`;
+  return `./deployments/${chainId}.network.json`;
 }
 
 export async function deployContractProxy(
@@ -126,7 +138,7 @@ export async function _deployContract(
 
   // Save constructor arguments for verification
   await writeFile(
-    `./deployment/${chainId}.${contractName}.arguments.json`,
+    `./deployments/${chainId}.${contractName}.arguments.json`,
     JSON.stringify(args)
   );
 
@@ -137,7 +149,7 @@ export async function _deployContract(
     try {
       await hre.run("verify", {
         address: contract.address,
-        constructorArgs: `deployment/${chainId}.${contractName}.arguments.json`,
+        constructorArgs: `deployments/${chainId}.${contractName}.arguments.json`,
         contract: `contracts/${contractName}.sol:${contractName}`,
       });
     } catch (e) {
@@ -148,39 +160,56 @@ export async function _deployContract(
   return contract;
 }
 
+export async function getContractAddress(
+  contractName: ContractNames,
+  chainId: number
+) {
+  const configPath = getConfigPath(chainId);
+  const contracts: NeokingdomNetworkFile = JSON.parse(
+    await readFile(configPath, "utf8")
+  );
+  const address = contracts[contractName]?.address;
+  if (!address) {
+    throw "Contract doesn't have an address";
+  }
+  return address;
+}
+
 export async function loadContract<T>(
   hre: HardhatRuntimeEnvironment,
   contractName: ContractNames
 ) {
-  if (isContractName(contractName)) {
-    const [deployer] = await hre.ethers.getSigners();
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const configPath = getConfigPath(chainId);
-    const contracts: NeokingdomNetworkFile = JSON.parse(
-      await readFile(configPath, "utf8")
-    );
-    const address = contracts[contractName]?.address;
-    if (address) {
-      return FACTORIES[contractName].connect(address, deployer) as T;
-    } else {
-      throw "Contract doesn't have an address";
+  const deployer = await getWallet(hre);
+  const { chainId } = await hre.ethers.provider.getNetwork();
+  const configPath = getConfigPath(chainId);
+  let contracts: NeokingdomNetworkFile;
+  try {
+    contracts = JSON.parse(await readFile(configPath, "utf8"));
+  } catch (e) {
+    if ((e as any).code !== "ENOENT") {
+      throw e;
     }
+    throw "Contract doesn't have an address";
+  }
+  const address = contracts[contractName]?.address;
+  if (address) {
+    return FACTORIES[contractName].connect(address, deployer) as T;
   } else {
-    throw "Contract doesn't exist";
+    throw "Contract doesn't have an address";
   }
 }
 
 export async function loadContracts(
   hre: HardhatRuntimeEnvironment
-): Promise<NeokingdomContracts> {
-  function _loadContract<T>(
+): Promise<Partial<NeokingdomContracts>> {
+  async function _loadContract<T>(
     hre: HardhatRuntimeEnvironment,
     contractName: ContractNames
   ) {
     try {
-      return loadContract<T>(hre, contractName);
+      return await loadContract<T>(hre, contractName);
     } catch (e) {
-      if ((e as any).toString() === "Contact doesn't have an address") {
+      if ((e as any).toString() === "Contract doesn't have an address") {
         return;
       }
     }
@@ -207,21 +236,21 @@ export async function loadContracts(
   };
 }
 
-export async function getWallet(
-  hre: HardhatRuntimeEnvironment
-): Promise<Signer> {
+export async function getWallet(hre: HardhatRuntimeEnvironment) {
   const ethers = hre.ethers;
   const { chainId } = await hre.ethers.provider.getNetwork();
-
+  /*
   if (chainId !== 9000 && chainId !== 9001) {
-    const [signer] = await hre.ethers.getSigners();
-    return signer;
+    throw new Error("This thing works only for EVMOS, fixme please!");
   }
 
   const privateKey =
     chainId === 9000
       ? process.env.TEVMOS_PRIVATE_KEY
       : process.env.EVMOS_PRIVATE_KEY;
+  */
+
+  const privateKey = process.env.PRIVATE_KEY;
 
   if (!privateKey) {
     console.error("Cannot load private key for chainId", chainId);

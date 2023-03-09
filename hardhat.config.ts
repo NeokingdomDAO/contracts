@@ -73,6 +73,7 @@ const config: HardhatUserConfig = {
     hardhat: {},
     localhost: {
       url: "http://127.0.0.1:8545",
+      accounts: [process.env.PRIVATE_KEY!],
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${INFURA_API_KEY}`,

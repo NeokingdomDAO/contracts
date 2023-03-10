@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 
-import { ContractName, ROLES, loadContractByName } from "./config";
+import { ContractName, ROLES, loadContractByName } from "../lib/config";
 
 task(
   "grant-role",

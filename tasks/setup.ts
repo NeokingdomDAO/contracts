@@ -7,8 +7,8 @@ import {
   Voting__factory,
 } from "../typechain";
 
-import { ROLES, loadContract } from "./config";
-import { getWallet } from "./utils";
+import { ROLES, loadContract } from "../lib/config";
+import { getWallet } from "../lib/utils";
 
 task("setup", "Setup DAO")
   .addParam("adminAddress", "Address of the admin")

@@ -66,7 +66,7 @@ export const ROLES = {
   TOKEN_MANAGER_ROLE: keccak256(toUtf8Bytes("TOKEN_MANAGER_ROLE")),
 } as const;
 
-function isContractName(name: string): name is ContractNames {
+export function isContractName(name: string): name is ContractNames {
   return Object.keys(FACTORIES).includes(name);
 }
 

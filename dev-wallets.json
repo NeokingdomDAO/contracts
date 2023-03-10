@@ -3,25 +3,25 @@
     {
       "name": "albi",
       "address": "0x197970E48082CD46f277ABDb8afe492bCCd78300",
-      "role": "contributor",
+      "status": "contributor",
       "tokens": 1000
     },
     {
       "name": "gian",
       "address": "0x8e2e09eb2a0a8e6e1d8de3e5fb09ec1e05b0cdbf",
-      "role": "contributor",
+      "status": "contributor",
       "tokens": 1000
     },
     {
       "name": "nicola",
       "address": "0xbded7c8a2efa4cf2ee6c953e6447a246f3ac4e12",
-      "role": "contributor",
+      "status": "contributor",
       "tokens": 1000
     },
     {
       "name": "stefano",
       "address": "0xbded7c8a2efa4cf2ee6c953e6447a246f3ac4e12",
-      "role": "board",
+      "status": "board",
       "tokens": 1000
     }
   ]

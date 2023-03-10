@@ -17,5 +17,5 @@ task("dev:deploy", "Deploy DAO").setAction(async (_, hre) => {
 
 task("dev:setup", "Set up the DAO").setAction(async (_, hre) => {
   const neokingdom = await NeokingdomDAO.initialize(hre);
-  await neokingdom.run(generateSetupContext, STAGING_SETUP_SEQUENCE);
+  await neokingdom.run(generateSetupContext, STAGING_SETUP_SEQUENCE, true);
 });

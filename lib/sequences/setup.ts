@@ -20,7 +20,7 @@ export const generateSetupContext: ContextGenerator<SetupContext> =
   };
 
 export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
-  // Give to each address one share
+  // Give each address one share
   expandable((c: SetupContext) =>
     c.contributors.map(
       (x) => (e: typeof c) => e.registry.mint(x.address, parseEther("1"))
@@ -46,7 +46,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
     })
   ),
 
-  // Give to each contributor tokens
+  // Give each contributor tokens
   expandable((c: SetupContext) =>
     c.contributors.map(
       (x) => (e: typeof c) =>

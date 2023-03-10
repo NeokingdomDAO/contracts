@@ -1,4 +1,4 @@
-import { Wallet } from "ethers";
+import { Contract, ContractTransaction, Wallet } from "ethers";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -31,7 +31,7 @@ const defaultConfig: Partial<Config> = {
   saveNetworkConfig: false,
 };
 
-const LASTSTEP_FILENAME = "./deployments/.laststep";
+const NEXTSTEP_FILENAME = "./deployments/.nextstep";
 
 export class NeokingdomDAO {
   hre: HardhatRuntimeEnvironment;
@@ -61,17 +61,21 @@ export class NeokingdomDAO {
     return new NeokingdomDAO(hre, newConfig);
   }
 
-  async run<T extends Context>(c: ContextGenerator<T>, s: Sequence<T>) {
-    let lastStep = 0;
+  async run<T extends Context>(
+    c: ContextGenerator<T>,
+    s: Sequence<T>,
+    force = false
+  ) {
+    let nextStep = 0;
     try {
-      lastStep = parseInt(await readFile(LASTSTEP_FILENAME, "utf8"));
+      nextStep = parseInt(await readFile(NEXTSTEP_FILENAME, "utf8"));
     } catch (e) {
       if ((e as any).code !== "ENOENT") {
         throw e;
       }
     }
     const sequence = await this._preprocessSequence(c, s);
-    await this._executeSequence(c, sequence, lastStep + 1);
+    await this._executeSequence(c, sequence, nextStep, force);
   }
 
   async loadContracts() {
@@ -105,8 +109,8 @@ export class NeokingdomDAO {
       // FIXME: Don't know why Awaited<T> is not the same as T
       const context = (await c(this)) as T;
       const step = s[i];
-      sequence = [...sequence, ...expand(context, step)];
-      console.log(`${i + 1}/${s.length}: ${step.toString()}`);
+      const expanded = preprocessStep(context, step);
+      sequence = [...sequence, ...expanded];
     }
     return sequence;
   }
@@ -114,23 +118,29 @@ export class NeokingdomDAO {
   private async _executeSequence<T extends Context>(
     c: ContextGenerator<T>,
     s: ProcessedSequence<T>,
-    lastIndex = 0
+    nextIndex = 0,
+    force = false
   ) {
-    for (let i = lastIndex; i < s.length; i++) {
+    for (let i = nextIndex; i < s.length; i++) {
       const context = await c(this);
       const step = s[i];
       console.log(`${i + 1}/${s.length}: ${step.toString()}`);
-      const tx = await step(context);
+      let tx: Contract | ContractTransaction | null = null;
+      try {
+        tx = await step(context);
+      } catch (e) {
+        console.error(e);
+      }
       // FIXME: wait should always be a valid attribute, but it's not
-      if (tx.wait) {
+      if (tx?.wait) {
         await tx.wait(1);
       }
-      await writeFile(LASTSTEP_FILENAME, i.toString());
+      await writeFile(NEXTSTEP_FILENAME, (i + 1).toString());
     }
   }
 }
 
-export const expand = <T extends Context>(
+export const preprocessStep = <T extends Context>(
   c: T,
   s: StepWithExpandable<T>
 ): ProcessedSequence<T> => {

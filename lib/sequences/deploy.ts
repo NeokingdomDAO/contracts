@@ -76,6 +76,9 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Set interdependencies
   //////////////////////////
 
+  // Market
+  (c) => c.registry.setVoting(c.voting.address),
+
   // Voting
   (c) => c.voting.setShareholderRegistry(c.registry.address),
   (c) => c.voting.setToken(c.token.address),

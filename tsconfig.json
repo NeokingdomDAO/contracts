@@ -10,7 +10,6 @@
   "include": [
     "./scripts",
     "./test",
-    "./deploy",
     "./tasks",
     "./lib",
     "lib/config.ts"

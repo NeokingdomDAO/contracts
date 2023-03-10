@@ -20,12 +20,14 @@ export const generateSetupContext: ContextGenerator<SetupContext> =
   };
 
 export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
+  // Give to each address one share
   expandable((c: SetupContext) =>
     c.contributors.map(
       (x) => (e: typeof c) => e.registry.mint(x.address, parseEther("1"))
     )
   ),
 
+  // Set each address to contributor
   expandable((c: SetupContext) =>
     c.contributors.map((x) => async (e: typeof c) => {
       if (x.status === "contributor") {
@@ -42,5 +44,13 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
       }
       throw new Error("Unknown status for " + x);
     })
+  ),
+
+  // Give to each contributor tokens
+  expandable((c: SetupContext) =>
+    c.contributors.map(
+      (x) => (e: typeof c) =>
+        e.token.mint(x.address, parseEther(x.tokens.toString()))
+    )
   ),
 ];

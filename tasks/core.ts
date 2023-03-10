@@ -1,4 +1,5 @@
 import { Contract, ContractTransaction, Wallet } from "ethers";
+import { parseEther } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -13,6 +14,7 @@ import {
   Voting,
 } from "../typechain";
 
+import wallets from "../dev-wallets.json";
 import {
   ContractNames,
   NeokingdomContracts,
@@ -38,7 +40,11 @@ const defaultConfig: Partial<Config> = {
 
 const LASTSTEP_FILENAME = "./deployments/.laststep";
 
-export type Context = {
+type ContextGenerator<T extends Context> = (n: NeokingdomDAO) => Promise<T>;
+
+type Context = {};
+
+type ContractContext = Context & {
   market: InternalMarket;
   token: NeokingdomToken;
   oracle: PriceOracle;
@@ -47,6 +53,13 @@ export type Context = {
   registry: ShareholderRegistry;
   usdc: TokenMock;
   voting: Voting;
+};
+
+type SetupContext = ContractContext & {
+  contributors: typeof wallets.contributors;
+};
+
+type DeployContext = ContractContext & {
   deployer: Wallet;
   reserve: string;
   deploy: (contractName: ContractNames, args?: any[]) => Promise<Contract>;
@@ -81,7 +94,7 @@ export class NeokingdomDAO {
     return new NeokingdomDAO(hre, newConfig);
   }
 
-  async deploy() {
+  async run<T extends Context>(c: ContextGenerator<T>, s: Sequence<T>) {
     let lastStep = 0;
     try {
       lastStep = parseInt(await readFile(LASTSTEP_FILENAME, "utf8"));
@@ -90,10 +103,11 @@ export class NeokingdomDAO {
         throw e;
       }
     }
-    await this._executeSequence(DEPLOY_SEQUENCE, lastStep);
+    const sequence = await this._preprocessSequence(c, s);
+    await this._executeSequence(c, sequence, lastStep + 1);
   }
 
-  private async _deploy(contractName: ContractNames, args: any[] = []) {
+  async deploy(contractName: ContractNames, args: any[] = []) {
     return await deployContract(
       this.hre,
       contractName,
@@ -102,7 +116,7 @@ export class NeokingdomDAO {
     );
   }
 
-  private async _deployProxy(contractName: ContractNames, args: any[] = []) {
+  async deployProxy(contractName: ContractNames, args: any[] = []) {
     return await deployContractProxy(
       this.hre,
       contractName,
@@ -111,19 +125,32 @@ export class NeokingdomDAO {
     );
   }
 
-  private async _executeSequence(s: Sequence, lastIndex = 0) {
+  private async _preprocessSequence<T extends Context>(
+    c: ContextGenerator<T>,
+    s: Sequence<T>
+  ) {
+    let sequence: ProcessedSequence<T> = [];
+    for (let i = 0; i < s.length; i++) {
+      // FIXME: Don't know why Awaited<T> is not the same as T
+      const context = (await c(this)) as T;
+      const step = s[i];
+      sequence = [...sequence, ...expand(context, step)];
+      console.log(`${i + 1}/${s.length}: ${step.toString()}`);
+    }
+    return sequence;
+  }
+
+  private async _executeSequence<T extends Context>(
+    c: ContextGenerator<T>,
+    s: ProcessedSequence<T>,
+    lastIndex = 0
+  ) {
     for (let i = lastIndex; i < s.length; i++) {
-      const contracts = (await loadContracts(this.hre)) as NeokingdomContracts;
-      const context: Context = {
-        ...contracts,
-        deployer: this.config.deployer,
-        reserve: this.config.reserve,
-        deploy: this._deploy.bind(this),
-        deployProxy: this._deployProxy.bind(this),
-      };
+      const context = await c(this);
       const step = s[i];
       console.log(`${i + 1}/${s.length}: ${step.toString()}`);
       const tx = await step(context);
+      // FIXME: wait should always be a valid attribute, but it's not
       if (tx.wait) {
         await tx.wait(1);
       }
@@ -132,16 +159,78 @@ export class NeokingdomDAO {
   }
 }
 
-type Step = (c: Context) => Promise<Contract | ContractTransaction>;
-type Sequence = Step[];
+type Step<T extends Context> = (
+  c: T
+) => Promise<Contract | ContractTransaction>;
 
-const DEPLOY_SEQUENCE: Sequence = [
+type StepWithExpandable<T extends Context> =
+  | ExpandableStep<T>
+  | ((c: T) => Promise<Contract | ContractTransaction>);
+
+type ExpandableStep<T extends Context> = {
+  expandable: true;
+  f: (c: T) => ProcessedSequence<T>;
+};
+
+type Sequence<T extends Context> = StepWithExpandable<T>[];
+
+type ProcessedSequence<T extends Context> = Step<T>[];
+
+const expand = <T extends Context>(
+  c: T,
+  s: StepWithExpandable<T>
+): ProcessedSequence<T> => {
+  if (isExpandable(s)) {
+    return s.f(c);
+  } else {
+    return [s];
+  }
+};
+
+export const expandable = <T extends Context>(
+  s: (c: T) => ProcessedSequence<T>
+): ExpandableStep<T> => {
+  return {
+    expandable: true,
+    f: s,
+  };
+};
+
+export const isExpandable = <T extends Context>(
+  s: StepWithExpandable<T>
+): s is ExpandableStep<T> => {
+  return "expandable" in s && "f" in s;
+};
+
+const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
+  expandable((c: SetupContext) =>
+    c.contributors.map(
+      (x) => (e: typeof c) => e.registry.mint(x.address, parseEther("1"))
+    )
+  ),
+  //(c) => c.registry.mint()),
+];
+
+export const generateDeployContext: ContextGenerator<DeployContext> =
+  async function (n) {
+    const contracts = (await loadContracts(n.hre)) as NeokingdomContracts;
+    const context: DeployContext = {
+      ...contracts,
+      deployer: n.config.deployer,
+      reserve: n.config.reserve,
+      deploy: n.deploy.bind(n),
+      deployProxy: n.deployProxy.bind(n),
+    };
+    return context;
+  };
+
+export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Deploy Contracts
   /////////////////////
-  (c) => c.deployProxy("Voting"),
-  (c) => c.deployProxy("NeokingdomToken", ["NeokingdomToken", "NEOK"]),
   (c) => c.deploy("TokenMock"),
   (c) => c.deploy("PriceOracle"),
+  (c) => c.deployProxy("Voting"),
+  (c) => c.deployProxy("NeokingdomToken", ["NeokingdomToken", "NEOK"]),
   (c) => c.deployProxy("RedemptionController"),
   (c) => c.deployProxy("InternalMarket", [c.token.address]),
   (c) => c.deployProxy("ShareholderRegistry", ["NeokingdomShare", "NEOS"]),

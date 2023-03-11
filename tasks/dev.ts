@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 
-import { NeokingdomDAO } from "../lib/core";
+import { NeokingdomDAOHardhat } from "../lib/hardhat";
 import {
   DEPLOY_SEQUENCE,
   generateDeployContext,
@@ -11,11 +11,11 @@ import {
 } from "../lib/sequences/setup";
 
 task("dev:deploy", "Deploy DAO").setAction(async (_, hre) => {
-  const neokingdom = await NeokingdomDAO.initialize(hre);
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
   await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
 });
 
 task("dev:setup", "Set up the DAO").setAction(async (_, hre) => {
-  const neokingdom = await NeokingdomDAO.initialize(hre);
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
   await neokingdom.run(generateSetupContext, STAGING_SETUP_SEQUENCE, true);
 });

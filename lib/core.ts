@@ -1,6 +1,5 @@
 import { Contract, ContractTransaction, Wallet } from "ethers";
 import { readFile, writeFile } from "fs/promises";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   Context,
@@ -10,13 +9,7 @@ import {
   Sequence,
   StepWithExpandable,
 } from "./types";
-import {
-  ContractNames,
-  deployContract,
-  deployContractProxy,
-  getWallet,
-  loadContracts,
-} from "./utils";
+import { ContractNames, NeokingdomContracts } from "./utils";
 
 export type Config = {
   deployer: Wallet;
@@ -34,31 +27,17 @@ const defaultConfig: Partial<Config> = {
 const NEXTSTEP_FILENAME = "./deployments/.nextstep";
 
 export class NeokingdomDAO {
-  hre: HardhatRuntimeEnvironment;
   config: Config;
 
-  private constructor(hre: HardhatRuntimeEnvironment, config: Config) {
-    this.hre = hre;
+  constructor(config: Config) {
     this.config = config;
   }
 
-  static async initialize(
-    hre: HardhatRuntimeEnvironment,
-    config: Partial<Config> = {}
-  ) {
-    const deployer = config.deployer ? config.deployer : await getWallet(hre);
-    const reserve = config.reserve ? config.reserve : deployer.address;
-    const { chainId } = await hre.ethers.provider.getNetwork();
-
-    const newConfig = {
+  static _mergeWithDefaultConfig(config: Partial<Config> = {}) {
+    return {
       ...defaultConfig,
       ...config,
-      chainId,
-      deployer,
-      reserve,
     } as Config;
-
-    return new NeokingdomDAO(hre, newConfig);
   }
 
   async run<T extends Context>(
@@ -78,26 +57,22 @@ export class NeokingdomDAO {
     await this._executeSequence(c, sequence, nextStep, force);
   }
 
-  async loadContracts() {
-    return loadContracts(this.hre, this.config.deployer, this.config.chainId);
+  async loadContracts(): Promise<Partial<NeokingdomContracts>> {
+    throw new Error("Method 'loadContracts()' must be implemented.");
   }
 
-  async deploy(contractName: ContractNames, args: any[] = []) {
-    return await deployContract(
-      this.hre,
-      contractName,
-      this.config.verifyContracts,
-      args
-    );
+  async deploy(
+    contractName: ContractNames,
+    args: any[] = []
+  ): Promise<Contract> {
+    throw new Error("Method 'deploy()' must be implemented.");
   }
 
-  async deployProxy(contractName: ContractNames, args: any[] = []) {
-    return await deployContractProxy(
-      this.hre,
-      contractName,
-      this.config.verifyContracts,
-      args
-    );
+  async deployProxy(
+    contractName: ContractNames,
+    args: any[] = []
+  ): Promise<Contract> {
+    throw new Error("Method 'deployProxy()' must be implemented.");
   }
 
   private async _preprocessSequence<T extends Context>(

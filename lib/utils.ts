@@ -22,7 +22,7 @@ import {
   Voting__factory,
 } from "../typechain";
 
-const FACTORIES = {
+export const FACTORIES = {
   InternalMarket: InternalMarket__factory,
   NeokingdomToken: NeokingdomToken__factory,
   PriceOracle: PriceOracle__factory,
@@ -181,15 +181,10 @@ export async function getContractAddress(
 }
 
 export async function loadContract<T>(
-  hre: HardhatRuntimeEnvironment,
   contractName: ContractNames,
-  deployer?: Wallet,
-  chainId?: number
+  deployer: Wallet,
+  chainId: number
 ) {
-  deployer = deployer ? deployer : await getWallet(hre);
-  chainId = chainId
-    ? chainId
-    : (await hre.ethers.provider.getNetwork()).chainId;
   const configPath = getConfigPath(chainId);
   let contracts: NeokingdomNetworkFile;
   try {
@@ -209,16 +204,12 @@ export async function loadContract<T>(
 }
 
 export async function loadContracts(
-  hre: HardhatRuntimeEnvironment,
-  deployer?: Wallet,
-  chainId?: number
+  deployer: Wallet,
+  chainId: number
 ): Promise<Partial<NeokingdomContracts>> {
-  async function _loadContract<T>(
-    hre: HardhatRuntimeEnvironment,
-    contractName: ContractNames
-  ) {
+  async function _loadContract<T>(contractName: ContractNames) {
     try {
-      return await loadContract<T>(hre, contractName, deployer, chainId);
+      return await loadContract<T>(contractName, deployer, chainId);
     } catch (e) {
       if ((e as any).toString() === "Contract doesn't have an address") {
         return;
@@ -227,23 +218,16 @@ export async function loadContracts(
   }
 
   return {
-    market: await _loadContract<InternalMarket>(hre, "InternalMarket"),
-    token: await _loadContract<NeokingdomToken>(hre, "NeokingdomToken"),
-    oracle: await _loadContract<PriceOracle>(hre, "PriceOracle"),
+    market: await _loadContract<InternalMarket>("InternalMarket"),
+    token: await _loadContract<NeokingdomToken>("NeokingdomToken"),
+    oracle: await _loadContract<PriceOracle>("PriceOracle"),
     redemption: await _loadContract<RedemptionController>(
-      hre,
       "RedemptionController"
     ),
-    resolution: await _loadContract<ResolutionManager>(
-      hre,
-      "ResolutionManager"
-    ),
-    registry: await _loadContract<ShareholderRegistry>(
-      hre,
-      "ShareholderRegistry"
-    ),
-    usdc: await _loadContract<TokenMock>(hre, "TokenMock"),
-    voting: await _loadContract<Voting>(hre, "Voting"),
+    resolution: await _loadContract<ResolutionManager>("ResolutionManager"),
+    registry: await _loadContract<ShareholderRegistry>("ShareholderRegistry"),
+    usdc: await _loadContract<TokenMock>("TokenMock"),
+    voting: await _loadContract<Voting>("Voting"),
   };
 }
 

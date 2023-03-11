@@ -53,4 +53,6 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
         e.token.mint(x.address, parseEther(x.tokens.toString()))
     )
   ),
+  (c) =>
+    c.resolution.addResolutionType("30sNotice3mVoting", 66, 30, 60 * 3, false),
 ];

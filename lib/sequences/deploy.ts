@@ -47,8 +47,14 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Set ACLs
   /////////////
 
-  // ShareholdersRegistry
   // FIXME: not sure deployer should be here
+
+  // ResolutionManager
+  (c) => c.resolution.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.resolution.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) => c.resolution.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),
+
+  // ShareholdersRegistry
   (c) => c.registry.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
   (c) => c.registry.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
   (c) => c.registry.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),

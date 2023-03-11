@@ -70,6 +70,10 @@ export function isContractName(name: string): name is ContractNames {
   return Object.keys(FACTORIES).includes(name);
 }
 
+const WAIT_BLOCKS = process.env.WAIT_BLOCKS
+  ? parseInt(process.env.WAIT_BLOCKS)
+  : 1;
+
 function getConfigPath(chainId: number) {
   return `./deployments/${chainId}.network.json`;
 }
@@ -113,8 +117,9 @@ export async function _deployContract(
   } else {
     contract = await factory.deploy(...args);
   }
-  const receipt = await contract.deployTransaction.wait(1);
   console.log("Contract address:", contract.address);
+  console.log(`Wait ${WAIT_BLOCKS} blocks`);
+  const receipt = await contract.deployTransaction.wait(WAIT_BLOCKS);
 
   // Save the address in the config json file
   const configPath = getConfigPath(chainId);

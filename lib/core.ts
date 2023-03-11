@@ -135,7 +135,7 @@ export class NeokingdomDAO {
           throw e;
         }
       }
-      console.log("\n");
+      console.log();
       // FIXME: wait should always be a valid attribute, but it's not
       if (tx?.wait) {
         await tx.wait(1);

@@ -1,4 +1,4 @@
-import { Contract } from "ethers";
+import { Contract, Wallet } from "ethers";
 import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -177,10 +177,14 @@ export async function getContractAddress(
 
 export async function loadContract<T>(
   hre: HardhatRuntimeEnvironment,
-  contractName: ContractNames
+  contractName: ContractNames,
+  deployer?: Wallet,
+  chainId?: number
 ) {
-  const deployer = await getWallet(hre);
-  const { chainId } = await hre.ethers.provider.getNetwork();
+  deployer = deployer ? deployer : await getWallet(hre);
+  chainId = chainId
+    ? chainId
+    : (await hre.ethers.provider.getNetwork()).chainId;
   const configPath = getConfigPath(chainId);
   let contracts: NeokingdomNetworkFile;
   try {
@@ -200,14 +204,16 @@ export async function loadContract<T>(
 }
 
 export async function loadContracts(
-  hre: HardhatRuntimeEnvironment
+  hre: HardhatRuntimeEnvironment,
+  deployer?: Wallet,
+  chainId?: number
 ): Promise<Partial<NeokingdomContracts>> {
   async function _loadContract<T>(
     hre: HardhatRuntimeEnvironment,
     contractName: ContractNames
   ) {
     try {
-      return await loadContract<T>(hre, contractName);
+      return await loadContract<T>(hre, contractName, deployer, chainId);
     } catch (e) {
       if ((e as any).toString() === "Contract doesn't have an address") {
         return;

@@ -13,6 +13,9 @@ import("./tasks").catch((e) => console.log("Cannot load tasks", e.toString()));
 
 const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
 const BLAST_API_KEY = process.env.BLAST_API_KEY || "";
+const LOCALHOST_PRIVATE_KEY =
+  process.env.LOCALHOST_PRIVATE_KEY! ||
+  "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const MUMBAI_PRIVATE_KEY =
   process.env.RINKEBY_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
@@ -73,7 +76,7 @@ const config: HardhatUserConfig = {
     hardhat: {},
     localhost: {
       url: "http://127.0.0.1:8545",
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: [process.env.LOCALHOST_PRIVATE_KEY!],
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${INFURA_API_KEY}`,

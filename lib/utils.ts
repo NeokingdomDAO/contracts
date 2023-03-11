@@ -236,9 +236,23 @@ export async function loadContracts(
   };
 }
 
+const CHAINID_TO_NAME = {
+  666666: "localhost",
+  9000: "tevmos",
+  9001: "evmos",
+} as const;
+
+const CHAINIDS = Object.keys(CHAINID_TO_NAME).map((c) => parseInt(c));
+
+export const isChainId = (
+  chainId: number
+): chainId is keyof typeof CHAINID_TO_NAME => {
+  return CHAINIDS.includes(chainId);
+};
+
 export async function getWallet(hre: HardhatRuntimeEnvironment) {
   const ethers = hre.ethers;
-  const { chainId } = await hre.ethers.provider.getNetwork();
+  let { chainId, name } = await hre.ethers.provider.getNetwork();
   /*
   if (chainId !== 9000 && chainId !== 9001) {
     throw new Error("This thing works only for EVMOS, fixme please!");
@@ -250,10 +264,20 @@ export async function getWallet(hre: HardhatRuntimeEnvironment) {
       : process.env.EVMOS_PRIVATE_KEY;
   */
 
-  const privateKey = process.env.PRIVATE_KEY;
+  if (name === "unknown" && isChainId(chainId)) {
+    name = CHAINID_TO_NAME[chainId];
+  }
+
+  const privateKeyName = `${name.toUpperCase()}_PRIVATE_KEY`;
+  const privateKey = process.env[privateKeyName];
 
   if (!privateKey) {
-    console.error("Cannot load private key for chainId", chainId);
+    console.error(
+      "Cannot load private key",
+      privateKeyName,
+      "for chainId",
+      chainId
+    );
     process.exit(1);
   }
 

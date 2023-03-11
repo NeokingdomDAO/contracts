@@ -106,6 +106,7 @@ export class NeokingdomDAO {
   ) {
     let sequence: ProcessedSequence<T> = [];
     for (let i = 0; i < s.length; i++) {
+      console.log(`${i + 1}/${s.length}: preprocess`);
       // FIXME: Don't know why Awaited<T> is not the same as T
       const context = (await c(this)) as T;
       const step = s[i];
@@ -129,7 +130,11 @@ export class NeokingdomDAO {
       try {
         tx = await step(context);
       } catch (e) {
-        console.error(e);
+        if (force) {
+          console.error(e);
+        } else {
+          throw e;
+        }
       }
       // FIXME: wait should always be a valid attribute, but it's not
       if (tx?.wait) {

@@ -16,28 +16,15 @@ import {
   Voting__factory,
 } from "../typechain";
 
+import { ContractNames } from "./types";
+
 export const DEFAULT_CONFIG_PATH = "./deployments/networks.json";
 export const DEFAULT_LOCALHOST_CONFIG_PATH =
   "./deployments/networks.localhost.json";
 
-export type ContractName =
-  | "NeokingdomToken"
-  | "ResolutionManager"
-  | "ShareholderRegistry"
-  | "Voting"
-  | "VotingV2"
-  | "PriceOracle";
-
-export type DAOContract =
-  | NeokingdomToken
-  | ResolutionManager
-  | ShareholderRegistry
-  | Voting
-  | PriceOracle;
-
 export type NetworkConfig = {
   [key: number]: {
-    [key in ContractName]?: string;
+    [key in ContractNames]?: string;
   };
 };
 
@@ -65,34 +52,6 @@ function getDefaultConfigPath(
   return configPath;
 }
 
-export async function exportAddress(
-  hre: HardhatRuntimeEnvironment,
-  contract: Contract,
-  name: ContractName,
-  configPath?: string
-) {
-  configPath = getDefaultConfigPath(hre, configPath);
-  const { chainId } = await hre.ethers.provider.getNetwork();
-  let previousConfig: NetworkConfig = {};
-  try {
-    previousConfig = JSON.parse(await readFile(configPath, "utf-8"));
-  } catch (e: any) {
-    if (e.code !== "ENOENT") {
-      throw e;
-    }
-  }
-
-  const config = {
-    ...previousConfig,
-    [chainId]: {
-      ...previousConfig[chainId],
-      [name]: contract.address,
-    },
-  };
-
-  await writeFile(configPath, JSON.stringify(config, null, 2));
-}
-
 type ContractFactory =
   | typeof ShareholderRegistry__factory
   | typeof ResolutionManager__factory
@@ -103,7 +62,7 @@ type ContractFactory =
 export async function loadContract<T extends ContractFactory>(
   hre: HardhatRuntimeEnvironment,
   contractFactory: T,
-  name: ContractName,
+  name: ContractNames,
   configPath?: string
 ) {
   configPath = getDefaultConfigPath(hre, configPath);
@@ -123,40 +82,4 @@ export async function loadContract<T extends ContractFactory>(
   const address = addresses[name]!;
 
   return contractFactory.connect(address, deployer) as ReturnType<T["connect"]>;
-}
-
-export async function loadContractByName(
-  hre: HardhatRuntimeEnvironment,
-  name: ContractName,
-  configPath?: string
-): Promise<DAOContract> {
-  configPath = getDefaultConfigPath(hre, configPath);
-  const networks: NetworkConfig = JSON.parse(
-    await readFile(configPath, "utf8")
-  );
-  const [deployer] = await hre.ethers.getSigners();
-  const { chainId } = await hre.ethers.provider.getNetwork();
-  const addresses = networks[chainId];
-
-  if (!addresses || !addresses[name]) {
-    console.error(`Cannot find address for ${name}.`);
-    process.exit(1);
-  }
-
-  // FIXME: I thought `address[name]` type would be `string` because of the previous `if`.
-  const address = addresses[name]!;
-
-  switch (name) {
-    case "ResolutionManager":
-      return ResolutionManager__factory.connect(address, deployer);
-    case "ShareholderRegistry":
-      return ShareholderRegistry__factory.connect(address, deployer);
-    case "NeokingdomToken":
-      return NeokingdomToken__factory.connect(address, deployer);
-    case "Voting":
-      return Voting__factory.connect(address, deployer);
-    default:
-      console.error(`Cannot find contract with name ${name}.`);
-      process.exit(1);
-  }
 }

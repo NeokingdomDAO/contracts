@@ -32,6 +32,7 @@ export const FACTORIES = {
   Voting: Voting__factory,
 } as const;
 
+export const CONTRACT_NAMES = Object.keys(FACTORIES);
 export type ContractNames = keyof typeof FACTORIES;
 export type ContextGenerator<T extends Context> = (
   n: NeokingdomDAO
@@ -88,4 +89,15 @@ export function castContract(contractName: ContractNames, contract: Contract) {
     case "Voting":
       return contract as Voting;
   }
+}
+
+export function isNeokingdomContracts(
+  n: Partial<NeokingdomContracts>
+): n is NeokingdomContracts {
+  for (let name of CONTRACT_NAMES) {
+    if (!(name in n)) {
+      return false;
+    }
+  }
+  return true;
 }

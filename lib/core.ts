@@ -11,6 +11,7 @@ import {
   ProcessedSequence,
   Sequence,
   StepWithExpandable,
+  isNeokingdomContracts,
 } from "./types";
 
 export type Config = {
@@ -69,8 +70,16 @@ export class NeokingdomDAO {
     await this._executeSequence(c, sequence, nextStep, force);
   }
 
-  async loadContracts(): Promise<Partial<NeokingdomContracts>> {
+  async loadContractsPartial(): Promise<Partial<NeokingdomContracts>> {
     throw new Error("Method 'loadContracts()' must be implemented.");
+  }
+
+  async loadContracts(): Promise<NeokingdomContracts> {
+    const contracts = await this.loadContractsPartial();
+    if (isNeokingdomContracts(contracts)) {
+      return contracts;
+    }
+    throw new Error("Missing contracts");
   }
 
   async deploy(

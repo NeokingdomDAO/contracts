@@ -19,7 +19,7 @@ export type DeployContext = ContractContext & {
 
 export const generateDeployContext: ContextGenerator<DeployContext> =
   async function (n) {
-    const contracts = (await n.loadContracts()) as NeokingdomContracts;
+    const contracts = (await n.loadContractsPartial()) as NeokingdomContracts;
     const context: DeployContext = {
       ...contracts,
       deployer: n.config.deployer,

@@ -52,10 +52,9 @@ describe("Upgrade", () => {
       deployer,
       reserve: reserve.address,
     });
-    ({ NeokingdomToken, ShareholderRegistry, ResolutionManager } = await n.run(
-      generateDeployContext,
-      DEPLOY_SEQUENCE
-    ));
+    await n.run(generateDeployContext, DEPLOY_SEQUENCE);
+    ({ NeokingdomToken, ShareholderRegistry, ResolutionManager } =
+      await n.loadContracts());
 
     managingBoardStatus = await ShareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await ShareholderRegistry.CONTRIBUTOR_STATUS();

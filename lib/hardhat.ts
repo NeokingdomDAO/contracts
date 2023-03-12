@@ -37,7 +37,7 @@ export class NeokingdomDAOHardhat extends NeokingdomDAO {
     return new NeokingdomDAOHardhat(hre, newConfig);
   }
 
-  async loadContracts() {
+  async loadContractsPartial() {
     return loadContracts(this.config.deployer, this.config.chainId);
   }
 

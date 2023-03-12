@@ -15,7 +15,7 @@ export type SetupContext = ContractContext & {
 
 export const generateSetupContext: ContextGenerator<SetupContext> =
   async function (n) {
-    const contracts = (await n.loadContracts()) as NeokingdomContracts;
+    const contracts = (await n.loadContractsPartial()) as NeokingdomContracts;
     const context: SetupContext = {
       ...contracts,
       contributors: contributors.contributors,

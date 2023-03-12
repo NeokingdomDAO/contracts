@@ -91,7 +91,7 @@ describe("Integration", async () => {
       InternalMarket,
       RedemptionController,
       TokenMock,
-    } = n.contracts as NeokingdomContracts);
+    } = await n.loadContracts());
 
     const managingBoardStatus =
       await ShareholderRegistry.MANAGING_BOARD_STATUS();

@@ -32,7 +32,7 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
     return new NeokingdomDAOMemory(newConfig);
   }
 
-  async loadContracts() {
+  async loadContractsPartial() {
     return this.contracts;
   }
 

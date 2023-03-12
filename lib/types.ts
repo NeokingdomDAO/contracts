@@ -2,33 +2,55 @@ import { Contract, ContractTransaction } from "ethers";
 
 import {
   InternalMarket,
+  InternalMarket__factory,
   NeokingdomToken,
+  NeokingdomToken__factory,
   PriceOracle,
+  PriceOracle__factory,
   RedemptionController,
+  RedemptionController__factory,
   ResolutionManager,
+  ResolutionManager__factory,
   ShareholderRegistry,
+  ShareholderRegistry__factory,
   TokenMock,
+  TokenMock__factory,
   Voting,
+  Voting__factory,
 } from "../typechain";
 
 import { NeokingdomDAO } from "./core";
 
+export const FACTORIES = {
+  InternalMarket: InternalMarket__factory,
+  NeokingdomToken: NeokingdomToken__factory,
+  PriceOracle: PriceOracle__factory,
+  RedemptionController: RedemptionController__factory,
+  ResolutionManager: ResolutionManager__factory,
+  ShareholderRegistry: ShareholderRegistry__factory,
+  TokenMock: TokenMock__factory,
+  Voting: Voting__factory,
+} as const;
+
+export type ContractNames = keyof typeof FACTORIES;
 export type ContextGenerator<T extends Context> = (
   n: NeokingdomDAO
 ) => Promise<T>;
 
+export type NeokingdomContracts = {
+  InternalMarket: InternalMarket;
+  NeokingdomToken: NeokingdomToken;
+  PriceOracle: PriceOracle;
+  RedemptionController: RedemptionController;
+  ResolutionManager: ResolutionManager;
+  ShareholderRegistry: ShareholderRegistry;
+  TokenMock: TokenMock;
+  Voting: Voting;
+};
+
 export type Context = {};
 
-export type ContractContext = Context & {
-  market: InternalMarket;
-  token: NeokingdomToken;
-  oracle: PriceOracle;
-  redemption: RedemptionController;
-  resolution: ResolutionManager;
-  registry: ShareholderRegistry;
-  usdc: TokenMock;
-  voting: Voting;
-};
+export type ContractContext = Context & NeokingdomContracts;
 
 export type Step<T extends Context> = (
   c: T
@@ -46,3 +68,24 @@ export type ExpandableStep<T extends Context> = {
 export type Sequence<T extends Context> = StepWithExpandable<T>[];
 
 export type ProcessedSequence<T extends Context> = Step<T>[];
+
+export function castContract(contractName: ContractNames, contract: Contract) {
+  switch (contractName) {
+    case "InternalMarket":
+      return contract as InternalMarket;
+    case "NeokingdomToken":
+      return contract as NeokingdomToken;
+    case "PriceOracle":
+      return contract as PriceOracle;
+    case "RedemptionController":
+      return contract as RedemptionController;
+    case "ResolutionManager":
+      return contract as ResolutionManager;
+    case "ShareholderRegistry":
+      return contract as ShareholderRegistry;
+    case "TokenMock":
+      return contract as TokenMock;
+    case "Voting":
+      return contract as Voting;
+  }
+}

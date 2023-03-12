@@ -2,8 +2,12 @@ import { parseEther } from "ethers/lib/utils";
 
 import contributors from "../../dev-wallets.json";
 import { expandable } from "../core";
-import { ContextGenerator, ContractContext, Sequence } from "../types";
-import { NeokingdomContracts } from "../utils";
+import {
+  ContextGenerator,
+  ContractContext,
+  NeokingdomContracts,
+  Sequence,
+} from "../types";
 
 export type SetupContext = ContractContext & {
   contributors: typeof contributors.contributors;
@@ -23,7 +27,8 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   // Give each address one share
   expandable((c: SetupContext) =>
     c.contributors.map(
-      (x) => (e: typeof c) => e.registry.mint(x.address, parseEther("1"))
+      (x) => (e: typeof c) =>
+        e.ShareholderRegistry.mint(x.address, parseEther("1"))
     )
   ),
 
@@ -31,14 +36,14 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   expandable((c: SetupContext) =>
     c.contributors.map((x) => async (e: typeof c) => {
       if (x.status === "contributor") {
-        return e.registry.setStatus(
-          await e.registry.CONTRIBUTOR_STATUS(),
+        return e.ShareholderRegistry.setStatus(
+          await e.ShareholderRegistry.CONTRIBUTOR_STATUS(),
           x.address
         );
       }
       if (x.status === "board") {
-        return e.registry.setStatus(
-          await e.registry.MANAGING_BOARD_STATUS(),
+        return e.ShareholderRegistry.setStatus(
+          await e.ShareholderRegistry.MANAGING_BOARD_STATUS(),
           x.address
         );
       }
@@ -50,9 +55,15 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   expandable((c: SetupContext) =>
     c.contributors.map(
       (x) => (e: typeof c) =>
-        e.token.mint(x.address, parseEther(x.tokens.toString()))
+        e.NeokingdomToken.mint(x.address, parseEther(x.tokens.toString()))
     )
   ),
   (c) =>
-    c.resolution.addResolutionType("30sNotice3mVoting", 66, 30, 60 * 3, false),
+    c.ResolutionManager.addResolutionType(
+      "30sNotice3mVoting",
+      66,
+      30,
+      60 * 3,
+      false
+    ),
 ];

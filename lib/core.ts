@@ -1,18 +1,20 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract, ContractTransaction, Wallet } from "ethers";
 import { readFile, writeFile } from "fs/promises";
 
 import {
   Context,
   ContextGenerator,
+  ContractNames,
   ExpandableStep,
+  NeokingdomContracts,
   ProcessedSequence,
   Sequence,
   StepWithExpandable,
 } from "./types";
-import { ContractNames, NeokingdomContracts } from "./utils";
 
 export type Config = {
-  deployer: Wallet;
+  deployer: Wallet | SignerWithAddress;
   reserve: string;
   chainId: number;
   verifyContracts: false;
@@ -23,8 +25,6 @@ const defaultConfig: Partial<Config> = {
   verifyContracts: false,
   saveNetworkConfig: false,
 };
-
-const NEXTSTEP_FILENAME = "./deployments/.nextstep";
 
 export class NeokingdomDAO {
   config: Config;
@@ -40,20 +40,32 @@ export class NeokingdomDAO {
     } as Config;
   }
 
-  async run<T extends Context>(
-    c: ContextGenerator<T>,
-    s: Sequence<T>,
-    force = false
-  ) {
-    let nextStep = 0;
+  public getNextStepFilename() {
+    return `./deployments/${this.config.chainId}.nextstep`;
+  }
+
+  public async setNextStep(n: number) {
+    await writeFile(this.getNextStepFilename(), n.toString());
+  }
+
+  public async getNextStep() {
     try {
-      nextStep = parseInt(await readFile(NEXTSTEP_FILENAME, "utf8"));
+      return parseInt(await readFile(this.getNextStepFilename(), "utf8"));
     } catch (e) {
       if ((e as any).code !== "ENOENT") {
         throw e;
       }
     }
+    return 0;
+  }
+
+  async run<T extends Context>(
+    c: ContextGenerator<T>,
+    s: Sequence<T>,
+    force = false
+  ) {
     const sequence = await this._preprocessSequence(c, s);
+    const nextStep = await this.getNextStep();
     await this._executeSequence(c, sequence, nextStep, force);
   }
 
@@ -115,7 +127,7 @@ export class NeokingdomDAO {
       if (tx?.wait) {
         await tx.wait(1);
       }
-      await writeFile(NEXTSTEP_FILENAME, (i + 1).toString());
+      await this.setNextStep(i + 1);
     }
   }
 }

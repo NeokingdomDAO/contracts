@@ -1,8 +1,8 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { Config, NeokingdomDAO } from "./core";
+import { ContractNames } from "./types";
 import {
-  ContractNames,
   deployContract,
   deployContractProxy,
   getWallet,
@@ -38,7 +38,7 @@ export class NeokingdomDAOHardhat extends NeokingdomDAO {
   }
 
   async loadContracts() {
-    return loadContracts(this.hre, this.config.deployer, this.config.chainId);
+    return loadContracts(this.config.deployer, this.config.chainId);
   }
 
   async deploy(contractName: ContractNames, args: any[] = []) {

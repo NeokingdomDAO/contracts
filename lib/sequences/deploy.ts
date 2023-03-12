@@ -1,10 +1,17 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract, Wallet } from "ethers";
 
-import type { ContextGenerator, ContractContext, Sequence } from "../types";
-import { ContractNames, NeokingdomContracts, ROLES } from "../utils";
+import type {
+  ContextGenerator,
+  ContractContext,
+  ContractNames,
+  NeokingdomContracts,
+  Sequence,
+} from "../types";
+import { ROLES } from "../utils";
 
 export type DeployContext = ContractContext & {
-  deployer: Wallet;
+  deployer: Wallet | SignerWithAddress;
   reserve: string;
   deploy: (contractName: ContractNames, args?: any[]) => Promise<Contract>;
   deployProxy: (contractName: ContractNames, args?: any[]) => Promise<Contract>;
@@ -31,18 +38,17 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) => c.deployProxy("Voting"),
   (c) => c.deployProxy("NeokingdomToken", ["NeokingdomToken", "NEOK"]),
   (c) => c.deployProxy("RedemptionController"),
-  (c) => c.deployProxy("InternalMarket", [c.token.address]),
+  (c) => c.deployProxy("InternalMarket", [c.NeokingdomToken.address]),
   (c) => c.deployProxy("ShareholderRegistry", ["NeokingdomShare", "NEOS"]),
   (c) =>
     c.deployProxy("ResolutionManager", [
-      c.registry.address,
-      c.token.address,
-      c.voting.address,
+      c.ShareholderRegistry.address,
+      c.NeokingdomToken.address,
+      c.Voting.address,
     ]),
 
-  // Configure PriceOracle
-  (c) => c.oracle.relay(["eur", "usd"], [1, 1], [1, 1]),
-  (c) => c.oracle.relay(["usdc", "usd"], [1, 1], [1, 1]),
+  (c) => c.PriceOracle.relay(["eur", "usd"], [1, 1], [1, 1]),
+  (c) => c.PriceOracle.relay(["usdc", "usd"], [1, 1], [1, 1]),
 
   // Set ACLs
   /////////////
@@ -50,55 +56,92 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // FIXME: not sure deployer should be here
 
   // ResolutionManager
-  (c) => c.resolution.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.resolution.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.resolution.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),
+  (c) => c.ResolutionManager.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) =>
+    c.ResolutionManager.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) =>
+    c.ResolutionManager.grantRole(
+      ROLES.RESOLUTION_ROLE,
+      c.ResolutionManager.address
+    ),
 
-  // ShareholdersRegistry
-  (c) => c.registry.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.registry.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.registry.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),
+  // ShareholderRegistry
+  (c) =>
+    c.ShareholderRegistry.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) =>
+    c.ShareholderRegistry.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) =>
+    c.ShareholderRegistry.grantRole(
+      ROLES.RESOLUTION_ROLE,
+      c.ResolutionManager.address
+    ),
 
   // Voting
   (c) =>
-    c.voting.grantRole(ROLES.SHAREHOLDER_REGISTRY_ROLE, c.registry.address),
-  (c) => c.voting.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.voting.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.voting.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),
+    c.Voting.grantRole(
+      ROLES.SHAREHOLDER_REGISTRY_ROLE,
+      c.ShareholderRegistry.address
+    ),
+  (c) => c.Voting.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.Voting.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) => c.Voting.grantRole(ROLES.RESOLUTION_ROLE, c.ResolutionManager.address),
 
   // Token
-  (c) => c.token.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.token.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.token.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),
+  (c) => c.NeokingdomToken.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.NeokingdomToken.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) =>
+    c.NeokingdomToken.grantRole(
+      ROLES.RESOLUTION_ROLE,
+      c.ResolutionManager.address
+    ),
 
   // Market
-  (c) => c.market.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.market.grantRole(ROLES.RESOLUTION_ROLE, c.resolution.address),
+  (c) => c.InternalMarket.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) =>
+    c.InternalMarket.grantRole(
+      ROLES.RESOLUTION_ROLE,
+      c.ResolutionManager.address
+    ),
 
   // RedemptionController
-  (c) => c.redemption.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.token.address),
-  (c) => c.redemption.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.market.address),
+  (c) =>
+    c.RedemptionController.grantRole(
+      ROLES.TOKEN_MANAGER_ROLE,
+      c.NeokingdomToken.address
+    ),
+  (c) =>
+    c.RedemptionController.grantRole(
+      ROLES.TOKEN_MANAGER_ROLE,
+      c.InternalMarket.address
+    ),
 
   // Set interdependencies
   //////////////////////////
 
   // Market
-  (c) => c.registry.setVoting(c.voting.address),
+  (c) => c.ShareholderRegistry.setVoting(c.Voting.address),
 
   // Voting
-  (c) => c.voting.setShareholderRegistry(c.registry.address),
-  (c) => c.voting.setToken(c.token.address),
+  (c) => c.Voting.setShareholderRegistry(c.ShareholderRegistry.address),
+  (c) => c.Voting.setToken(c.NeokingdomToken.address),
 
   // Token
-  (c) => c.token.setVoting(c.voting.address),
-  (c) => c.token.setInternalMarket(c.market.address),
-  (c) => c.token.setRedemptionController(c.redemption.address),
-  (c) => c.token.setShareholderRegistry(c.registry.address),
+  (c) => c.NeokingdomToken.setVoting(c.Voting.address),
+  (c) => c.NeokingdomToken.setInternalMarket(c.InternalMarket.address),
+  (c) =>
+    c.NeokingdomToken.setRedemptionController(c.RedemptionController.address),
+  (c) =>
+    c.NeokingdomToken.setShareholderRegistry(c.ShareholderRegistry.address),
 
   // Registry
-  (c) => c.token.setVoting(c.voting.address),
+  (c) => c.NeokingdomToken.setVoting(c.Voting.address),
 
-  (c) => c.market.setRedemptionController(c.redemption.address),
-  (c) => c.market.setExchangePair(c.usdc.address, c.oracle.address),
-  (c) => c.market.setReserve(c.reserve),
+  (c) =>
+    c.InternalMarket.setRedemptionController(c.RedemptionController.address),
+  (c) =>
+    c.InternalMarket.setExchangePair(
+      c.TokenMock.address,
+      c.PriceOracle.address
+    ),
+  (c) => c.InternalMarket.setReserve(c.reserve),
 ];

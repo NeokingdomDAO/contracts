@@ -14,7 +14,12 @@ import {
   ShareholderRegistry,
 } from "../typechain";
 
-import { deployDAO } from "./utils/deploy";
+import { NeokingdomDAOMemory } from "../lib/memory";
+import {
+  DEPLOY_SEQUENCE,
+  generateDeployContext,
+} from "../lib/sequences/deploy";
+import { NeokingdomContracts } from "../lib/types";
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 
 chai.use(solidity);
@@ -26,9 +31,9 @@ const DAY = 60 * 60 * 24;
 describe("Upgrade", () => {
   let snapshotId: string;
 
-  let token: NeokingdomToken;
-  let registry: ShareholderRegistry;
-  let resolution: ResolutionManager;
+  let NeokingdomToken: NeokingdomToken;
+  let ShareholderRegistry: ShareholderRegistry;
+  let ResolutionManager: ResolutionManager;
   let managingBoardStatus: string;
   let contributorStatus: string;
   let shareholderStatus: string;
@@ -43,16 +48,19 @@ describe("Upgrade", () => {
   before(async () => {
     [deployer, reserve, managingBoard, user1, user2, user3] =
       await ethers.getSigners();
-    ({ token, registry, resolution } = await deployDAO(
+    const n = await NeokingdomDAOMemory.initialize({
       deployer,
-      managingBoard,
-      reserve
+      reserve: reserve.address,
+    });
+    ({ NeokingdomToken, ShareholderRegistry, ResolutionManager } = await n.run(
+      generateDeployContext,
+      DEPLOY_SEQUENCE
     ));
 
-    managingBoardStatus = await registry.MANAGING_BOARD_STATUS();
-    contributorStatus = await registry.CONTRIBUTOR_STATUS();
-    shareholderStatus = await registry.SHAREHOLDER_STATUS();
-    investorStatus = await registry.INVESTOR_STATUS();
+    managingBoardStatus = await ShareholderRegistry.MANAGING_BOARD_STATUS();
+    contributorStatus = await ShareholderRegistry.CONTRIBUTOR_STATUS();
+    shareholderStatus = await ShareholderRegistry.SHAREHOLDER_STATUS();
+    investorStatus = await ShareholderRegistry.INVESTOR_STATUS();
   });
 
   beforeEach(async () => {
@@ -70,23 +78,27 @@ describe("Upgrade", () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await token.mint(user.address, tokens);
+      await NeokingdomToken.mint(user.address, tokens);
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
-      await registry.mint(user.address, parseEther("1"));
-      await registry.setStatus(contributorStatus, user.address);
+      await ShareholderRegistry.mint(user.address, parseEther("1"));
+      await ShareholderRegistry.setStatus(contributorStatus, user.address);
       await _mintTokens(user, tokens);
     }
 
     async function _prepareResolution(type: number) {
       currentResolution++;
-      await resolution
-        .connect(user1)
-        .createResolution("Qxtest", type, false, [], []);
-      await resolution
-        .connect(managingBoard)
-        .approveResolution(currentResolution);
+      await ResolutionManager.connect(user1).createResolution(
+        "Qxtest",
+        type,
+        false,
+        [],
+        []
+      );
+      await ResolutionManager.connect(managingBoard).approveResolution(
+        currentResolution
+      );
 
       return currentResolution;
     }
@@ -95,10 +107,12 @@ describe("Upgrade", () => {
       // Change notice period of the a resolution type in the Resolution contract
       await _prepareForVoting(user1, 42);
       const resolutionId = await _prepareResolution(6);
-      const resolutionObject = await resolution.resolutions(resolutionId);
+      const resolutionObject = await ResolutionManager.resolutions(
+        resolutionId
+      );
 
       await expect(
-        resolution.connect(user1).vote(resolutionId, true)
+        ResolutionManager.connect(user1).vote(resolutionId, true)
       ).revertedWith("Resolution: not votable");
 
       // Originally is 3 days notice, 2 days voting
@@ -106,13 +120,13 @@ describe("Upgrade", () => {
         resolutionObject.approveTimestamp.toNumber() + DAY * 3;
       await setEVMTimestamp(votingTimestamp);
 
-      await resolution.connect(user1).vote(resolutionId, true);
+      await ResolutionManager.connect(user1).vote(resolutionId, true);
 
       const votingEndTimestamp = (await getEVMTimestamp()) + DAY * 2;
       await setEVMTimestamp(votingEndTimestamp);
 
       await expect(
-        resolution.connect(user1).vote(resolutionId, false)
+        ResolutionManager.connect(user1).vote(resolutionId, false)
       ).revertedWith("Resolution: not votable");
 
       const ResolutionV2MockFactory = (await ethers.getContractFactory(
@@ -120,17 +134,19 @@ describe("Upgrade", () => {
       )) as ResolutionManagerV2Mock__factory;
 
       const resolutionV2Contract = await upgrades.upgradeProxy(
-        resolution.address,
+        ResolutionManager.address,
         ResolutionV2MockFactory
       );
       await resolutionV2Contract.deployed();
       await resolutionV2Contract.reinitialize();
 
       const newResolutionId = await _prepareResolution(6);
-      const newResolutionObject = await resolution.resolutions(newResolutionId);
+      const newResolutionObject = await ResolutionManager.resolutions(
+        newResolutionId
+      );
 
       await expect(
-        resolution.connect(user1).vote(newResolutionId, true)
+        ResolutionManager.connect(user1).vote(newResolutionId, true)
       ).revertedWith("Resolution: not votable");
 
       // Now it's expected to have 1 day notice, 1 days voting
@@ -138,55 +154,55 @@ describe("Upgrade", () => {
         newResolutionObject.approveTimestamp.toNumber() + DAY * 1;
       await setEVMTimestamp(newVotingTimestamp);
 
-      await resolution.connect(user1).vote(newResolutionId, true);
+      await ResolutionManager.connect(user1).vote(newResolutionId, true);
 
       const newVotingEndTimestamp = (await getEVMTimestamp()) + DAY * 1;
       await setEVMTimestamp(newVotingEndTimestamp);
       await mineEVMBlock();
 
       await expect(
-        resolution.connect(user1).vote(newResolutionId, false)
+        ResolutionManager.connect(user1).vote(newResolutionId, false)
       ).revertedWith("Resolution: not votable");
     });
 
     it("should change contract logic", async () => {
       // Prevents also shareholder from transfering their tokens on NeokingdomToken
-      await registry.mint(user1.address, parseEther("1"));
-      await registry.setStatus(contributorStatus, user1.address);
+      await ShareholderRegistry.mint(user1.address, parseEther("1"));
+      await ShareholderRegistry.setStatus(contributorStatus, user1.address);
       await _mintTokens(user1, 42);
 
-      await registry.mint(user2.address, parseEther("1"));
-      await registry.setStatus(shareholderStatus, user2.address);
+      await ShareholderRegistry.mint(user2.address, parseEther("1"));
+      await ShareholderRegistry.setStatus(shareholderStatus, user2.address);
       await _mintTokens(user2, 42);
 
       await expect(
-        token.connect(user1).transfer(user2.address, 1)
+        NeokingdomToken.connect(user1).transfer(user2.address, 1)
       ).revertedWith("NeokingdomToken: contributor cannot transfer");
 
-      await token.connect(user2).transfer(user1.address, 1);
+      await NeokingdomToken.connect(user2).transfer(user1.address, 1);
 
       const NeokingdomTokenV2MockFactory = (await ethers.getContractFactory(
         "NeokingdomTokenV2Mock"
       )) as NeokingdomTokenV2Mock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
-        token.address,
+        NeokingdomToken.address,
         NeokingdomTokenV2MockFactory
       );
       await tokenV2Contract.deployed();
 
       await expect(
-        token.connect(user1).transfer(user2.address, 1)
+        NeokingdomToken.connect(user1).transfer(user2.address, 1)
       ).revertedWith("NeokingdomTokenV2: nopety nope");
 
       await expect(
-        token.connect(user2).transfer(user1.address, 1)
+        NeokingdomToken.connect(user2).transfer(user1.address, 1)
       ).revertedWith("NeokingdomTokenV2: nopety nope");
     });
 
     it("should change events", async () => {
-      await expect(token.mintVesting(user1.address, 31))
-        .emit(token, "VestingSet")
+      await expect(NeokingdomToken.mintVesting(user1.address, 31))
+        .emit(NeokingdomToken, "VestingSet")
         .withArgs(user1.address, 31);
 
       const NewNeokingdomTokenMockFactory = (await ethers.getContractFactory(
@@ -194,12 +210,12 @@ describe("Upgrade", () => {
       )) as NewNeokingdomTokenMock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
-        token.address,
+        NeokingdomToken.address,
         NewNeokingdomTokenMockFactory
       );
       await tokenV2Contract.deployed();
 
-      await expect(token.mintVesting(user1.address, 31))
+      await expect(NeokingdomToken.mintVesting(user1.address, 31))
         .emit(tokenV2Contract, "VestingSet2")
         .withArgs(deployer.address, user1.address, 31);
     });

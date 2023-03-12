@@ -1,3 +1,4 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract, Wallet } from "ethers";
 import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
@@ -5,35 +6,16 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   InternalMarket,
-  InternalMarket__factory,
   NeokingdomToken,
-  NeokingdomToken__factory,
   PriceOracle,
-  PriceOracle__factory,
   RedemptionController,
-  RedemptionController__factory,
   ResolutionManager,
-  ResolutionManager__factory,
   ShareholderRegistry,
-  ShareholderRegistry__factory,
   TokenMock,
-  TokenMock__factory,
   Voting,
-  Voting__factory,
 } from "../typechain";
 
-export const FACTORIES = {
-  InternalMarket: InternalMarket__factory,
-  NeokingdomToken: NeokingdomToken__factory,
-  PriceOracle: PriceOracle__factory,
-  RedemptionController: RedemptionController__factory,
-  ResolutionManager: ResolutionManager__factory,
-  ShareholderRegistry: ShareholderRegistry__factory,
-  TokenMock: TokenMock__factory,
-  Voting: Voting__factory,
-} as const;
-
-export type ContractNames = keyof typeof FACTORIES;
+import { ContractNames, FACTORIES, NeokingdomContracts } from "./types";
 
 type NeokingdomNetworkFile = {
   [key in ContractNames]?: {
@@ -41,17 +23,6 @@ type NeokingdomNetworkFile = {
     blockNumber: number;
     blockHash: string;
   };
-};
-
-export type NeokingdomContracts = {
-  market: InternalMarket;
-  token: NeokingdomToken;
-  oracle: PriceOracle;
-  redemption: RedemptionController;
-  resolution: ResolutionManager;
-  registry: ShareholderRegistry;
-  usdc: TokenMock;
-  voting: Voting;
 };
 
 export const ROLES = {
@@ -69,7 +40,6 @@ export const ROLES = {
 export function isContractName(name: string): name is ContractNames {
   return Object.keys(FACTORIES).includes(name);
 }
-
 const WAIT_BLOCKS = process.env.WAIT_BLOCKS
   ? parseInt(process.env.WAIT_BLOCKS)
   : 1;
@@ -182,7 +152,7 @@ export async function getContractAddress(
 
 export async function loadContract<T>(
   contractName: ContractNames,
-  deployer: Wallet,
+  deployer: Wallet | SignerWithAddress,
   chainId: number
 ) {
   const configPath = getConfigPath(chainId);
@@ -204,7 +174,7 @@ export async function loadContract<T>(
 }
 
 export async function loadContracts(
-  deployer: Wallet,
+  deployer: Wallet | SignerWithAddress,
   chainId: number
 ): Promise<Partial<NeokingdomContracts>> {
   async function _loadContract<T>(contractName: ContractNames) {
@@ -218,16 +188,20 @@ export async function loadContracts(
   }
 
   return {
-    market: await _loadContract<InternalMarket>("InternalMarket"),
-    token: await _loadContract<NeokingdomToken>("NeokingdomToken"),
-    oracle: await _loadContract<PriceOracle>("PriceOracle"),
-    redemption: await _loadContract<RedemptionController>(
+    InternalMarket: await _loadContract<InternalMarket>("InternalMarket"),
+    NeokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
+    PriceOracle: await _loadContract<PriceOracle>("PriceOracle"),
+    RedemptionController: await _loadContract<RedemptionController>(
       "RedemptionController"
     ),
-    resolution: await _loadContract<ResolutionManager>("ResolutionManager"),
-    registry: await _loadContract<ShareholderRegistry>("ShareholderRegistry"),
-    usdc: await _loadContract<TokenMock>("TokenMock"),
-    voting: await _loadContract<Voting>("Voting"),
+    ResolutionManager: await _loadContract<ResolutionManager>(
+      "ResolutionManager"
+    ),
+    ShareholderRegistry: await _loadContract<ShareholderRegistry>(
+      "ShareholderRegistry"
+    ),
+    TokenMock: await _loadContract<TokenMock>("TokenMock"),
+    Voting: await _loadContract<Voting>("Voting"),
   };
 }
 
@@ -294,3 +268,30 @@ export async function getWallet(hre: HardhatRuntimeEnvironment) {
   // Create the signer for the mnemonic, connected to the provider with hardcoded fee data
   return new ethers.Wallet(privateKey).connect(provider);
 }
+
+/* FIXME we might need this function, leave it here for now
+export async function multicall3(
+  c: ContractContext,
+  data: Promise<PopulatedTransaction>[]
+) {
+  const cd = await Promise.all(
+    data.map(async (d) => {
+      const populatedTx = await d;
+      if (!populatedTx.data) {
+        throw new Error("Calldata empty");
+      }
+      if (!populatedTx.to) {
+        throw new Error("To empty");
+      }
+      return {
+        target: populatedTx.to,
+        allowFailure: false,
+        callData: populatedTx.data,
+      };
+    })
+  );
+  console.log(cd);
+
+  return c.Multicall3.aggregate3(cd);
+}
+*/

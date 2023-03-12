@@ -13,7 +13,7 @@ import {
 } from "../typechain";
 
 import { Config, NeokingdomDAO } from "./core";
-import { ContractNames, NeokingdomContracts } from "./types";
+import { ContractNames, NeokingdomContracts, castContract } from "./types";
 
 export class NeokingdomDAOMemory extends NeokingdomDAO {
   contracts: Partial<NeokingdomContracts>;
@@ -43,6 +43,7 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
   public async getNextStep() {
     return this.nextStep;
   }
+
   async deploy(contractName: ContractNames, args: any[] = []) {
     const Factory = await ethers.getContractFactory(contractName);
     const contract = await Factory.deploy(...args);
@@ -60,30 +61,7 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
   }
 
   private storeContract(contractName: ContractNames, contract: Contract) {
-    switch (contractName) {
-      case "InternalMarket":
-        this.contracts[contractName] = contract as InternalMarket;
-        break;
-      case "NeokingdomToken":
-        this.contracts[contractName] = contract as NeokingdomToken;
-        break;
-      case "PriceOracle":
-        this.contracts[contractName] = contract as PriceOracle;
-        break;
-      case "RedemptionController":
-        this.contracts[contractName] = contract as RedemptionController;
-        break;
-      case "ResolutionManager":
-        this.contracts[contractName] = contract as ResolutionManager;
-        break;
-      case "ShareholderRegistry":
-        this.contracts[contractName] = contract as ShareholderRegistry;
-        break;
-      case "TokenMock":
-        this.contracts[contractName] = contract as TokenMock;
-        break;
-      case "Voting":
-        this.contracts[contractName] = contract as Voting;
-    }
+    // FIXME: I cannot typescript, remove any
+    this.contracts[contractName] = castContract(contractName, contract) as any;
   }
 }

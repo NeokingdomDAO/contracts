@@ -19,7 +19,6 @@ task("dev:deploy", "Deploy DAO")
         verifyContracts: verify,
         verbose: true,
       });
-      console.log(restart);
       await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE, { restart });
     }
   );

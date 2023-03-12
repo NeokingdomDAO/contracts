@@ -18,13 +18,15 @@ export type Config = {
   deployer: Wallet | SignerWithAddress;
   reserve: string;
   chainId: number;
-  verifyContracts: false;
-  saveNetworkConfig: false;
+  verifyContracts: boolean;
+  saveNetworkConfig: boolean;
+  verbose: boolean;
 };
 
 const defaultConfig: Partial<Config> = {
   verifyContracts: false,
   saveNetworkConfig: false,
+  verbose: false,
 };
 
 export class NeokingdomDAO {
@@ -63,10 +65,11 @@ export class NeokingdomDAO {
   async run<T extends Context>(
     c: ContextGenerator<T>,
     s: Sequence<T>,
-    force = false
+    config: { force?: boolean; restart?: boolean } = {}
   ) {
+    const { force, restart } = config;
     const sequence = await this._preprocessSequence(c, s);
-    const nextStep = await this.getNextStep();
+    const nextStep = restart ? 0 : await this.getNextStep();
     await this._executeSequence(c, sequence, nextStep, force);
   }
 
@@ -114,13 +117,15 @@ export class NeokingdomDAO {
   private async _executeSequence<T extends Context>(
     c: ContextGenerator<T>,
     s: ProcessedSequence<T>,
-    nextIndex = 0,
+    nextStep = 0,
     force = false
   ) {
-    for (let i = nextIndex; i < s.length; i++) {
+    for (let i = nextStep; i < s.length; i++) {
       const context = await c(this);
       const step = s[i];
-      console.log(`${i + 1}/${s.length}: ${step.toString()}`);
+      if (this.config.verbose) {
+        console.log(`${i + 1}/${s.length}: ${step.toString()}`);
+      }
       let tx: Contract | ContractTransaction | null = null;
       try {
         tx = await step(context);
@@ -131,7 +136,9 @@ export class NeokingdomDAO {
           throw e;
         }
       }
-      console.log();
+      if (this.config.verbose) {
+        console.log();
+      }
       // FIXME: wait should always be a valid attribute, but it's not
       if (tx?.wait) {
         await tx.wait(1);

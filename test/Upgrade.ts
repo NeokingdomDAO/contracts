@@ -19,7 +19,6 @@ import {
   DEPLOY_SEQUENCE,
   generateDeployContext,
 } from "../lib/sequences/deploy";
-import { NeokingdomContracts } from "../lib/types";
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 
 chai.use(solidity);
@@ -60,6 +59,12 @@ describe("Upgrade", () => {
     contributorStatus = await ShareholderRegistry.CONTRIBUTOR_STATUS();
     shareholderStatus = await ShareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await ShareholderRegistry.INVESTOR_STATUS();
+
+    await ShareholderRegistry.mint(managingBoard.address, parseEther("1"));
+    await ShareholderRegistry.setStatus(
+      managingBoardStatus,
+      managingBoard.address
+    );
   });
 
   beforeEach(async () => {

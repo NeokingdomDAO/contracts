@@ -21,7 +21,6 @@ import {
   DEPLOY_SEQUENCE,
   generateDeployContext,
 } from "../lib/sequences/deploy";
-import { NeokingdomContracts } from "../lib/types";
 import {
   getEVMTimestamp,
   mineEVMBlock,

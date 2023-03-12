@@ -222,16 +222,11 @@ export const isChainId = (
 export async function getWallet(hre: HardhatRuntimeEnvironment) {
   const ethers = hre.ethers;
   let { chainId, name } = await hre.ethers.provider.getNetwork();
-  /*
-  if (chainId !== 9000 && chainId !== 9001) {
-    throw new Error("This thing works only for EVMOS, fixme please!");
-  }
 
-  const privateKey =
-    chainId === 9000
-      ? process.env.TEVMOS_PRIVATE_KEY
-      : process.env.EVMOS_PRIVATE_KEY;
-  */
+  if (chainId !== 9000 && chainId !== 9001) {
+    const [signer] = await hre.ethers.getSigners();
+    return signer;
+  }
 
   if (name === "unknown" && isChainId(chainId)) {
     name = CHAINID_TO_NAME[chainId];

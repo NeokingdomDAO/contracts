@@ -40,15 +40,31 @@ export const generateDeployContext: ContextGenerator<DeployContext> =
 export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Deploy Contracts
   /////////////////////
+  (c) => c.deploy("DAORoles"),
   (c) => c.deploy("TokenMock"),
   (c) => c.deploy("PriceOracle"),
-  (c) => c.deployProxy("Voting"),
-  (c) => c.deployProxy("NeokingdomToken", ["NeokingdomToken", "NEOK"]),
-  (c) => c.deployProxy("RedemptionController"),
-  (c) => c.deployProxy("InternalMarket", [c.neokingdomToken.address]),
-  (c) => c.deployProxy("ShareholderRegistry", ["NeokingdomShare", "NEOS"]),
+  (c) => c.deployProxy("Voting", [c.daoRoles.address]),
+  (c) =>
+    c.deployProxy("NeokingdomToken", [
+      c.daoRoles.address,
+      "NeokingdomToken",
+      "NEOK",
+    ]),
+  (c) => c.deployProxy("RedemptionController", [c.daoRoles.address]),
+  (c) =>
+    c.deployProxy("InternalMarket", [
+      c.daoRoles.address,
+      c.neokingdomToken.address,
+    ]),
+  (c) =>
+    c.deployProxy("ShareholderRegistry", [
+      c.daoRoles.address,
+      "NeokingdomShare",
+      "NEOS",
+    ]),
   (c) =>
     c.deployProxy("ResolutionManager", [
+      c.daoRoles.address,
       c.shareholderRegistry.address,
       c.neokingdomToken.address,
       c.voting.address,
@@ -61,66 +77,20 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   /////////////
 
   // FIXME: not sure deployer should be here
+  (c) => c.daoRoles.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.daoRoles.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
 
-  // ResolutionManager
-  (c) => c.resolutionManager.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
   (c) =>
-    c.resolutionManager.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+    c.daoRoles.grantRole(ROLES.RESOLUTION_ROLE, c.resolutionManager.address),
   (c) =>
-    c.resolutionManager.grantRole(
-      ROLES.RESOLUTION_ROLE,
-      c.resolutionManager.address
-    ),
-
-  // ShareholderRegistry
-  (c) =>
-    c.shareholderRegistry.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) =>
-    c.shareholderRegistry.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) =>
-    c.shareholderRegistry.grantRole(
-      ROLES.RESOLUTION_ROLE,
-      c.resolutionManager.address
-    ),
-
-  // Voting
-  (c) =>
-    c.voting.grantRole(
+    c.daoRoles.grantRole(
       ROLES.SHAREHOLDER_REGISTRY_ROLE,
       c.shareholderRegistry.address
     ),
-  (c) => c.voting.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.voting.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.voting.grantRole(ROLES.RESOLUTION_ROLE, c.resolutionManager.address),
-
-  // Token
-  (c) => c.neokingdomToken.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.neokingdomToken.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
   (c) =>
-    c.neokingdomToken.grantRole(
-      ROLES.RESOLUTION_ROLE,
-      c.resolutionManager.address
-    ),
-
-  // Market
-  (c) => c.internalMarket.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+    c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.neokingdomToken.address),
   (c) =>
-    c.internalMarket.grantRole(
-      ROLES.RESOLUTION_ROLE,
-      c.resolutionManager.address
-    ),
-
-  // RedemptionController
-  (c) =>
-    c.redemptionController.grantRole(
-      ROLES.TOKEN_MANAGER_ROLE,
-      c.neokingdomToken.address
-    ),
-  (c) =>
-    c.redemptionController.grantRole(
-      ROLES.TOKEN_MANAGER_ROLE,
-      c.internalMarket.address
-    ),
+    c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
 
   // Set interdependencies
   //////////////////////////

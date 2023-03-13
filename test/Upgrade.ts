@@ -14,11 +14,8 @@ import {
   ShareholderRegistry,
 } from "../typechain";
 
-import {
-  DEPLOY_SEQUENCE,
-  NeokingdomDAOMemory,
-  generateDeployContext,
-} from "../lib";
+import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
+import { NeokingdomDAOMemory } from "../lib/environment/memory";
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 
 chai.use(solidity);

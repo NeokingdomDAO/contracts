@@ -16,11 +16,8 @@ import {
   Voting,
 } from "../typechain";
 
-import {
-  DEPLOY_SEQUENCE,
-  NeokingdomDAOMemory,
-  generateDeployContext,
-} from "../lib";
+import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
+import { NeokingdomDAOMemory } from "../lib/environment/memory";
 import {
   getEVMTimestamp,
   mineEVMBlock,

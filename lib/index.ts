@@ -2,4 +2,8 @@ export { generateDeployContext, DEPLOY_SEQUENCE } from "./sequence/deploy";
 export { generateSetupContext, STAGING_SETUP_SEQUENCE } from "./sequence/setup";
 
 export { NeokingdomDAOHardhat } from "./environment/hardhat";
-export { NeokingdomDAOMemory } from "./environment/memory";
+
+// Do not export this in index. The module loads hardhat and if this happens in
+// a task the command will fail with "Cannot load tasks HardhatError: HH9: Error
+// while loading Hardhat's configuration."
+// export { NeokingdomDAOMemory } from "./environment/memory";

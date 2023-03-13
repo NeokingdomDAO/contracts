@@ -29,7 +29,7 @@ const defaultConfig: Partial<Config> = {
   verbose: false,
 };
 
-export class NeokingdomDAO {
+export abstract class NeokingdomDAO {
   config: Config;
 
   constructor(config: Config) {
@@ -73,9 +73,7 @@ export class NeokingdomDAO {
     await this._executeSequence(c, sequence, nextStep, force);
   }
 
-  async loadContractsPartial(): Promise<Partial<NeokingdomContracts>> {
-    throw new Error("Method 'loadContracts()' must be implemented.");
-  }
+  abstract loadContractsPartial(): Promise<Partial<NeokingdomContracts>>;
 
   async loadContracts(): Promise<NeokingdomContracts> {
     const contracts = await this.loadContractsPartial();
@@ -85,19 +83,12 @@ export class NeokingdomDAO {
     throw new Error("Missing contracts");
   }
 
-  async deploy(
-    contractName: ContractNames,
-    args: any[] = []
-  ): Promise<Contract> {
-    throw new Error("Method 'deploy()' must be implemented.");
-  }
+  abstract deploy(contractName: ContractNames, args?: any[]): Promise<Contract>;
 
-  async deployProxy(
+  abstract deployProxy(
     contractName: ContractNames,
-    args: any[] = []
-  ): Promise<Contract> {
-    throw new Error("Method 'deployProxy()' must be implemented.");
-  }
+    args?: any[]
+  ): Promise<Contract>;
 
   private async _preprocessSequence<T extends Context>(
     c: ContextGenerator<T>,

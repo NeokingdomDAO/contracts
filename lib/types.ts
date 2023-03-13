@@ -62,8 +62,7 @@ export type StepWithExpandable<T extends Context> =
   | ((c: T) => Promise<Contract | ContractTransaction>);
 
 export type ExpandableStep<T extends Context> = {
-  expandable: true;
-  f: (c: T) => ProcessedSequence<T>;
+  expandableFunction: (c: T) => ProcessedSequence<T>;
 };
 
 export type Sequence<T extends Context> = StepWithExpandable<T>[];

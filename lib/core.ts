@@ -153,7 +153,7 @@ export const preprocessStep = <T extends Context>(
   s: StepWithExpandable<T>
 ): ProcessedSequence<T> => {
   if (isExpandable(s)) {
-    return s.f(c);
+    return s.expandableFunction(c);
   } else {
     return [s];
   }
@@ -163,13 +163,12 @@ export const expandable = <T extends Context>(
   s: (c: T) => ProcessedSequence<T>
 ): ExpandableStep<T> => {
   return {
-    expandable: true,
-    f: s,
+    expandableFunction: s,
   };
 };
 
 export const isExpandable = <T extends Context>(
   s: StepWithExpandable<T>
 ): s is ExpandableStep<T> => {
-  return "expandable" in s && "f" in s;
+  return "expandableFunction" in s;
 };

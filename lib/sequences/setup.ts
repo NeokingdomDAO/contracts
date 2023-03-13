@@ -27,8 +27,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   // Give each address one share
   expandable((c: SetupContext) =>
     c.contributors.map(
-      (x) => (e: typeof c) =>
-        e.ShareholderRegistry.mint(x.address, parseEther("1"))
+      (x) => (e) => e.ShareholderRegistry.mint(x.address, parseEther("1"))
     )
   ),
 
@@ -54,7 +53,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   // Give each contributor tokens
   expandable((c: SetupContext) =>
     c.contributors.map(
-      (x) => (e: typeof c) =>
+      (x) => (e) =>
         e.NeokingdomToken.mint(x.address, parseEther(x.tokens.toString()))
     )
   ),

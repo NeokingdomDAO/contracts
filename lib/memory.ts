@@ -1,17 +1,6 @@
 import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
-import {
-  InternalMarket,
-  NeokingdomToken,
-  PriceOracle,
-  RedemptionController,
-  ResolutionManager,
-  ShareholderRegistry,
-  TokenMock,
-  Voting,
-} from "../typechain";
-
 import { Config, NeokingdomDAO } from "./core";
 import { ContractNames, NeokingdomContracts, castContract } from "./types";
 

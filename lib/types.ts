@@ -1,6 +1,8 @@
 import { Contract, ContractTransaction } from "ethers";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
@@ -22,6 +24,7 @@ import {
 import { NeokingdomDAO } from "./core";
 
 export const FACTORIES = {
+  DAORoles: DAORoles__factory,
   InternalMarket: InternalMarket__factory,
   NeokingdomToken: NeokingdomToken__factory,
   PriceOracle: PriceOracle__factory,
@@ -39,6 +42,7 @@ export type ContextGenerator<T extends Context> = (
 ) => Promise<T>;
 
 export type NeokingdomContracts = {
+  DAORoles: DAORoles;
   InternalMarket: InternalMarket;
   NeokingdomToken: NeokingdomToken;
   PriceOracle: PriceOracle;
@@ -72,6 +76,8 @@ export type ProcessedSequence<T extends Context> = Step<T>[];
 
 export function castContract(contractName: ContractNames, contract: Contract) {
   switch (contractName) {
+    case "DAORoles":
+      return contract as DAORoles;
     case "InternalMarket":
       return contract as InternalMarket;
     case "NeokingdomToken":

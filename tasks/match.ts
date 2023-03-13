@@ -3,7 +3,7 @@ import { task } from "hardhat/config";
 
 import { NeokingdomToken__factory } from "../typechain";
 
-import { loadContract } from "./config";
+import { loadContract } from "../lib/config";
 
 task("match-offer", "Match an offer")
   .addPositionalParam("fromAddress", "From address")

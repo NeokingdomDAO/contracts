@@ -2,7 +2,7 @@ import { task } from "hardhat/config";
 
 import { ResolutionManager__factory } from "../typechain";
 
-import { loadContract } from "./config";
+import { loadContract } from "../lib/config";
 
 task("types", "Add test resolution types").setAction(async ({}, hre) => {
   const contract = await loadContract(

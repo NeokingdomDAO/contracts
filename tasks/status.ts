@@ -12,7 +12,7 @@ import {
   ShareholderRegistry__factory,
 } from "../typechain";
 
-import { loadContract } from "./config";
+import { loadContract } from "../lib/config";
 
 task("mint-share", "Mint a share to an address")
   .addPositionalParam("account", "The address")

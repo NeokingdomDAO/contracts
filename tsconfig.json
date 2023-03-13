@@ -10,8 +10,9 @@
   "include": [
     "./scripts",
     "./test",
-    "./deploy",
-    "./tasks"
+    "./tasks",
+    "./lib",
+    "lib/config.ts"
   ],
   "files": [
     "./hardhat.config.ts"

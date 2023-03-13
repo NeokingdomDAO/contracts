@@ -6,6 +6,8 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   IRedemptionController,
   NeokingdomToken,
   NeokingdomToken__factory,
@@ -25,6 +27,7 @@ describe("NeokingdomTokenSnapshot", () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
+  let daoRoles: DAORoles;
   let neokingdomToken: NeokingdomToken;
   let redemption: FakeContract<IRedemptionController>;
   let voting: VotingMock;
@@ -40,6 +43,14 @@ describe("NeokingdomTokenSnapshot", () => {
       await ethers.getSigners();
 
     redemption = await smock.fake("IRedemptionController");
+
+    const DAORolesFactory = (await ethers.getContractFactory(
+      "DAORoles",
+      deployer
+    )) as DAORoles__factory;
+
+    daoRoles = await DAORolesFactory.deploy();
+    await daoRoles.deployed();
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
@@ -58,7 +69,7 @@ describe("NeokingdomTokenSnapshot", () => {
 
     neokingdomToken = (await upgrades.deployProxy(
       NeokingdomTokenFactory,
-      ["Test", "TEST"],
+      [daoRoles.address, "Test", "TEST"],
       { initializer: "initialize" }
     )) as NeokingdomToken;
     await neokingdomToken.deployed();
@@ -67,13 +78,13 @@ describe("NeokingdomTokenSnapshot", () => {
     await voting.deployed();
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await neokingdomToken.grantRole(RESOLUTION_ROLE, deployer.address);
+    await daoRoles.grantRole(RESOLUTION_ROLE, deployer.address);
 
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
-    await neokingdomToken.grantRole(OPERATOR_ROLE, deployer.address);
+    await daoRoles.grantRole(OPERATOR_ROLE, deployer.address);
 
     const ESCROW_ROLE = await roles.ESCROW_ROLE();
-    await neokingdomToken.grantRole(ESCROW_ROLE, deployer.address);
+    await daoRoles.grantRole(ESCROW_ROLE, deployer.address);
 
     shareholderRegistry = (await upgrades.deployProxy(
       ShareholderRegistryMockFactory,

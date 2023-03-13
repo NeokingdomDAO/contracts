@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { Roles } from "../extensions/Roles.sol";
 import "./IRedemptionController.sol";
+import { Roles } from "../extensions/Roles.sol";
+import "../extensions/DAORoles.sol";
+import "../extensions/HasRole.sol";
 
 // Redeemable tokens are decided on Offer
 // - when user offers, we check how many tokens are eligible for redemption (3 months, 15 months rule)
@@ -21,22 +22,15 @@ import "./IRedemptionController.sol";
 
 // The contract tells how many tokens are redeemable by Contributors
 
-contract RedemptionController is
-    IRedemptionController,
-    Initializable,
-    AccessControlUpgradeable
-{
+contract RedemptionController is IRedemptionController, Initializable, HasRole {
     uint256 public redemptionStart;
     uint256 public redemptionWindow;
 
     uint256 public maxDaysInThePast;
     uint256 public activityWindow;
 
-    bytes32 public constant TOKEN_MANAGER_ROLE =
-        keccak256("TOKEN_MANAGER_ROLE");
-
-    function initialize() public initializer {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    function initialize(DAORoles roles) public initializer {
+        _setRoles(roles);
         redemptionStart = 60 days;
         redemptionWindow = 10 days;
         maxDaysInThePast = 30 days * 15;
@@ -68,7 +62,7 @@ contract RedemptionController is
     function afterMint(
         address to,
         uint256 amount
-    ) external onlyRole(TOKEN_MANAGER_ROLE) {
+    ) external onlyRole(Roles.TOKEN_MANAGER_ROLE) {
         // FIXME: should we check if the user is a contributor? Worst case we end up having
         // minting entries that will never be used.
         _mintBudgets[to].push(MintBudget(block.timestamp, amount));
@@ -92,7 +86,7 @@ contract RedemptionController is
     function afterOffer(
         address account,
         uint256 amount
-    ) external onlyRole(TOKEN_MANAGER_ROLE) {
+    ) external onlyRole(Roles.TOKEN_MANAGER_ROLE) {
         // Find tokens minted ofer the last 3 months of activity, no earlier than 15 months
         if (_mintBudgets[account].length == 0) {
             return;
@@ -219,7 +213,7 @@ contract RedemptionController is
     function afterRedeem(
         address account,
         uint256 amount
-    ) external onlyRole(TOKEN_MANAGER_ROLE) {
+    ) external onlyRole(Roles.TOKEN_MANAGER_ROLE) {
         Redeemable[] storage redeemables = _redeemables[account];
 
         for (uint256 i = 0; i < redeemables.length && amount > 0; i++) {

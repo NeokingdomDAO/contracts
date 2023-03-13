@@ -5,6 +5,8 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   ERC20Mock,
   ERC20Mock__factory,
   ShareholderRegistryMock,
@@ -32,6 +34,7 @@ describe("Voting", () => {
   let resolutionRole: string;
   let shareholderRegistryRole: string;
 
+  let daoRoles: DAORoles;
   let voting: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -53,6 +56,15 @@ describe("Voting", () => {
       noDelegate,
       nonContributor,
     ] = await ethers.getSigners();
+
+    const DAORolesFactory = (await ethers.getContractFactory(
+      "DAORoles",
+      deployer
+    )) as DAORoles__factory;
+
+    daoRoles = await DAORolesFactory.deploy();
+    await daoRoles.deployed();
+
     const VotingFactory = (await ethers.getContractFactory(
       "Voting",
       deployer
@@ -68,7 +80,7 @@ describe("Voting", () => {
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    voting = (await upgrades.deployProxy(VotingFactory, {
+    voting = (await upgrades.deployProxy(VotingFactory, [daoRoles.address], {
       initializer: "initialize",
     })) as Voting;
     await voting.deployed();
@@ -92,9 +104,9 @@ describe("Voting", () => {
     shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
-    await voting.grantRole(operatorRole, deployer.address);
-    await voting.grantRole(resolutionRole, deployer.address);
-    await voting.grantRole(shareholderRegistryRole, deployer.address);
+    await daoRoles.grantRole(operatorRole, deployer.address);
+    await daoRoles.grantRole(resolutionRole, deployer.address);
+    await daoRoles.grantRole(shareholderRegistryRole, deployer.address);
 
     await voting.setToken(token.address);
     await voting.setShareholderRegistry(shareholderRegistry.address);
@@ -157,7 +169,7 @@ describe("Voting", () => {
         voting.connect(noDelegate).setToken(token.address)
       ).revertedWith(errorMessage);
 
-      await voting.grantRole(operatorRole, noDelegate.address);
+      await daoRoles.grantRole(operatorRole, noDelegate.address);
       await voting.connect(noDelegate).setToken(shareholderRegistry.address);
     });
 
@@ -169,7 +181,7 @@ describe("Voting", () => {
           .setShareholderRegistry(shareholderRegistry.address)
       ).revertedWith(errorMessage);
 
-      await voting.grantRole(operatorRole, noDelegate.address);
+      await daoRoles.grantRole(operatorRole, noDelegate.address);
       await voting
         .connect(noDelegate)
         .setShareholderRegistry(shareholderRegistry.address);
@@ -181,7 +193,7 @@ describe("Voting", () => {
         voting.connect(noDelegate).beforeRemoveContributor(delegator1.address)
       ).revertedWith(errorMessage);
 
-      await voting.grantRole(shareholderRegistryRole, noDelegate.address);
+      await daoRoles.grantRole(shareholderRegistryRole, noDelegate.address);
       await voting
         .connect(noDelegate)
         .beforeRemoveContributor(delegator1.address);
@@ -193,12 +205,12 @@ describe("Voting", () => {
         voting.connect(noDelegate).afterAddContributor(delegator1.address)
       ).revertedWith(errorMessage);
 
-      await voting.grantRole(shareholderRegistryRole, noDelegate.address);
+      await daoRoles.grantRole(shareholderRegistryRole, noDelegate.address);
       await voting.connect(noDelegate).afterAddContributor(noDelegate.address);
     });
 
     it("should not fail if an address calling 'beforeRemoveContributor' on an address with delegate is not a contributor", async () => {
-      await voting.grantRole(shareholderRegistryRole, nonContributor.address);
+      await daoRoles.grantRole(shareholderRegistryRole, nonContributor.address);
       await voting.connect(delegator1).delegate(delegated1.address);
       await voting
         .connect(nonContributor)

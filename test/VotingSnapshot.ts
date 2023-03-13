@@ -5,6 +5,8 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   ERC20Mock,
   ERC20Mock__factory,
   ShareholderRegistryMock,
@@ -32,6 +34,7 @@ describe("VotingSnapshot", () => {
   let shareholderRegistryRole: string;
   let resolutionRole: string;
 
+  let daoRoles: DAORoles;
   let votingSnapshot: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -53,6 +56,14 @@ describe("VotingSnapshot", () => {
       noDelegate,
       nonContributor,
     ] = await ethers.getSigners();
+    const DAORolesFactory = (await ethers.getContractFactory(
+      "DAORoles",
+      deployer
+    )) as DAORoles__factory;
+
+    daoRoles = await DAORolesFactory.deploy();
+    await daoRoles.deployed();
+
     const VotingSnapshotFactory = (await ethers.getContractFactory(
       "Voting",
       deployer
@@ -68,17 +79,21 @@ describe("VotingSnapshot", () => {
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    votingSnapshot = (await upgrades.deployProxy(VotingSnapshotFactory, {
-      initializer: "initialize",
-    })) as Voting;
+    votingSnapshot = (await upgrades.deployProxy(
+      VotingSnapshotFactory,
+      [daoRoles.address],
+      {
+        initializer: "initialize",
+      }
+    )) as Voting;
     await votingSnapshot.deployed();
     resolutionRole = await roles.RESOLUTION_ROLE();
     operatorRole = await roles.OPERATOR_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
 
-    await votingSnapshot.grantRole(operatorRole, deployer.address);
-    await votingSnapshot.grantRole(resolutionRole, deployer.address);
-    await votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
+    await daoRoles.grantRole(operatorRole, deployer.address);
+    await daoRoles.grantRole(resolutionRole, deployer.address);
+    await daoRoles.grantRole(shareholderRegistryRole, deployer.address);
 
     token = (await upgrades.deployProxy(
       ERC20MockFactory,
@@ -225,7 +240,7 @@ describe("VotingSnapshot", () => {
 
       it("should return no delegate from a new snapshot if contributor removed", async () => {
         const resolutionRole = await roles.RESOLUTION_ROLE();
-        await votingSnapshot.grantRole(resolutionRole, deployer.address);
+        await daoRoles.grantRole(resolutionRole, deployer.address);
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 
@@ -349,7 +364,7 @@ describe("VotingSnapshot", () => {
 
       it("should return false when contributor is not anymore a contributor at a given snapshot", async () => {
         const resolutionRole = await roles.RESOLUTION_ROLE();
-        await votingSnapshot.grantRole(resolutionRole, deployer.address);
+        await daoRoles.grantRole(resolutionRole, deployer.address);
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 

@@ -2,14 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./VotingSnapshot.sol";
 import { Roles } from "../extensions/Roles.sol";
+import "../extensions/DAORoles.sol";
+import "../extensions/HasRole.sol";
 
-contract Voting is VotingSnapshot, AccessControl, Initializable {
-    function initialize() public initializer {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+contract Voting is VotingSnapshot, Initializable, HasRole {
+    function initialize(DAORoles roles) public initializer {
+        _setRoles(roles);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor

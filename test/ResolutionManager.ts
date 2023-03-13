@@ -6,6 +6,8 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   NeokingdomTokenMock,
   NeokingdomTokenMock__factory,
   ResolutionExecutorMock,
@@ -35,6 +37,7 @@ describe("Resolution", async () => {
   let shareholderStatus: string;
   let investorStatus: string;
 
+  let daoRoles: DAORoles;
   let voting: VotingMock;
   let token: NeokingdomTokenMock;
   let resolution: ResolutionManager;
@@ -52,6 +55,15 @@ describe("Resolution", async () => {
   before(async () => {
     [deployer, managingBoard, user1, user2, delegate1, nonContributor] =
       await ethers.getSigners();
+
+    const DAORolesFactory = (await ethers.getContractFactory(
+      "DAORoles",
+      deployer
+    )) as DAORoles__factory;
+
+    daoRoles = await DAORolesFactory.deploy();
+    await daoRoles.deployed();
+
     const VotingMockFactory = (await ethers.getContractFactory(
       "VotingMock",
       deployer
@@ -105,7 +117,12 @@ describe("Resolution", async () => {
 
     resolution = (await upgrades.deployProxy(
       ResolutionFactory,
-      [shareholderRegistry.address, token.address, voting.address],
+      [
+        daoRoles.address,
+        shareholderRegistry.address,
+        token.address,
+        voting.address,
+      ],
       {
         initializer: "initialize",
       }
@@ -115,8 +132,8 @@ describe("Resolution", async () => {
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
 
-    await resolution.grantRole(OPERATOR_ROLE, deployer.address);
-    await resolution.grantRole(RESOLUTION_ROLE, deployer.address);
+    await daoRoles.grantRole(OPERATOR_ROLE, deployer.address);
+    await daoRoles.grantRole(RESOLUTION_ROLE, deployer.address);
 
     await voting.mock_getDelegateAt(user1.address, user1.address);
 
@@ -341,19 +358,19 @@ describe("Resolution", async () => {
 
   describe("dependency injection", async () => {
     it("allows the OPERATOR_ROLE to setVoting", async () => {
-      await resolution.grantRole(OPERATOR_ROLE, user1.address);
+      await daoRoles.grantRole(OPERATOR_ROLE, user1.address);
       await resolution.connect(user1).setVoting(managingBoard.address);
     });
 
     it("allow the OPERATOR_ROLE to setShareholderRegistry", async () => {
-      await resolution.grantRole(OPERATOR_ROLE, user1.address);
+      await daoRoles.grantRole(OPERATOR_ROLE, user1.address);
       await resolution
         .connect(user1)
         .setShareholderRegistry(managingBoard.address);
     });
 
     it("allow the OPERATOR_ROLE to setNeokingdomToken", async () => {
-      await resolution.grantRole(OPERATOR_ROLE, user1.address);
+      await daoRoles.grantRole(OPERATOR_ROLE, user1.address);
       await resolution.connect(user1).setNeokingdomToken(managingBoard.address);
     });
 
@@ -390,7 +407,7 @@ describe("Resolution", async () => {
 
   describe("resolution type management", async () => {
     it("should allow a resolution to add a resolution type", async () => {
-      await resolution.grantRole(RESOLUTION_ROLE, user1.address);
+      await daoRoles.grantRole(RESOLUTION_ROLE, user1.address);
       await resolution
         .connect(user1)
         .addResolutionType("test", 42, 43, 44, false);

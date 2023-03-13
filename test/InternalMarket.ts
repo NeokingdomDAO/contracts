@@ -7,6 +7,8 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   IERC20,
   IRedemptionController,
   IStdReference,
@@ -29,6 +31,7 @@ describe("InternalMarket", async () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string;
+  let daoRoles: DAORoles;
   let token: FakeContract<IERC20>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
@@ -47,12 +50,20 @@ describe("InternalMarket", async () => {
     token = await smock.fake("IERC20");
     usdc = await smock.fake("IERC20");
 
+    const DAORolesFactory = (await ethers.getContractFactory(
+      "DAORoles",
+      deployer
+    )) as DAORoles__factory;
+    daoRoles = await DAORolesFactory.deploy();
+    await daoRoles.deployed();
+
     const InternalMarketFactory = (await ethers.getContractFactory(
       "InternalMarket",
       deployer
     )) as InternalMarket__factory;
 
     internalMarket = (await upgrades.deployProxy(InternalMarketFactory, [
+      daoRoles.address,
       token.address,
     ])) as InternalMarket;
 
@@ -60,8 +71,7 @@ describe("InternalMarket", async () => {
     stdReference = await smock.fake("IStdReference");
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await internalMarket.grantRole(RESOLUTION_ROLE, deployer.address);
-
+    await daoRoles.grantRole(RESOLUTION_ROLE, deployer.address);
     offerDuration = (await internalMarket.offerDuration()).toNumber();
 
     await internalMarket.setRedemptionController(redemption.address);

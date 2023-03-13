@@ -41,7 +41,8 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
     const Factory = await ethers.getContractFactory(contractName);
     const contract = await Factory.deploy(...args);
     this.storeContract(contractName, contract);
-    return await contract.deployed();
+    await contract.deployed();
+    return contract.deployTransaction;
   }
 
   async deployProxy(contractName: ContractNames, args: any[] = []) {
@@ -50,7 +51,8 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
       initializer: "initialize",
     });
     this.storeContract(contractName, contract);
-    return await contract.deployed();
+    await contract.deployed();
+    return contract.deployTransaction;
   }
 
   private storeContract(contractName: ContractNames, contract: Contract) {

@@ -1,4 +1,5 @@
-import { Contract, ContractTransaction } from "ethers";
+import { TransactionResponse } from "@ethersproject/providers";
+import { Contract, ContractTransaction, Transaction } from "ethers";
 
 import {
   InternalMarket,
@@ -52,13 +53,11 @@ export type Context = {};
 
 export type ContractContext = Context & NeokingdomContracts;
 
-export type Step<T extends Context> = (
-  c: T
-) => Promise<Contract | ContractTransaction>;
+export type Step<T extends Context> = (c: T) => Promise<TransactionResponse>;
 
 export type StepWithExpandable<T extends Context> =
   | ExpandableStep<T>
-  | ((c: T) => Promise<Contract | ContractTransaction>);
+  | ((c: T) => Promise<TransactionResponse>);
 
 export type ExpandableStep<T extends Context> = {
   expandableFunction: (c: T) => ProcessedSequence<T>;

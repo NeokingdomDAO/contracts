@@ -42,20 +42,22 @@ export class NeokingdomDAOHardhat extends NeokingdomDAO {
   }
 
   async deploy(contractName: ContractNames, args: any[] = []) {
-    return await deployContract(
+    const contract = await deployContract(
       this.hre,
       contractName,
       this.config.verifyContracts,
       args
     );
+    return contract.deployTransaction;
   }
 
   async deployProxy(contractName: ContractNames, args: any[] = []) {
-    return await deployContractProxy(
+    const contract = await deployContractProxy(
       this.hre,
       contractName,
       this.config.verifyContracts,
       args
     );
+    return contract.deployTransaction;
   }
 }

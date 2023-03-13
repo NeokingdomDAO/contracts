@@ -1,5 +1,6 @@
+import { TransactionResponse } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Contract, ContractTransaction, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { readFile, writeFile } from "fs/promises";
 
 import {
@@ -88,12 +89,15 @@ export abstract class NeokingdomDAO {
     throw new Error("Missing contracts");
   }
 
-  abstract deploy(contractName: ContractNames, args?: any[]): Promise<Contract>;
+  abstract deploy(
+    contractName: ContractNames,
+    args?: any[]
+  ): Promise<TransactionResponse>;
 
   abstract deployProxy(
     contractName: ContractNames,
     args?: any[]
-  ): Promise<Contract>;
+  ): Promise<TransactionResponse>;
 
   private async _preprocessSequence<T extends Context>(
     c: ContextGenerator<T>,
@@ -122,7 +126,7 @@ export abstract class NeokingdomDAO {
       if (this.config.verbose) {
         console.log(`${i + 1}/${s.length}: ${step.toString()}`);
       }
-      let tx: Contract | ContractTransaction | null = null;
+      let tx: TransactionResponse | null = null;
       try {
         tx = await step(context);
       } catch (e) {
@@ -135,8 +139,9 @@ export abstract class NeokingdomDAO {
       if (this.config.verbose) {
         console.log();
       }
-      // FIXME: wait should always be a valid attribute, but it's not
-      await tx?.wait(1);
+      if (tx) {
+        await tx.wait(1);
+      }
       await this.setNextStep(i + 1);
     }
   }

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
@@ -43,7 +43,7 @@ contract InternalMarket is
     }
 
     function setExchangePair(
-        IERC20 token,
+        ERC20 token,
         IStdReference oracle
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
         _setExchangePair(token, oracle);

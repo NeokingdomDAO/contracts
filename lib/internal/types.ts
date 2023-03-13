@@ -17,8 +17,7 @@ import {
   TokenMock__factory,
   Voting,
   Voting__factory,
-} from "../typechain";
-
+} from "../../typechain";
 import { NeokingdomDAO } from "./core";
 
 export const FACTORIES = {

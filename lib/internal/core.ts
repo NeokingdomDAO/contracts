@@ -136,9 +136,7 @@ export abstract class NeokingdomDAO {
         console.log();
       }
       // FIXME: wait should always be a valid attribute, but it's not
-      if (tx?.wait) {
-        await tx.wait(1);
-      }
+      await tx?.wait(1);
       await this.setNextStep(i + 1);
     }
   }

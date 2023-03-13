@@ -16,11 +16,11 @@ import {
   Voting,
 } from "../typechain";
 
-import { NeokingdomDAOMemory } from "../lib/memory";
 import {
   DEPLOY_SEQUENCE,
+  NeokingdomDAOMemory,
   generateDeployContext,
-} from "../lib/sequences/deploy";
+} from "../lib";
 import {
   getEVMTimestamp,
   mineEVMBlock,
@@ -75,12 +75,12 @@ describe("Integration", async () => {
       free2,
       free3,
     ] = await ethers.getSigners();
-    const n = await NeokingdomDAOMemory.initialize({
+    const neokingdom = await NeokingdomDAOMemory.initialize({
       deployer,
       reserve: reserve.address,
     });
 
-    await n.run(generateDeployContext, DEPLOY_SEQUENCE);
+    await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
 
     ({
       Voting,
@@ -90,7 +90,7 @@ describe("Integration", async () => {
       InternalMarket,
       RedemptionController,
       TokenMock,
-    } = await n.loadContracts());
+    } = await neokingdom.loadContracts());
 
     const managingBoardStatus =
       await ShareholderRegistry.MANAGING_BOARD_STATUS();

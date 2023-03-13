@@ -1,8 +1,12 @@
 import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
-import { Config, NeokingdomDAO } from "./core";
-import { ContractNames, NeokingdomContracts, castContract } from "./types";
+import { Config, NeokingdomDAO } from "../internal/core";
+import {
+  ContractNames,
+  NeokingdomContracts,
+  castContract,
+} from "../internal/types";
 
 export class NeokingdomDAOMemory extends NeokingdomDAO {
   contracts: Partial<NeokingdomContracts>;

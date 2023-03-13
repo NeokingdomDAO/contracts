@@ -7,7 +7,7 @@ import type {
   ContractNames,
   NeokingdomContracts,
   Sequence,
-} from "../types";
+} from "../internal/types";
 import { ROLES } from "../utils";
 
 export type DeployContext = ContractContext & {

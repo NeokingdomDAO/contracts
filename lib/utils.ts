@@ -15,7 +15,11 @@ import {
   Voting,
 } from "../typechain";
 
-import { ContractNames, FACTORIES, NeokingdomContracts } from "./types";
+import {
+  ContractNames,
+  FACTORIES,
+  NeokingdomContracts,
+} from "./internal/types";
 
 type NeokingdomNetworkFile = {
   [key in ContractNames]?: {

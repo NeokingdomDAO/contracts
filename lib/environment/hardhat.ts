@@ -1,13 +1,13 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { Config, NeokingdomDAO } from "./core";
-import { ContractNames } from "./types";
+import { Config, NeokingdomDAO } from "../internal/core";
+import { ContractNames } from "../internal/types";
 import {
   deployContract,
   deployContractProxy,
   getWallet,
   loadContracts,
-} from "./utils";
+} from "../utils";
 
 export class NeokingdomDAOHardhat extends NeokingdomDAO {
   hre: HardhatRuntimeEnvironment;

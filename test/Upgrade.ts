@@ -14,11 +14,11 @@ import {
   ShareholderRegistry,
 } from "../typechain";
 
-import { NeokingdomDAOMemory } from "../lib/memory";
 import {
   DEPLOY_SEQUENCE,
+  NeokingdomDAOMemory,
   generateDeployContext,
-} from "../lib/sequences/deploy";
+} from "../lib";
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 
 chai.use(solidity);
@@ -47,13 +47,13 @@ describe("Upgrade", () => {
   before(async () => {
     [deployer, reserve, managingBoard, user1, user2, user3] =
       await ethers.getSigners();
-    const n = await NeokingdomDAOMemory.initialize({
+    const neokingdom = await NeokingdomDAOMemory.initialize({
       deployer,
       reserve: reserve.address,
     });
-    await n.run(generateDeployContext, DEPLOY_SEQUENCE);
+    await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
     ({ NeokingdomToken, ShareholderRegistry, ResolutionManager } =
-      await n.loadContracts());
+      await neokingdom.loadContracts());
 
     managingBoardStatus = await ShareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await ShareholderRegistry.CONTRIBUTOR_STATUS();

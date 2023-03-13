@@ -32,7 +32,6 @@ export const FACTORIES = {
   Voting: Voting__factory,
 } as const;
 
-export const CONTRACT_NAMES = Object.keys(FACTORIES);
 export type ContractNames = keyof typeof FACTORIES;
 export type ContextGenerator<T extends Context> = (
   n: NeokingdomDAO
@@ -67,26 +66,17 @@ export type Sequence<T extends Context> = StepWithExpandable<T>[];
 
 export type ProcessedSequence<T extends Context> = Step<T>[];
 
-export function castContract(contractName: ContractNames, contract: Contract) {
-  switch (contractName) {
-    case "InternalMarket":
-      return contract as InternalMarket;
-    case "NeokingdomToken":
-      return contract as NeokingdomToken;
-    case "PriceOracle":
-      return contract as PriceOracle;
-    case "RedemptionController":
-      return contract as RedemptionController;
-    case "ResolutionManager":
-      return contract as ResolutionManager;
-    case "ShareholderRegistry":
-      return contract as ShareholderRegistry;
-    case "TokenMock":
-      return contract as TokenMock;
-    case "Voting":
-      return contract as Voting;
-  }
-}
+// FIXME: There Must Be A Better Way™ to do this in TypeScript
+export const CONTRACT_NAMES = [
+  "internalMarket",
+  "neokingdomToken",
+  "priceOracle",
+  "redemptionController",
+  "resolutionManager",
+  "shareholderRegistry",
+  "tokenMock",
+  "voting",
+];
 
 export function isNeokingdomContracts(
   n: Partial<NeokingdomContracts>

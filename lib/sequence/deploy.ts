@@ -54,8 +54,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.voting.address,
     ]),
 
-  (c) => c.priceOracle.relay(["eur", "usd"], [1, 1], [1, 1]),
-  (c) => c.priceOracle.relay(["usdc", "usd"], [1, 1], [1, 1]),
+  (c) => c.priceOracle.relay(["EUR", "USD"], [1, 1], [1, 1]),
+  (c) => c.priceOracle.relay(["USDC", "USD"], [1, 1], [1, 1]),
 
   // Set ACLs
   /////////////

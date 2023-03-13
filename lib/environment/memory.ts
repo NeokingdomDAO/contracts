@@ -1,12 +1,18 @@
 import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
-import { Config, NeokingdomDAO } from "../internal/core";
 import {
-  ContractNames,
-  NeokingdomContracts,
-  castContract,
-} from "../internal/types";
+  InternalMarket,
+  NeokingdomToken,
+  PriceOracle,
+  RedemptionController,
+  ResolutionManager,
+  ShareholderRegistry,
+  TokenMock,
+  Voting,
+} from "../../typechain";
+import { Config, NeokingdomDAO } from "../internal/core";
+import { ContractNames, NeokingdomContracts } from "../internal/types";
 
 export class NeokingdomDAOMemory extends NeokingdomDAO {
   contracts: Partial<NeokingdomContracts>;
@@ -56,7 +62,31 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
   }
 
   private storeContract(contractName: ContractNames, contract: Contract) {
-    // FIXME: I cannot typescript, remove any
-    this.contracts[contractName] = castContract(contractName, contract) as any;
+    // FIXME: I cannot typescript, I guess this can be done much better.
+    switch (contractName) {
+      case "InternalMarket":
+        this.contracts.internalMarket = contract as InternalMarket;
+        break;
+      case "NeokingdomToken":
+        this.contracts.neokingdomToken = contract as NeokingdomToken;
+        break;
+      case "PriceOracle":
+        this.contracts.priceOracle = contract as PriceOracle;
+        break;
+      case "RedemptionController":
+        this.contracts.redemptionController = contract as RedemptionController;
+        break;
+      case "ResolutionManager":
+        this.contracts.resolutionManager = contract as ResolutionManager;
+        break;
+      case "ShareholderRegistry":
+        this.contracts.shareholderRegistry = contract as ShareholderRegistry;
+        break;
+      case "TokenMock":
+        this.contracts.tokenMock = contract as TokenMock;
+        break;
+      case "Voting":
+        this.contracts.voting = contract as Voting;
+    }
   }
 }

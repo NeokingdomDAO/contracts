@@ -24,10 +24,10 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
 
     mapping(address => bytes32) internal _statuses;
 
-    function initialize(
+    function _initialize(
         string memory name,
         string memory symbol
-    ) public virtual {
+    ) internal virtual {
         __ERC20_init(name, symbol);
         SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
         INVESTOR_STATUS = keccak256("INVESTOR_STATUS");

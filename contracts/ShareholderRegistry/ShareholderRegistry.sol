@@ -23,7 +23,7 @@ contract ShareholderRegistry is
         string memory name,
         string memory symbol
     ) public initializer {
-        super.initialize(name, symbol);
+        _initialize(name, symbol);
         _setRoles(roles);
     }
 

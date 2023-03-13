@@ -57,6 +57,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     ]),
   (c) =>
     c.deployProxy("ResolutionManager", [
+      c.DAORoles.address,
       c.ShareholderRegistry.address,
       c.NeokingdomToken.address,
       c.Voting.address,

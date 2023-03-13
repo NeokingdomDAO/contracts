@@ -44,6 +44,8 @@ contract PriceOracle is IStdReference, AccessControl {
     ) public view override returns (ReferenceData memory) {
         (uint256 baseRate, uint256 baseLastUpdate) = _getRefData(_base);
         (uint256 quoteRate, uint256 quoteLastUpdate) = _getRefData(_quote);
+
+        assert(baseRate != quoteRate);
         return
             ReferenceData({
                 rate: (baseRate * 1e18) / quoteRate,

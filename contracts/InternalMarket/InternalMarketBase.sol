@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
 
@@ -28,7 +28,7 @@ contract InternalMarketBase {
     event OfferMatched(uint128 id, address from, address to, uint256 amount);
 
     IERC20 public daoToken;
-    IERC20 public exchangeToken;
+    ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
     IStdReference public priceOracle;
@@ -61,7 +61,7 @@ contract InternalMarketBase {
     }
 
     function _setExchangePair(
-        IERC20 token,
+        ERC20 token,
         IStdReference oracle
     ) internal virtual {
         exchangeToken = token;
@@ -83,16 +83,18 @@ contract InternalMarketBase {
     }
 
     function _makeOffer(address from, uint256 amount) internal virtual {
-        daoToken.transferFrom(from, address(this), amount);
+        _vaultContributors[from] += amount;
 
         uint256 expiredAt = block.timestamp + offerDuration;
         uint128 id = _enqueue(_offers[from], Offer(expiredAt, amount));
 
-        _vaultContributors[from] += amount;
-
-        redemptionController.afterOffer(from, amount);
-
         emit OfferCreated(id, from, amount, expiredAt);
+
+        require(
+            daoToken.transferFrom(from, address(this), amount),
+            "InternalMarketBase: transfer failed"
+        );
+        redemptionController.afterOffer(from, amount);
     }
 
     function _beforeWithdraw(address from, uint256 amount) internal virtual {
@@ -160,7 +162,10 @@ contract InternalMarketBase {
         uint256 amount
     ) internal virtual {
         _beforeWithdraw(from, amount);
-        daoToken.transfer(to, amount);
+        require(
+            daoToken.transfer(to, amount),
+            "InternalMarketBase: transfer failed"
+        );
     }
 
     function _matchOffer(
@@ -169,28 +174,50 @@ contract InternalMarketBase {
         uint256 amount
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
-        daoToken.transfer(to, amount);
-        exchangeToken.transferFrom(to, from, _convertToUSDC(amount));
+        require(
+            daoToken.transfer(to, amount),
+            "InternalMarketBase: transfer failed"
+        );
+        require(
+            exchangeToken.transferFrom(to, from, _convertToUSDC(amount)),
+            "InternalMarketBase: transfer failed"
+        );
     }
 
     function _redeem(address from, uint256 amount) internal virtual {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
-            daoToken.transferFrom(from, reserve, difference);
+            // daoToken is an address set by the operators of the DAO, hence trustworthy
+            // slither-disable-start reentrancy-no-eth
+            require(
+                daoToken.transferFrom(from, reserve, difference),
+                "InternalMarketBase: transfer failed"
+            );
             _withdraw(from, reserve, withdrawableBalance);
+            // slither-disable-end reentrancy-no-eth
         } else {
             _withdraw(from, reserve, amount);
         }
 
-        exchangeToken.transferFrom(reserve, from, _convertToUSDC(amount));
+        // The "from" value is always the msg.sender according to the public implementation (see InternalMarket.sol)
+        // slither-disable-next-line arbitrary-send-erc20
+        require(
+            exchangeToken.transferFrom(reserve, from, _convertToUSDC(amount)),
+            "InternalMarketBase: transfer failed"
+        );
         redemptionController.afterRedeem(from, amount);
     }
 
     function _convertToUSDC(uint256 eurAmount) internal view returns (uint256) {
-        uint256 eurUsd = priceOracle.getReferenceData("eur", "usd").rate;
-        uint256 usdUsdc = priceOracle.getReferenceData("usdc", "usd").rate;
-        return (eurAmount * eurUsd) / usdUsdc;
+        uint256 eurUsd = priceOracle.getReferenceData("EUR", "USD").rate;
+        uint256 usdUsdc = priceOracle.getReferenceData("USDC", "USD").rate;
+
+        // 18 is the default amount of decimals for ERC20 tokens, including neokingdom ones
+        return
+            (eurAmount * eurUsd) /
+            usdUsdc /
+            (10 ** (18 - exchangeToken.decimals()));
     }
 
     function _calculateOffersOf(
@@ -199,7 +226,7 @@ contract InternalMarketBase {
         Offers storage offers = _offers[account];
 
         uint256 vault = _vaultContributors[account];
-        uint256 unlocked;
+        uint256 unlocked = 0;
 
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];

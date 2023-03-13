@@ -1,14 +1,12 @@
 import { task } from "hardhat/config";
 
-import { NeokingdomDAOHardhat } from "../lib/hardhat";
 import {
   DEPLOY_SEQUENCE,
-  generateDeployContext,
-} from "../lib/sequences/deploy";
-import {
+  NeokingdomDAOHardhat,
   STAGING_SETUP_SEQUENCE,
+  generateDeployContext,
   generateSetupContext,
-} from "../lib/sequences/setup";
+} from "../lib";
 
 task("dev:deploy", "Deploy DAO")
   .addFlag("verify", "Verify contracts")

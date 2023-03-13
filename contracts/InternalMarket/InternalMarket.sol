@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
@@ -41,22 +41,22 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     }
 
     function setExchangePair(
-        IERC20 token,
+        ERC20 token,
         IStdReference oracle
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
         _setExchangePair(token, oracle);
     }
 
     function setReserve(
-        address reserve
+        address reserve_
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
-        _setReserve(reserve);
+        _setReserve(reserve_);
     }
 
     function setRedemptionController(
-        IRedemptionController redemptionController
+        IRedemptionController redemptionController_
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
-        _setRedemptionController(redemptionController);
+        _setRedemptionController(redemptionController_);
     }
 
     function setOfferDuration(

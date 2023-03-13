@@ -9,3 +9,4 @@ deployments
 node_modules/
 pnpm-lock.yaml
 typechain/
+dist/

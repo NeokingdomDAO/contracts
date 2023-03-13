@@ -15,7 +15,11 @@ import {
   Voting,
 } from "../typechain";
 
-import { ContractNames, FACTORIES, NeokingdomContracts } from "./types";
+import {
+  ContractNames,
+  FACTORIES,
+  NeokingdomContracts,
+} from "./internal/types";
 
 type NeokingdomNetworkFile = {
   [key in ContractNames]?: {
@@ -188,20 +192,20 @@ export async function loadContracts(
   }
 
   return {
-    InternalMarket: await _loadContract<InternalMarket>("InternalMarket"),
-    NeokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
-    PriceOracle: await _loadContract<PriceOracle>("PriceOracle"),
-    RedemptionController: await _loadContract<RedemptionController>(
+    internalMarket: await _loadContract<InternalMarket>("InternalMarket"),
+    neokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
+    priceOracle: await _loadContract<PriceOracle>("PriceOracle"),
+    redemptionController: await _loadContract<RedemptionController>(
       "RedemptionController"
     ),
-    ResolutionManager: await _loadContract<ResolutionManager>(
+    resolutionManager: await _loadContract<ResolutionManager>(
       "ResolutionManager"
     ),
-    ShareholderRegistry: await _loadContract<ShareholderRegistry>(
+    shareholderRegistry: await _loadContract<ShareholderRegistry>(
       "ShareholderRegistry"
     ),
-    TokenMock: await _loadContract<TokenMock>("TokenMock"),
-    Voting: await _loadContract<Voting>("Voting"),
+    tokenMock: await _loadContract<TokenMock>("TokenMock"),
+    voting: await _loadContract<Voting>("Voting"),
   };
 }
 
@@ -263,30 +267,3 @@ export async function getWallet(hre: HardhatRuntimeEnvironment) {
   // Create the signer for the mnemonic, connected to the provider with hardcoded fee data
   return new ethers.Wallet(privateKey).connect(provider);
 }
-
-/* FIXME we might need this function, leave it here for now
-export async function multicall3(
-  c: ContractContext,
-  data: Promise<PopulatedTransaction>[]
-) {
-  const cd = await Promise.all(
-    data.map(async (d) => {
-      const populatedTx = await d;
-      if (!populatedTx.data) {
-        throw new Error("Calldata empty");
-      }
-      if (!populatedTx.to) {
-        throw new Error("To empty");
-      }
-      return {
-        target: populatedTx.to,
-        allowFailure: false,
-        callData: populatedTx.data,
-      };
-    })
-  );
-  console.log(cd);
-
-  return c.Multicall3.aggregate3(cd);
-}
-*/

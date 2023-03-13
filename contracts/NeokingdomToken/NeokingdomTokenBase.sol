@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../RedemptionController/IRedemptionController.sol";
@@ -91,8 +91,8 @@ contract NeokingdomTokenBase is ERC20Upgradeable {
     // TODO: ask Marko whether vesting tokens can be given only to contributors
     function _mintVesting(address to, uint256 amount) internal virtual {
         _vestingBalance[to] += amount;
-        _mint(to, amount);
         emit VestingSet(to, _vestingBalance[to]);
+        _mint(to, amount);
     }
 
     function _setVesting(address account, uint256 amount) internal virtual {
@@ -100,8 +100,8 @@ contract NeokingdomTokenBase is ERC20Upgradeable {
             amount < _vestingBalance[account],
             "NeokingdomToken: vesting can only be decreased"
         );
-        _vestingBalance[account] = amount;
         emit VestingSet(account, amount);
+        _vestingBalance[account] = amount;
     }
 
     // Tokens that are still in the vesting phase

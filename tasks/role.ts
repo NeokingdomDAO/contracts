@@ -18,7 +18,11 @@ task(
         contract,
         role,
         account,
-      }: { contract: ContractName; role: keyof typeof ROLES; account: string },
+      }: {
+        contract: ContractName;
+        role: keyof typeof ROLES;
+        account: string;
+      },
       hre
     ) => {
       const c = await loadContractByName(hre, contract);

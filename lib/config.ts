@@ -1,22 +1,16 @@
-import { Contract } from "ethers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
-import { readFile, writeFile } from "fs/promises";
+import { readFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
-  NeokingdomToken,
   NeokingdomToken__factory,
-  PriceOracle,
   PriceOracle__factory,
-  ResolutionManager,
   ResolutionManager__factory,
-  ShareholderRegistry,
   ShareholderRegistry__factory,
-  Voting,
   Voting__factory,
 } from "../typechain";
 
-import { ContractNames } from "./types";
+import { ContractNames } from "./internal/types";
 
 export const DEFAULT_CONFIG_PATH = "./deployments/networks.json";
 export const DEFAULT_LOCALHOST_CONFIG_PATH =

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
@@ -163,9 +163,14 @@ contract ResolutionManager is Initializable, HasRole {
     }
 
     function _snapshotAll() internal virtual returns (uint256) {
-        _shareholderRegistry.snapshot();
-        _neokingdomToken.snapshot();
-        return _voting.snapshot();
+        uint256 snapshotId = _shareholderRegistry.snapshot();
+        require(
+            _neokingdomToken.snapshot() == snapshotId &&
+                _voting.snapshot() == snapshotId,
+            "ResolutionManager: snapshot ids are inconsistent"
+        );
+
+        return snapshotId;
     }
 
     function createResolution(
@@ -194,6 +199,8 @@ contract ResolutionManager is Initializable, HasRole {
             "Resolution: length mismatch"
         );
         uint256 resolutionId = _currentResolutionId++;
+        emit ResolutionCreated(_msgSender(), resolutionId);
+
         Resolution storage resolution = resolutions[resolutionId];
 
         resolution.dataURI = dataURI;
@@ -202,13 +209,13 @@ contract ResolutionManager is Initializable, HasRole {
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
 
-        emit ResolutionCreated(_msgSender(), resolutionId);
         return resolutionId;
     }
 
     function approveResolution(
         uint256 resolutionId
     ) public virtual onlyPending(resolutionId) exists(resolutionId) {
+        emit ResolutionApproved(_msgSender(), resolutionId);
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -219,13 +226,15 @@ contract ResolutionManager is Initializable, HasRole {
 
         Resolution storage resolution = resolutions[resolutionId];
         resolution.approveTimestamp = block.timestamp;
+
         resolution.snapshotId = _snapshotAll();
-        emit ResolutionApproved(_msgSender(), resolutionId);
     }
 
     function rejectResolution(
         uint256 resolutionId
     ) public virtual onlyPending(resolutionId) exists(resolutionId) {
+        emit ResolutionRejected(_msgSender(), resolutionId);
+
         require(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.MANAGING_BOARD_STATUS(),
@@ -237,7 +246,6 @@ contract ResolutionManager is Initializable, HasRole {
         Resolution storage resolution = resolutions[resolutionId];
 
         resolution.rejectionTimestamp = block.timestamp;
-        emit ResolutionRejected(_msgSender(), resolutionId);
     }
 
     function updateResolution(
@@ -248,6 +256,8 @@ contract ResolutionManager is Initializable, HasRole {
         address[] memory executionTo,
         bytes[] memory executionData
     ) public virtual onlyPending(resolutionId) {
+        emit ResolutionUpdated(_msgSender(), resolutionId);
+
         Resolution storage resolution = resolutions[resolutionId];
         require(
             executionTo.length == executionData.length,
@@ -275,11 +285,11 @@ contract ResolutionManager is Initializable, HasRole {
         resolution.isNegative = isNegative;
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
-
-        emit ResolutionUpdated(_msgSender(), resolutionId);
     }
 
     function executeResolution(uint256 resolutionId) public virtual {
+        emit ResolutionExecuted(_msgSender(), resolutionId);
+
         Resolution storage resolution = resolutions[resolutionId];
         require(
             resolution.executionTo.length > 0,
@@ -303,11 +313,13 @@ contract ResolutionManager is Initializable, HasRole {
         // Set timestamp before execution as a re-entrancy guard.
         resolution.executionTimestamp = block.timestamp;
 
-        for (uint256 i; i < to.length; i++) {
+        // slither-disable-start calls-loop
+        for (uint256 i = 0; i < to.length; i++) {
+            // slither-disable-next-line low-level-calls
             (bool success, ) = to[i].call(data[i]);
             require(success, "Resolution: execution failed");
         }
-        emit ResolutionExecuted(_msgSender(), resolutionId);
+        // slither-disable-end calls-loop
     }
 
     function getExecutionDetails(

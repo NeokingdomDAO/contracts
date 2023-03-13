@@ -192,20 +192,20 @@ export async function loadContracts(
   }
 
   return {
-    InternalMarket: await _loadContract<InternalMarket>("InternalMarket"),
-    NeokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
-    PriceOracle: await _loadContract<PriceOracle>("PriceOracle"),
-    RedemptionController: await _loadContract<RedemptionController>(
+    internalMarket: await _loadContract<InternalMarket>("InternalMarket"),
+    neokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
+    priceOracle: await _loadContract<PriceOracle>("PriceOracle"),
+    redemptionController: await _loadContract<RedemptionController>(
       "RedemptionController"
     ),
-    ResolutionManager: await _loadContract<ResolutionManager>(
+    resolutionManager: await _loadContract<ResolutionManager>(
       "ResolutionManager"
     ),
-    ShareholderRegistry: await _loadContract<ShareholderRegistry>(
+    shareholderRegistry: await _loadContract<ShareholderRegistry>(
       "ShareholderRegistry"
     ),
-    TokenMock: await _loadContract<TokenMock>("TokenMock"),
-    Voting: await _loadContract<Voting>("Voting"),
+    tokenMock: await _loadContract<TokenMock>("TokenMock"),
+    voting: await _loadContract<Voting>("Voting"),
   };
 }
 

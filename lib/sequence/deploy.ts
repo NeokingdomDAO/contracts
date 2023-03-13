@@ -1,3 +1,4 @@
+import { TransactionResponse } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract, Wallet } from "ethers";
 
@@ -13,8 +14,14 @@ import { ROLES } from "../utils";
 export type DeployContext = ContractContext & {
   deployer: Wallet | SignerWithAddress;
   reserve: string;
-  deploy: (contractName: ContractNames, args?: any[]) => Promise<Contract>;
-  deployProxy: (contractName: ContractNames, args?: any[]) => Promise<Contract>;
+  deploy: (
+    contractName: ContractNames,
+    args?: any[]
+  ) => Promise<TransactionResponse>;
+  deployProxy: (
+    contractName: ContractNames,
+    args?: any[]
+  ) => Promise<TransactionResponse>;
 };
 
 export const generateDeployContext: ContextGenerator<DeployContext> =
@@ -38,17 +45,17 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) => c.deployProxy("Voting"),
   (c) => c.deployProxy("NeokingdomToken", ["NeokingdomToken", "NEOK"]),
   (c) => c.deployProxy("RedemptionController"),
-  (c) => c.deployProxy("InternalMarket", [c.NeokingdomToken.address]),
+  (c) => c.deployProxy("InternalMarket", [c.neokingdomToken.address]),
   (c) => c.deployProxy("ShareholderRegistry", ["NeokingdomShare", "NEOS"]),
   (c) =>
     c.deployProxy("ResolutionManager", [
-      c.ShareholderRegistry.address,
-      c.NeokingdomToken.address,
-      c.Voting.address,
+      c.shareholderRegistry.address,
+      c.neokingdomToken.address,
+      c.voting.address,
     ]),
 
-  (c) => c.PriceOracle.relay(["eur", "usd"], [1, 1], [1, 1]),
-  (c) => c.PriceOracle.relay(["usdc", "usd"], [1, 1], [1, 1]),
+  (c) => c.priceOracle.relay(["eur", "usd"], [1, 1], [1, 1]),
+  (c) => c.priceOracle.relay(["usdc", "usd"], [1, 1], [1, 1]),
 
   // Set ACLs
   /////////////
@@ -56,92 +63,92 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // FIXME: not sure deployer should be here
 
   // ResolutionManager
-  (c) => c.ResolutionManager.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.resolutionManager.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
   (c) =>
-    c.ResolutionManager.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+    c.resolutionManager.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
   (c) =>
-    c.ResolutionManager.grantRole(
+    c.resolutionManager.grantRole(
       ROLES.RESOLUTION_ROLE,
-      c.ResolutionManager.address
+      c.resolutionManager.address
     ),
 
   // ShareholderRegistry
   (c) =>
-    c.ShareholderRegistry.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+    c.shareholderRegistry.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
   (c) =>
-    c.ShareholderRegistry.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+    c.shareholderRegistry.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
   (c) =>
-    c.ShareholderRegistry.grantRole(
+    c.shareholderRegistry.grantRole(
       ROLES.RESOLUTION_ROLE,
-      c.ResolutionManager.address
+      c.resolutionManager.address
     ),
 
   // Voting
   (c) =>
-    c.Voting.grantRole(
+    c.voting.grantRole(
       ROLES.SHAREHOLDER_REGISTRY_ROLE,
-      c.ShareholderRegistry.address
+      c.shareholderRegistry.address
     ),
-  (c) => c.Voting.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.Voting.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
-  (c) => c.Voting.grantRole(ROLES.RESOLUTION_ROLE, c.ResolutionManager.address),
+  (c) => c.voting.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.voting.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) => c.voting.grantRole(ROLES.RESOLUTION_ROLE, c.resolutionManager.address),
 
   // Token
-  (c) => c.NeokingdomToken.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
-  (c) => c.NeokingdomToken.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) => c.neokingdomToken.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+  (c) => c.neokingdomToken.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
   (c) =>
-    c.NeokingdomToken.grantRole(
+    c.neokingdomToken.grantRole(
       ROLES.RESOLUTION_ROLE,
-      c.ResolutionManager.address
+      c.resolutionManager.address
     ),
 
   // Market
-  (c) => c.InternalMarket.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+  (c) => c.internalMarket.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
   (c) =>
-    c.InternalMarket.grantRole(
+    c.internalMarket.grantRole(
       ROLES.RESOLUTION_ROLE,
-      c.ResolutionManager.address
+      c.resolutionManager.address
     ),
 
   // RedemptionController
   (c) =>
-    c.RedemptionController.grantRole(
+    c.redemptionController.grantRole(
       ROLES.TOKEN_MANAGER_ROLE,
-      c.NeokingdomToken.address
+      c.neokingdomToken.address
     ),
   (c) =>
-    c.RedemptionController.grantRole(
+    c.redemptionController.grantRole(
       ROLES.TOKEN_MANAGER_ROLE,
-      c.InternalMarket.address
+      c.internalMarket.address
     ),
 
   // Set interdependencies
   //////////////////////////
 
   // Market
-  (c) => c.ShareholderRegistry.setVoting(c.Voting.address),
+  (c) => c.shareholderRegistry.setVoting(c.voting.address),
 
   // Voting
-  (c) => c.Voting.setShareholderRegistry(c.ShareholderRegistry.address),
-  (c) => c.Voting.setToken(c.NeokingdomToken.address),
+  (c) => c.voting.setShareholderRegistry(c.shareholderRegistry.address),
+  (c) => c.voting.setToken(c.neokingdomToken.address),
 
   // Token
-  (c) => c.NeokingdomToken.setVoting(c.Voting.address),
-  (c) => c.NeokingdomToken.setInternalMarket(c.InternalMarket.address),
+  (c) => c.neokingdomToken.setVoting(c.voting.address),
+  (c) => c.neokingdomToken.setInternalMarket(c.internalMarket.address),
   (c) =>
-    c.NeokingdomToken.setRedemptionController(c.RedemptionController.address),
+    c.neokingdomToken.setRedemptionController(c.redemptionController.address),
   (c) =>
-    c.NeokingdomToken.setShareholderRegistry(c.ShareholderRegistry.address),
+    c.neokingdomToken.setShareholderRegistry(c.shareholderRegistry.address),
 
   // Registry
-  (c) => c.NeokingdomToken.setVoting(c.Voting.address),
+  (c) => c.neokingdomToken.setVoting(c.voting.address),
 
   (c) =>
-    c.InternalMarket.setRedemptionController(c.RedemptionController.address),
+    c.internalMarket.setRedemptionController(c.redemptionController.address),
   (c) =>
-    c.InternalMarket.setExchangePair(
-      c.TokenMock.address,
-      c.PriceOracle.address
+    c.internalMarket.setExchangePair(
+      c.tokenMock.address,
+      c.priceOracle.address
     ),
-  (c) => c.InternalMarket.setReserve(c.reserve),
+  (c) => c.internalMarket.setReserve(c.reserve),
 ];

@@ -39,14 +39,14 @@ export type ContextGenerator<T extends Context> = (
 ) => Promise<T>;
 
 export type NeokingdomContracts = {
-  InternalMarket: InternalMarket;
-  NeokingdomToken: NeokingdomToken;
-  PriceOracle: PriceOracle;
-  RedemptionController: RedemptionController;
-  ResolutionManager: ResolutionManager;
-  ShareholderRegistry: ShareholderRegistry;
-  TokenMock: TokenMock;
-  Voting: Voting;
+  internalMarket: InternalMarket;
+  neokingdomToken: NeokingdomToken;
+  priceOracle: PriceOracle;
+  redemptionController: RedemptionController;
+  resolutionManager: ResolutionManager;
+  shareholderRegistry: ShareholderRegistry;
+  tokenMock: TokenMock;
+  voting: Voting;
 };
 
 export type Context = {};

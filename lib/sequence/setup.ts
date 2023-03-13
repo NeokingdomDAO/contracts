@@ -28,7 +28,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(
       (contributor) => (c) =>
-        c.ShareholderRegistry.mint(contributor.address, parseEther("1"))
+        c.shareholderRegistry.mint(contributor.address, parseEther("1"))
     )
   ),
 
@@ -36,14 +36,14 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map((contributor) => async (c) => {
       if (contributor.status === "contributor") {
-        return c.ShareholderRegistry.setStatus(
-          await c.ShareholderRegistry.CONTRIBUTOR_STATUS(),
+        return c.shareholderRegistry.setStatus(
+          await c.shareholderRegistry.CONTRIBUTOR_STATUS(),
           contributor.address
         );
       }
       if (contributor.status === "board") {
-        return c.ShareholderRegistry.setStatus(
-          await c.ShareholderRegistry.MANAGING_BOARD_STATUS(),
+        return c.shareholderRegistry.setStatus(
+          await c.shareholderRegistry.MANAGING_BOARD_STATUS(),
           contributor.address
         );
       }
@@ -55,7 +55,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(
       (contributor) => (c) =>
-        c.NeokingdomToken.mint(
+        c.neokingdomToken.mint(
           contributor.address,
           parseEther(contributor.tokens.toString())
         )
@@ -64,7 +64,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
 
   // Add testing resolution type
   (c) =>
-    c.ResolutionManager.addResolutionType(
+    c.resolutionManager.addResolutionType(
       "30sNotice3mVoting",
       66,
       30,

@@ -267,30 +267,3 @@ export async function getWallet(hre: HardhatRuntimeEnvironment) {
   // Create the signer for the mnemonic, connected to the provider with hardcoded fee data
   return new ethers.Wallet(privateKey).connect(provider);
 }
-
-/* FIXME we might need this function, leave it here for now
-export async function multicall3(
-  c: ContractContext,
-  data: Promise<PopulatedTransaction>[]
-) {
-  const cd = await Promise.all(
-    data.map(async (d) => {
-      const populatedTx = await d;
-      if (!populatedTx.data) {
-        throw new Error("Calldata empty");
-      }
-      if (!populatedTx.to) {
-        throw new Error("To empty");
-      }
-      return {
-        target: populatedTx.to,
-        allowFailure: false,
-        callData: populatedTx.data,
-      };
-    })
-  );
-  console.log(cd);
-
-  return c.Multicall3.aggregate3(cd);
-}
-*/

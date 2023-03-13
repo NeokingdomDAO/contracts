@@ -73,6 +73,11 @@ export abstract class NeokingdomDAO {
     await this._executeSequence(c, sequence, nextStep, force);
   }
 
+  // There are situations where you don't have all contracts available, and a
+  // call to `loadContracts` would fail. One example is when deploying a new
+  // DAO, if the DAO doesn't exist `loadContracts` will fail because there are
+  // no contracts deployed. That's why this function exists, to support use
+  // cases like deploying a new DAO.
   abstract loadContractsPartial(): Promise<Partial<NeokingdomContracts>>;
 
   async loadContracts(): Promise<NeokingdomContracts> {

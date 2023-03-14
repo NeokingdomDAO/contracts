@@ -76,7 +76,6 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Set ACLs
   /////////////
 
-  // FIXME: not sure deployer should be here
   (c) => c.daoRoles.grantRole(ROLES.OPERATOR_ROLE, c.deployer.address),
   (c) => c.daoRoles.grantRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
 

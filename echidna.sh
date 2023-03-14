@@ -1,0 +1,1 @@
+echidna-test contracts/PriceOracle/PriceOracle.sol --test-mode assertion --contract PriceOracle --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml

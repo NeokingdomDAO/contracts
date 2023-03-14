@@ -1,4 +1,4 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -30,7 +30,7 @@ describe("NeokingdomToken", () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string, ESCROW_ROLE: string;
-  let daoRoles: DAORoles;
+  let daoRoles: MockContract<DAORoles>;
   let neokingdomToken: NeokingdomToken;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -47,13 +47,8 @@ describe("NeokingdomToken", () => {
 
     redemption = await smock.fake("IRedemptionController");
 
-    const DAORolesFactory = (await ethers.getContractFactory(
-      "DAORoles",
-      deployer
-    )) as DAORoles__factory;
-
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
     daoRoles = await DAORolesFactory.deploy();
-    await daoRoles.deployed();
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
@@ -81,13 +76,8 @@ describe("NeokingdomToken", () => {
     await voting.deployed();
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await daoRoles.grantRole(RESOLUTION_ROLE, deployer.address);
-
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
-    await daoRoles.grantRole(OPERATOR_ROLE, deployer.address);
-
     ESCROW_ROLE = await roles.ESCROW_ROLE();
-    await daoRoles.grantRole(ESCROW_ROLE, deployer.address);
 
     shareholderRegistry = (await upgrades.deployProxy(
       ShareholderRegistryMockFactory,
@@ -97,6 +87,9 @@ describe("NeokingdomToken", () => {
     )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
 
+    daoRoles.hasRole
+      .whenCalledWith(OPERATOR_ROLE, deployer.address)
+      .returns(true);
     await neokingdomToken.setVoting(voting.address);
     await neokingdomToken.setShareholderRegistry(shareholderRegistry.address);
     await neokingdomToken.setRedemptionController(redemption.address);
@@ -129,11 +122,18 @@ describe("NeokingdomToken", () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
-    redemption.afterMint.reset();
+    daoRoles.hasRole
+      .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+      .returns(true);
+    daoRoles.hasRole
+      .whenCalledWith(ESCROW_ROLE, deployer.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    redemption.afterMint.reset();
+    daoRoles.hasRole.reset();
   });
 
   describe("token transfer logic", async () => {
@@ -178,6 +178,9 @@ describe("NeokingdomToken", () => {
     it("should transfer when called by the market contract", async () => {
       const market = account;
 
+      daoRoles.hasRole
+        .whenCalledWith(OPERATOR_ROLE, deployer.address)
+        .returns(true);
       neokingdomToken.setInternalMarket(market.address);
       neokingdomToken.mint(contributor.address, 10);
 
@@ -261,12 +264,20 @@ describe("NeokingdomToken", () => {
     });
 
     it("should allow to decrease the vesting balance", async () => {
+      daoRoles.hasRole
+        .whenCalledWith(OPERATOR_ROLE, deployer.address)
+        .returns(true);
+
       await neokingdomToken.mintVesting(account.address, 100);
       await neokingdomToken.setVesting(account.address, 90);
       expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(90);
     });
 
     it("should not allow to increase the vesting balance", async () => {
+      daoRoles.hasRole
+        .whenCalledWith(OPERATOR_ROLE, deployer.address)
+        .returns(true);
+
       await neokingdomToken.mintVesting(account.address, 100);
       await expect(
         neokingdomToken.setVesting(account.address, 110)

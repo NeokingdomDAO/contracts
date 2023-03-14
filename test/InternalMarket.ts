@@ -1,4 +1,4 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -8,6 +8,8 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   ERC20,
   IERC20,
   IRedemptionController,
@@ -31,6 +33,7 @@ describe("InternalMarket", async () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string;
+  let daoRoles: MockContract<DAORoles>;
   let token: FakeContract<IERC20>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
@@ -50,12 +53,16 @@ describe("InternalMarket", async () => {
     usdc = await smock.fake("ERC20");
     usdc.decimals.returns(6);
 
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
+    daoRoles = await DAORolesFactory.deploy();
+
     const InternalMarketFactory = (await ethers.getContractFactory(
       "InternalMarket",
       deployer
     )) as InternalMarket__factory;
 
     internalMarket = (await upgrades.deployProxy(InternalMarketFactory, [
+      daoRoles.address,
       token.address,
     ])) as InternalMarket;
 
@@ -63,13 +70,15 @@ describe("InternalMarket", async () => {
     stdReference = await smock.fake("IStdReference");
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await internalMarket.grantRole(RESOLUTION_ROLE, deployer.address);
 
-    offerDuration = (await internalMarket.offerDuration()).toNumber();
-
+    daoRoles.hasRole
+      .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+      .returns(true);
     await internalMarket.setRedemptionController(redemption.address);
     await internalMarket.setExchangePair(usdc.address, stdReference.address);
     await internalMarket.setReserve(reserve.address);
+
+    offerDuration = (await internalMarket.offerDuration()).toNumber();
   });
 
   beforeEach(async () => {
@@ -93,6 +102,7 @@ describe("InternalMarket", async () => {
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    daoRoles.hasRole.reset();
   });
 
   function parseUSDC(usdc: number) {
@@ -122,6 +132,9 @@ describe("InternalMarket", async () => {
   describe("setDaoToken", async () => {
     it("should allow a resolution to set token and oracle addresses", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
+      daoRoles.hasRole
+        .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+        .returns(true);
       await internalMarket.setDaoToken(alice.address);
       expect(await internalMarket.daoToken()).equal(alice.address);
     });
@@ -139,6 +152,9 @@ describe("InternalMarket", async () => {
   describe("setOfferDuration", async () => {
     it("should allow a resolution to set duration of an offer", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
+      daoRoles.hasRole
+        .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+        .returns(true);
       await internalMarket.setOfferDuration(DAY);
       expect(await internalMarket.offerDuration()).equal(DAY);
     });

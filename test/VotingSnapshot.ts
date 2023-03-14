@@ -1,3 +1,4 @@
+import { MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -5,6 +6,8 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   ERC20Mock,
   ERC20Mock__factory,
   ShareholderRegistryMock,
@@ -32,6 +35,7 @@ describe("VotingSnapshot", () => {
   let shareholderRegistryRole: string;
   let resolutionRole: string;
 
+  let daoRoles: MockContract<DAORoles>;
   let votingSnapshot: Voting;
   let token: ERC20Mock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -53,6 +57,10 @@ describe("VotingSnapshot", () => {
       noDelegate,
       nonContributor,
     ] = await ethers.getSigners();
+
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
+    daoRoles = await DAORolesFactory.deploy();
+
     const VotingSnapshotFactory = (await ethers.getContractFactory(
       "Voting",
       deployer
@@ -68,17 +76,17 @@ describe("VotingSnapshot", () => {
       deployer
     )) as ShareholderRegistryMock__factory;
 
-    votingSnapshot = (await upgrades.deployProxy(VotingSnapshotFactory, {
-      initializer: "initialize",
-    })) as Voting;
+    votingSnapshot = (await upgrades.deployProxy(
+      VotingSnapshotFactory,
+      [daoRoles.address],
+      {
+        initializer: "initialize",
+      }
+    )) as Voting;
     await votingSnapshot.deployed();
     resolutionRole = await roles.RESOLUTION_ROLE();
     operatorRole = await roles.OPERATOR_ROLE();
     shareholderRegistryRole = await roles.SHAREHOLDER_REGISTRY_ROLE();
-
-    await votingSnapshot.grantRole(operatorRole, deployer.address);
-    await votingSnapshot.grantRole(resolutionRole, deployer.address);
-    await votingSnapshot.grantRole(shareholderRegistryRole, deployer.address);
 
     token = (await upgrades.deployProxy(
       ERC20MockFactory,
@@ -100,6 +108,9 @@ describe("VotingSnapshot", () => {
     shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
     investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
+    daoRoles.hasRole
+      .whenCalledWith(operatorRole, deployer.address)
+      .returns(true);
     await votingSnapshot.setToken(token.address);
     await votingSnapshot.setShareholderRegistry(shareholderRegistry.address);
 
@@ -123,10 +134,16 @@ describe("VotingSnapshot", () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
+
+    daoRoles.hasRole
+      .whenCalledWith(resolutionRole, deployer.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+
+    daoRoles.hasRole.reset();
   });
 
   async function setContributor(user: SignerWithAddress, flag: boolean) {
@@ -224,8 +241,9 @@ describe("VotingSnapshot", () => {
       });
 
       it("should return no delegate from a new snapshot if contributor removed", async () => {
-        const resolutionRole = await roles.RESOLUTION_ROLE();
-        await votingSnapshot.grantRole(resolutionRole, deployer.address);
+        daoRoles.hasRole
+          .whenCalledWith(shareholderRegistryRole, deployer.address)
+          .returns(true);
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 
@@ -348,8 +366,9 @@ describe("VotingSnapshot", () => {
       });
 
       it("should return false when contributor is not anymore a contributor at a given snapshot", async () => {
-        const resolutionRole = await roles.RESOLUTION_ROLE();
-        await votingSnapshot.grantRole(resolutionRole, deployer.address);
+        daoRoles.hasRole
+          .whenCalledWith(shareholderRegistryRole, deployer.address)
+          .returns(true);
         await votingSnapshot.snapshot();
         let snapshotIdBefore = await votingSnapshot.getCurrentSnapshotId();
 

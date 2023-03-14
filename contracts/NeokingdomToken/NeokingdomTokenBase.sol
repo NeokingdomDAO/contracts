@@ -7,6 +7,7 @@ import "../RedemptionController/IRedemptionController.sol";
 import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
+import "../extensions/DAORoles.sol";
 
 contract NeokingdomTokenBase is ERC20Upgradeable {
     IVoting internal _voting;
@@ -14,10 +15,10 @@ contract NeokingdomTokenBase is ERC20Upgradeable {
     IShareholderRegistry internal _shareholderRegistry;
     IRedemptionController internal _redemptionController;
 
-    function initialize(
+    function _initialize(
         string memory name,
         string memory symbol
-    ) public virtual {
+    ) internal virtual {
         __ERC20_init(name, symbol);
     }
 

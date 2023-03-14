@@ -1,3 +1,4 @@
+import { MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -6,6 +7,8 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   ShareholderRegistry,
   ShareholderRegistry__factory,
   VotingMock,
@@ -30,7 +33,9 @@ describe("Shareholder Registry", () => {
     INVESTOR_STATUS: string,
     CONTRIBUTOR_STATUS: string,
     MANAGING_BOARD_STATUS: string;
+
   let shareCapital = parseEther("10");
+  let daoRoles: MockContract<DAORoles>;
   let registry: ShareholderRegistry;
   let voting: VotingMock;
   let operator: SignerWithAddress,
@@ -40,6 +45,10 @@ describe("Shareholder Registry", () => {
 
   before(async () => {
     [operator, managingBoard, alice, bob] = await ethers.getSigners();
+
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
+    daoRoles = await DAORolesFactory.deploy();
+
     const ShareholderRegistryFactory = (await ethers.getContractFactory(
       "ShareholderRegistry",
       operator
@@ -50,7 +59,7 @@ describe("Shareholder Registry", () => {
 
     registry = (await upgrades.deployProxy(
       ShareholderRegistryFactory,
-      ["NS", "Neokingdom Share"],
+      [daoRoles.address, "NS", "Neokingdom Share"],
       {
         initializer: "initialize",
       }
@@ -68,17 +77,24 @@ describe("Shareholder Registry", () => {
     CONTRIBUTOR_STATUS = await registry.CONTRIBUTOR_STATUS();
     MANAGING_BOARD_STATUS = await registry.MANAGING_BOARD_STATUS();
 
-    await registry.grantRole(RESOLUTION_ROLE, operator.address);
-    await registry.grantRole(OPERATOR_ROLE, operator.address);
+    daoRoles.hasRole
+      .whenCalledWith(OPERATOR_ROLE, operator.address)
+      .returns(true);
     await registry.setVoting(voting.address);
   });
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
+
+    daoRoles.hasRole
+      .whenCalledWith(RESOLUTION_ROLE, operator.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+
+    daoRoles.hasRole.reset();
   });
 
   describe("Status management", () => {

@@ -2,6 +2,8 @@ import { TransactionResponse } from "@ethersproject/providers";
 import { Contract, ContractTransaction, Transaction } from "ethers";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
@@ -22,6 +24,7 @@ import {
 import { NeokingdomDAO } from "./core";
 
 export const FACTORIES = {
+  DAORoles: DAORoles__factory,
   InternalMarket: InternalMarket__factory,
   NeokingdomToken: NeokingdomToken__factory,
   PriceOracle: PriceOracle__factory,
@@ -38,6 +41,7 @@ export type ContextGenerator<T extends Context> = (
 ) => Promise<T>;
 
 export type NeokingdomContracts = {
+  daoRoles: DAORoles;
   internalMarket: InternalMarket;
   neokingdomToken: NeokingdomToken;
   priceOracle: PriceOracle;
@@ -68,6 +72,7 @@ export type ProcessedSequence<T extends Context> = Step<T>[];
 
 // FIXME: There Must Be A Better Way™ to do this in TypeScript
 export const CONTRACT_NAMES = [
+  "daoRoles",
   "internalMarket",
   "neokingdomToken",
   "priceOracle",

@@ -1,3 +1,4 @@
+import { MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -21,7 +22,7 @@ const { expect } = chai;
 describe("RedemptionController", () => {
   let snapshotId: string;
 
-  let daoRoles: DAORoles;
+  let daoRoles: MockContract<DAORoles>;
   let redemptionController: RedemptionController;
   let deployer: SignerWithAddress, account: SignerWithAddress;
   let redemptionWindow: number;
@@ -31,13 +32,8 @@ describe("RedemptionController", () => {
   before(async () => {
     [deployer, account] = await ethers.getSigners();
 
-    const DAORolesFactory = (await ethers.getContractFactory(
-      "DAORoles",
-      deployer
-    )) as DAORoles__factory;
-
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
     daoRoles = await DAORolesFactory.deploy();
-    await daoRoles.deployed();
 
     const RedemptionControllerFactory = (await ethers.getContractFactory(
       "RedemptionController",
@@ -52,8 +48,6 @@ describe("RedemptionController", () => {
 
     TOKEN_MANAGER_ROLE = await roles.TOKEN_MANAGER_ROLE();
 
-    await daoRoles.grantRole(TOKEN_MANAGER_ROLE, deployer.address);
-
     redemptionWindow =
       (await redemptionController.redemptionWindow()).toNumber() /
       (60 * 60 * 24);
@@ -61,10 +55,15 @@ describe("RedemptionController", () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
+
+    daoRoles.hasRole
+      .whenCalledWith(TOKEN_MANAGER_ROLE, deployer.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    daoRoles.hasRole.reset();
   });
 
   async function expectBalance(amount: number) {

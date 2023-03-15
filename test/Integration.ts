@@ -7,6 +7,7 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
 import {
+  DAORoles,
   InternalMarket,
   NeokingdomToken,
   RedemptionController,
@@ -41,6 +42,7 @@ describe("Integration", async () => {
   let redemptionMaxDaysInThePast: number;
   let redemptionActivityWindow: number;
 
+  let daoRoles: DAORoles;
   let voting: Voting;
   let neokingdomToken: NeokingdomToken;
   let resolutionManager: ResolutionManager;
@@ -80,6 +82,7 @@ describe("Integration", async () => {
     await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
 
     ({
+      daoRoles,
       voting,
       neokingdomToken,
       shareholderRegistry,
@@ -398,10 +401,7 @@ describe("Integration", async () => {
 
       // votes given after burning share
       _makeContributor(user3, 42);
-      await shareholderRegistry.grantRole(
-        await roles.RESOLUTION_ROLE(),
-        deployer.address
-      );
+      await daoRoles.grantRole(await roles.RESOLUTION_ROLE(), deployer.address);
       await shareholderRegistry.burn(user3.address, parseEther("1"));
       const resolutionId3 = await _prepareResolution();
       await _makeVotable(resolutionId3);

@@ -8,15 +8,13 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
+import "../extensions/DAORoles.sol";
+import "../extensions/HasRole.sol";
 
-contract InternalMarket is
-    Initializable,
-    InternalMarketBase,
-    AccessControlUpgradeable
-{
-    function initialize(IERC20 daoToken_) public initializer {
-        _initialize(daoToken_, 7 days);
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+    function initialize(DAORoles roles, IERC20 daoToken) public initializer {
+        _initialize(daoToken, 7 days);
+        _setRoles(roles);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor

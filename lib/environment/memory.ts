@@ -2,6 +2,7 @@ import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
 import {
+  DAORoles,
   InternalMarket,
   NeokingdomToken,
   PriceOracle,
@@ -64,6 +65,9 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
   private storeContract(contractName: ContractNames, contract: Contract) {
     // FIXME: I cannot typescript, I guess this can be done much better.
     switch (contractName) {
+      case "DAORoles":
+        this.contracts.daoRoles = contract as DAORoles;
+        break;
       case "InternalMarket":
         this.contracts.internalMarket = contract as InternalMarket;
         break;

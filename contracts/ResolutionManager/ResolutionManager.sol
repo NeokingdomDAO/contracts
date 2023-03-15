@@ -3,15 +3,14 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../Voting/IVoting.sol";
-import "../extensions/Roles.sol";
-import "hardhat/console.sol";
+import { Roles } from "../extensions/Roles.sol";
+import "../extensions/DAORoles.sol";
+import "../extensions/HasRole.sol";
 
-contract ResolutionManager is Initializable, Context, AccessControl {
+contract ResolutionManager is Initializable, HasRole {
     uint256 internal _currentResolutionId;
 
     IShareholderRegistry internal _shareholderRegistry;
@@ -79,6 +78,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
     mapping(uint256 => Resolution) public resolutions;
 
     function initialize(
+        DAORoles roles,
         IShareholderRegistry shareholderRegistry,
         INeokingdomToken neokingdomToken,
         IVoting voting
@@ -87,7 +87,7 @@ contract ResolutionManager is Initializable, Context, AccessControl {
         _neokingdomToken = neokingdomToken;
         _voting = voting;
 
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setRoles(roles);
 
         // TODO: check if there are any rounding errors
         _addResolutionType("amendment", 66, 14 days, 6 days, false);

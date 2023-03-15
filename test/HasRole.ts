@@ -83,5 +83,13 @@ describe("HasRole", async () => {
         }`
       );
     });
+
+    it("should pass if account has role", async () => {
+      daoRoles.hasRole
+        .whenCalledWith(ROLES.OPERATOR_ROLE, alice.address)
+        .returns(true);
+      await expect(hasRole.connect(alice).checkOnlyRole(ROLES.OPERATOR_ROLE))
+        .not.reverted;
+    });
   });
 });

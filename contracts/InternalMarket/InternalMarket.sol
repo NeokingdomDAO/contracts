@@ -3,24 +3,20 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
 
-contract InternalMarket is
-    Initializable,
-    InternalMarketBase,
-    AccessControlUpgradeable
-{
-    function initialize(IERC20 daoToken_) public initializer {
+contract InternalMarket is Initializable, InternalMarketBase, AccessControl {
+    constructor(IERC20 daoToken_) {
         _initialize(daoToken_, 7 days);
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(
+            Roles.RESOLUTION_ROLE,
+            0x00a329c0648769A73afAc7F9381E08FB43dBEA72
+        );
     }
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
 
     function makeOffer(uint256 amount) public virtual {
         _makeOffer(_msgSender(), amount);

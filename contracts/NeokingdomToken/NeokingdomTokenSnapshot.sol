@@ -3,12 +3,14 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/utils/Arrays.sol";
+import "./INeokingdomToken.sol";
 import "./NeokingdomTokenBase.sol";
 import "../extensions/Snapshottable.sol";
 
 abstract contract NeokingdomTokenSnapshot is
     NeokingdomTokenBase,
-    Snapshottable
+    Snapshottable,
+    INeokingdomToken
 {
     using Arrays for uint256[];
 
@@ -103,4 +105,10 @@ abstract contract NeokingdomTokenSnapshot is
             snapshots.values.push(currentValue);
         }
     }
+
+    function snapshot()
+        public
+        virtual
+        override(ISnapshot, Snapshottable)
+        returns (uint256);
 }

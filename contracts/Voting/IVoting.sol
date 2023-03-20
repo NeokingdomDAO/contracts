@@ -5,6 +5,18 @@ pragma solidity ^0.8.16;
 import "../extensions/ISnapshot.sol";
 
 interface IVoting is ISnapshot {
+    event DelegateChanged(
+        address indexed delegator,
+        address currentDelegate,
+        address newDelegate
+    );
+
+    event DelegateVotesChanged(
+        address indexed account,
+        uint256 oldVotingPower,
+        uint256 newVotingPower
+    );
+
     function beforeRemoveContributor(address account) external;
 
     function afterAddContributor(address account) external;

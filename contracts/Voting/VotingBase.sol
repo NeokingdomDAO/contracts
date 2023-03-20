@@ -11,80 +11,28 @@ abstract contract VotingBase is IVoting {
 
     bytes32 internal _contributorRole;
 
-    // TODO Turn into struct
     mapping(address => address) internal _delegates;
     mapping(address => uint256) internal _votingPower;
     mapping(address => uint256) internal _delegators;
 
     uint256 internal _totalVotingPower;
 
-    event DelegateChanged(
-        address indexed delegator,
-        address currentDelegate,
-        address newDelegate
-    );
-    event DelegateVotesChanged(
-        address indexed account,
-        uint256 oldVotingPower,
-        uint256 newVotingPower
-    );
+    // Abstract
+    function setToken(IERC20Upgradeable token) external virtual;
 
-    modifier onlyToken() virtual {
-        require(
-            msg.sender == address(_token),
-            "Voting: only Token contract can call this method."
-        );
-        _;
-    }
+    function beforeRemoveContributor(address account) external virtual;
+
+    function afterAddContributor(address account) external virtual;
+
+    function setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) external virtual;
 
     function canVote(address account) public view virtual returns (bool) {
         return getDelegate(account) != address(0);
     }
 
-    function _setToken(IERC20Upgradeable token) internal virtual {
-        _token = token;
-    }
-
-    function _setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) internal virtual {
-        _shareholderRegistry = shareholderRegistry;
-        _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
-    }
-
-    function _beforeRemoveContributor(address account) internal virtual {
-        address delegated = getDelegate(account);
-        if (delegated == account) {
-            _beforeDelegate(account);
-        } else {
-            _delegate(account, account);
-        }
-
-        delete _delegates[account];
-
-        uint256 individualVotingPower = _token.balanceOf(account);
-        if (individualVotingPower > 0) {
-            _moveVotingPower(account, address(0), individualVotingPower);
-        }
-    }
-
-    function _afterAddContributor(address account) internal virtual {
-        _delegate(account, account);
-    }
-
-    /// @dev Hook to be called by the companion token upon token transfer
-    /// @notice Only the companion token can call this method
-    /// @notice The voting power transfer logic relies on the correct usage of this hook from the companion token
-    /// @param from The sender's address
-    /// @param to The receiver's address
-    /// @param amount The amount sent
-    function afterTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) external virtual onlyToken {
-        _moveVotingPower(getDelegate(from), getDelegate(to), amount);
-    }
+    // Public
 
     /// @dev Returns the account's current delegate
     /// @param account The account whose delegate is requested
@@ -113,12 +61,25 @@ abstract contract VotingBase is IVoting {
         return _totalVotingPower;
     }
 
-    /// @dev Allows sender to delegate another address for voting
-    /// @notice The first address to be delegated must be the sender itself
-    /// @notice Sub-delegation is not allowed
-    /// @param newDelegate Destination address of module transaction.
-    function delegate(address newDelegate) public virtual {
-        _delegate(msg.sender, newDelegate);
+    // Internal
+
+    function _setToken(IERC20Upgradeable token) internal virtual {
+        _token = token;
+    }
+
+    function _setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) internal virtual {
+        _shareholderRegistry = shareholderRegistry;
+        _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        _moveVotingPower(getDelegate(from), getDelegate(to), amount);
     }
 
     function _delegate(
@@ -211,6 +172,26 @@ abstract contract VotingBase is IVoting {
                 _totalVotingPower -= amount;
             }
         }
+    }
+
+    function _beforeRemoveContributor(address account) internal virtual {
+        address delegated = getDelegate(account);
+        if (delegated == account) {
+            _beforeDelegate(account);
+        } else {
+            _delegate(account, account);
+        }
+
+        delete _delegates[account];
+
+        uint256 individualVotingPower = _token.balanceOf(account);
+        if (individualVotingPower > 0) {
+            _moveVotingPower(account, address(0), individualVotingPower);
+        }
+    }
+
+    function _afterAddContributor(address account) internal virtual {
+        _delegate(account, account);
     }
 
     function _beforeDelegate(address delegator) internal virtual {}

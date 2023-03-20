@@ -294,64 +294,6 @@ contract ResolutionManagerBase {
         // slither-disable-end calls-loop
     }
 
-    function getExecutionDetails(
-        uint256 resolutionId
-    ) public view virtual returns (address[] memory, bytes[] memory) {
-        Resolution storage resolution = resolutions[resolutionId];
-
-        return (resolution.executionTo, resolution.executionData);
-    }
-
-    function getVoterVote(
-        uint256 resolutionId,
-        address voter
-    )
-        public
-        view
-        virtual
-        returns (bool isYes, bool hasVoted, uint256 votingPower)
-    {
-        Resolution storage resolution = resolutions[resolutionId];
-        require(
-            _voting.canVoteAt(voter, resolution.snapshotId),
-            "Resolution: account could not vote resolution"
-        );
-
-        isYes = resolution.hasVotedYes[voter];
-        hasVoted = resolution.hasVoted[voter];
-
-        if (
-            _voting.getDelegateAt(voter, resolution.snapshotId) != voter &&
-            hasVoted
-        ) {
-            votingPower = _neokingdomToken.balanceOfAt(
-                voter,
-                resolution.snapshotId
-            );
-        } else {
-            votingPower =
-                _voting.getVotingPowerAt(voter, resolution.snapshotId) -
-                resolution.lostVotingPower[voter];
-        }
-    }
-
-    function getResolutionResult(
-        uint256 resolutionId
-    ) public view virtual returns (bool) {
-        Resolution storage resolution = resolutions[resolutionId];
-        ResolutionType storage resolutionType = resolutionTypes[
-            resolution.resolutionTypeId
-        ];
-        uint256 totalVotingPower = _voting.getTotalVotingPowerAt(
-            resolution.snapshotId
-        );
-
-        bool hasQuorum = resolution.yesVotesTotal * 100 >=
-            resolutionType.quorum * totalVotingPower;
-
-        return resolution.isNegative ? !hasQuorum : hasQuorum;
-    }
-
     function _vote(uint256 resolutionId, bool isYes) internal virtual {
         Resolution storage resolution = resolutions[resolutionId];
         require(
@@ -451,5 +393,65 @@ contract ResolutionManagerBase {
         );
 
         emit ResolutionTypeCreated(msg.sender, resolutionTypes.length - 1);
+    }
+
+    // Views
+
+    function getExecutionDetails(
+        uint256 resolutionId
+    ) public view virtual returns (address[] memory, bytes[] memory) {
+        Resolution storage resolution = resolutions[resolutionId];
+
+        return (resolution.executionTo, resolution.executionData);
+    }
+
+    function getVoterVote(
+        uint256 resolutionId,
+        address voter
+    )
+        public
+        view
+        virtual
+        returns (bool isYes, bool hasVoted, uint256 votingPower)
+    {
+        Resolution storage resolution = resolutions[resolutionId];
+        require(
+            _voting.canVoteAt(voter, resolution.snapshotId),
+            "Resolution: account could not vote resolution"
+        );
+
+        isYes = resolution.hasVotedYes[voter];
+        hasVoted = resolution.hasVoted[voter];
+
+        if (
+            _voting.getDelegateAt(voter, resolution.snapshotId) != voter &&
+            hasVoted
+        ) {
+            votingPower = _neokingdomToken.balanceOfAt(
+                voter,
+                resolution.snapshotId
+            );
+        } else {
+            votingPower =
+                _voting.getVotingPowerAt(voter, resolution.snapshotId) -
+                resolution.lostVotingPower[voter];
+        }
+    }
+
+    function getResolutionResult(
+        uint256 resolutionId
+    ) public view virtual returns (bool) {
+        Resolution storage resolution = resolutions[resolutionId];
+        ResolutionType storage resolutionType = resolutionTypes[
+            resolution.resolutionTypeId
+        ];
+        uint256 totalVotingPower = _voting.getTotalVotingPowerAt(
+            resolution.snapshotId
+        );
+
+        bool hasQuorum = resolution.yesVotesTotal * 100 >=
+            resolutionType.quorum * totalVotingPower;
+
+        return resolution.isNegative ? !hasQuorum : hasQuorum;
     }
 }

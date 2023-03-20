@@ -6,6 +6,18 @@ import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
 abstract contract VotingBase is IVoting {
+    event DelegateChanged(
+        address indexed delegator,
+        address currentDelegate,
+        address newDelegate
+    );
+
+    event DelegateVotesChanged(
+        address indexed account,
+        uint256 oldVotingPower,
+        uint256 newVotingPower
+    );
+
     IShareholderRegistry internal _shareholderRegistry;
     IERC20Upgradeable internal _token;
 

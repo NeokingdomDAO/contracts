@@ -5,19 +5,6 @@ import "./IRedemptionController.sol";
 
 // The contract tells how many tokens are redeemable by Contributors
 abstract contract RedemptionControllerBase is IRedemptionController {
-    uint256 public redemptionStart;
-    uint256 public redemptionWindow;
-
-    uint256 public maxDaysInThePast;
-    uint256 public activityWindow;
-
-    function _initialize() internal {
-        redemptionStart = 60 days;
-        redemptionWindow = 10 days;
-        maxDaysInThePast = 30 days * 15;
-        activityWindow = 30 days * 3;
-    }
-
     struct Redeemable {
         uint256 amount;
         uint256 mintTimestamp;
@@ -30,11 +17,24 @@ abstract contract RedemptionControllerBase is IRedemptionController {
         uint256 amount;
     }
 
+    uint256 public redemptionStart;
+    uint256 public redemptionWindow;
+
+    uint256 public maxDaysInThePast;
+    uint256 public activityWindow;
+
     mapping(address => Redeemable[]) internal _redeemables;
     mapping(address => uint256) internal _redeemablesFirst;
 
     mapping(address => MintBudget[]) internal _mintBudgets;
     mapping(address => uint256) internal _mintBudgetsStartIndex;
+
+    function _initialize() internal {
+        redemptionStart = 60 days;
+        redemptionWindow = 10 days;
+        maxDaysInThePast = 30 days * 15;
+        activityWindow = 30 days * 3;
+    }
 
     // Hooks
 

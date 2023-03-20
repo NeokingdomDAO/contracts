@@ -7,6 +7,15 @@ import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
 
 contract InternalMarketBase {
+    event OfferCreated(
+        uint128 id,
+        address from,
+        uint256 amount,
+        uint256 createdAt
+    );
+
+    event OfferMatched(uint128 id, address from, address to, uint256 amount);
+
     struct Offer {
         uint256 expiredAt;
         uint256 amount;
@@ -17,15 +26,6 @@ contract InternalMarketBase {
         uint128 end;
         mapping(uint128 => Offer) offer;
     }
-
-    event OfferCreated(
-        uint128 id,
-        address from,
-        uint256 amount,
-        uint256 createdAt
-    );
-
-    event OfferMatched(uint128 id, address from, address to, uint256 amount);
 
     IERC20 public daoToken;
     ERC20 public exchangeToken;

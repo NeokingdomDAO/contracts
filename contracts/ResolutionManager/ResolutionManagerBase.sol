@@ -2,12 +2,73 @@
 
 pragma solidity ^0.8.16;
 
-import "./IResolutionManager.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../Voting/IVoting.sol";
 
-abstract contract ResolutionManagerBase is IResolutionManager {
+abstract contract ResolutionManagerBase {
+    event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
+
+    event ResolutionUpdated(address indexed from, uint256 indexed resolutionId);
+
+    event ResolutionApproved(
+        address indexed from,
+        uint256 indexed resolutionId
+    );
+
+    event ResolutionRejected(
+        address indexed from,
+        uint256 indexed resolutionId
+    );
+
+    event ResolutionVoted(
+        address indexed from,
+        uint256 indexed resolutionId,
+        uint256 votingPower,
+        bool isYes
+    );
+
+    event ResolutionExecuted(
+        address indexed from,
+        uint256 indexed resolutionId
+    );
+
+    event ResolutionTypeCreated(
+        address indexed from,
+        uint256 indexed typeIndex
+    );
+
+    event DelegateLostVotingPower(
+        address indexed from,
+        uint256 indexed resolutionId,
+        uint256 amount
+    );
+
+    struct ResolutionType {
+        string name;
+        uint256 quorum;
+        uint256 noticePeriod;
+        uint256 votingPeriod;
+        bool canBeNegative;
+    }
+
+    struct Resolution {
+        string dataURI;
+        uint256 resolutionTypeId;
+        uint256 approveTimestamp;
+        uint256 snapshotId;
+        uint256 yesVotesTotal;
+        bool isNegative;
+        uint256 rejectionTimestamp;
+        // Transaction fields
+        address[] executionTo;
+        bytes[] executionData;
+        uint256 executionTimestamp;
+        mapping(address => bool) hasVoted;
+        mapping(address => bool) hasVotedYes;
+        mapping(address => uint256) lostVotingPower;
+    }
+
     uint256 internal _currentResolutionId;
 
     IShareholderRegistry internal _shareholderRegistry;

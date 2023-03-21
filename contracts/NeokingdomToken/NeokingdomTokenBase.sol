@@ -8,8 +8,11 @@ import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../extensions/DAORoles.sol";
+import "./INeokingdomToken.sol";
 
-contract NeokingdomTokenBase is ERC20Upgradeable {
+abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
+    event VestingSet(address to, uint256 amount);
+
     IVoting internal _voting;
     InternalMarket internal _internalMarket;
     IShareholderRegistry internal _shareholderRegistry;
@@ -21,8 +24,6 @@ contract NeokingdomTokenBase is ERC20Upgradeable {
     ) internal virtual {
         __ERC20_init(name, symbol);
     }
-
-    event VestingSet(address to, uint256 amount);
 
     // TODO: what happens to vesting tokens when someone loses the contributor status?
     // In theory they should be burned or added to a pool

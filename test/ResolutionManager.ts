@@ -340,7 +340,7 @@ describe("Resolution", async () => {
     it("doesn't allow to update a resolution with mismatching length between executor and data", async () => {
       await expect(
         resolution
-          .connect(user1)
+          .connect(managingBoard)
           .updateResolution(
             resolutionId,
             "updated test",

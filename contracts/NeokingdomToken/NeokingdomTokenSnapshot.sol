@@ -103,4 +103,10 @@ abstract contract NeokingdomTokenSnapshot is
             snapshots.values.push(currentValue);
         }
     }
+
+    function snapshot()
+        public
+        virtual
+        override(ISnapshot, Snapshottable)
+        returns (uint256);
 }

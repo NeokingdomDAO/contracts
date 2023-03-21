@@ -43,12 +43,6 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
         _setInternalMarket(internalMarket);
     }
 
-    function setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        _setShareholderRegistry(shareholderRegistry);
-    }
-
     function setRedemptionController(
         IRedemptionController redemption
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {

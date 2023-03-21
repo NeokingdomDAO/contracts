@@ -9,8 +9,7 @@ import "../extensions/Snapshottable.sol";
 
 abstract contract NeokingdomTokenSnapshot is
     NeokingdomTokenBase,
-    Snapshottable,
-    INeokingdomToken
+    Snapshottable
 {
     using Arrays for uint256[];
 

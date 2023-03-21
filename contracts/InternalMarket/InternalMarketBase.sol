@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
@@ -28,8 +29,9 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    ERC20Burnable public daoToken;
-    IERC20 public daoTokenExternal;
+    IERC20 public daoToken;
+
+    // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
@@ -50,12 +52,10 @@ contract InternalMarketBase {
     }
 
     function _initialize(
-        IERC20 _daoTokenExternal,
         IERC20 _daoToken,
         uint256 _offerDuration
     ) internal virtual {
         daoToken = _daoToken;
-        daoTokenExternal = _daoTokenExternal;
         offerDuration = _offerDuration;
     }
 
@@ -180,9 +180,8 @@ contract InternalMarketBase {
         ) {
             _beforeWithdraw(from, amount);
         }
-        daoToken.burn(from, amount);
         require(
-            daoTokenExternal.transfer(to, amount),
+            daoToken.transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
     }

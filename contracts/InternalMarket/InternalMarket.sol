@@ -28,12 +28,16 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         _matchOffer(account, _msgSender(), amount);
     }
 
-    function deposit(uint amount) public {
-        _deposit(_msgSender(), amount);
-    }
-
     function withdraw(address to, uint amount) public {
         _withdraw(_msgSender(), to, amount);
+    }
+
+    function withdrawFrom(
+        address from,
+        address to,
+        uint amount
+    ) public onlyRole(Roles.TOKEN_GATEWAY_ROLE) {
+        _withdraw(from, to, amount);
     }
 
     function redeem(uint amount) public {

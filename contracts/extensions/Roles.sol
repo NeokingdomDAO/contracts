@@ -10,4 +10,6 @@ library Roles {
         keccak256("SHAREHOLDER_REGISTRY_ROLE");
     bytes32 public constant TOKEN_MANAGER_ROLE =
         keccak256("TOKEN_MANAGER_ROLE");
+    bytes32 public constant TOKEN_GATEWAY_ROLE =
+        keccak256("TOKEN_GATEWAY_ROLE");
 }

@@ -87,4 +87,15 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
     function delegate(address newDelegate) public virtual override {
         _delegate(msg.sender, newDelegate);
     }
+
+    /// @dev Allows sender to delegate another address for voting
+    /// @notice Sub-delegation is not allowed
+    /// @param delegator Delegating address.
+    /// @param newDelegate Destination address of module transaction.
+    function delegateOnBehalf(
+        address delegator,
+        address newDelegate
+    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) {
+        _delegate(delegator, newDelegate);
+    }
 }

@@ -43,4 +43,6 @@ interface IVoting is ISnapshot {
     ) external view returns (uint256);
 
     function delegate(address newDelegate) external;
+
+    function delegateOnBehalf(address delegator, address newDelegate) external;
 }

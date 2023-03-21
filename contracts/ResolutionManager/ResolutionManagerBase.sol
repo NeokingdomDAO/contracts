@@ -67,6 +67,7 @@ abstract contract ResolutionManagerBase {
         mapping(address => bool) hasVoted;
         mapping(address => bool) hasVotedYes;
         mapping(address => uint256) lostVotingPower;
+        address distrusted;
     }
 
     uint256 internal _currentResolutionId;
@@ -156,7 +157,8 @@ abstract contract ResolutionManagerBase {
         uint256 resolutionTypeId,
         bool isNegative,
         address[] memory executionTo,
-        bytes[] memory executionData
+        bytes[] memory executionData,
+        address distrusted
     ) internal virtual returns (uint256) {
         ResolutionType storage resolutionType = resolutionTypes[
             resolutionTypeId
@@ -173,6 +175,10 @@ abstract contract ResolutionManagerBase {
             "Resolution: cannot be negative"
         );
         require(
+            distrusted == address(0) || !isNegative,
+            "Resolution: no veto resolution for distrust vote"
+        );
+        require(
             executionTo.length == executionData.length,
             "Resolution: length mismatch"
         );
@@ -186,6 +192,7 @@ abstract contract ResolutionManagerBase {
         resolution.isNegative = isNegative;
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
+        resolution.distrusted = distrusted;
 
         return resolutionId;
     }
@@ -205,7 +212,20 @@ abstract contract ResolutionManagerBase {
         Resolution storage resolution = resolutions[resolutionId];
         resolution.approveTimestamp = block.timestamp;
 
+        address delegated;
+        if (resolution.distrusted != address(0)) {
+            delegated = _voting.getDelegate(resolution.distrusted);
+            _voting.delegateOnBehalf(
+                resolution.distrusted,
+                resolution.distrusted
+            );
+        }
+
         resolution.snapshotId = _snapshotAll();
+
+        if (resolution.distrusted != address(0)) {
+            _voting.delegateOnBehalf(resolution.distrusted, delegated);
+        }
     }
 
     function _rejectResolution(
@@ -302,6 +322,10 @@ abstract contract ResolutionManagerBase {
 
     function _vote(uint256 resolutionId, bool isYes) internal virtual {
         Resolution storage resolution = resolutions[resolutionId];
+        require(
+            msg.sender != resolution.distrusted,
+            "Resolution: account cannot vote"
+        );
         require(
             _voting.canVoteAt(msg.sender, resolution.snapshotId),
             "Resolution: account cannot vote"
@@ -422,7 +446,8 @@ abstract contract ResolutionManagerBase {
     {
         Resolution storage resolution = resolutions[resolutionId];
         require(
-            _voting.canVoteAt(voter, resolution.snapshotId),
+            msg.sender != resolution.distrusted &&
+                _voting.canVoteAt(voter, resolution.snapshotId),
             "Resolution: account could not vote resolution"
         );
 
@@ -454,6 +479,13 @@ abstract contract ResolutionManagerBase {
         uint256 totalVotingPower = _voting.getTotalVotingPowerAt(
             resolution.snapshotId
         );
+
+        if (resolution.distrusted != address(0)) {
+            totalVotingPower -= _neokingdomToken.balanceOfAt(
+                resolution.distrusted,
+                resolution.snapshotId
+            );
+        }
 
         bool hasQuorum = resolution.yesVotesTotal * 100 >=
             resolutionType.quorum * totalVotingPower;

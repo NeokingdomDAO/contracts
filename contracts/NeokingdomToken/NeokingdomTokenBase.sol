@@ -8,8 +8,9 @@ import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../extensions/DAORoles.sol";
+import "./INeokingdomToken.sol";
 
-contract NeokingdomTokenBase is ERC20Upgradeable {
+abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     event VestingSet(address to, uint256 amount);
 
     IVoting internal _voting;

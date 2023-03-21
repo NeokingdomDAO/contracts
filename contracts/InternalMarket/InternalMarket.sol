@@ -28,6 +28,10 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         _matchOffer(account, _msgSender(), amount);
     }
 
+    function deposit(uint amount) public {
+        _deposit(_msgSender(), amount);
+    }
+
     function withdraw(address to, uint amount) public {
         _withdraw(_msgSender(), to, amount);
     }

@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
 
@@ -27,11 +28,13 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    IERC20 public daoToken;
+    ERC20Burnable public daoToken;
+    IERC20 public daoTokenExternal;
     ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
     IStdReference public priceOracle;
+    IShareholderRegistry internal _shareholderRegistry;
 
     address public reserve;
     uint256 public offerDuration;
@@ -40,11 +43,19 @@ contract InternalMarketBase {
 
     mapping(address => uint256) internal _vaultContributors;
 
+    function _setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) internal virtual {
+        _shareholderRegistry = shareholderRegistry;
+    }
+
     function _initialize(
+        IERC20 _daoTokenExternal,
         IERC20 _daoToken,
         uint256 _offerDuration
     ) internal virtual {
         daoToken = _daoToken;
+        daoTokenExternal = _daoTokenExternal;
         offerDuration = _offerDuration;
     }
 
@@ -161,9 +172,17 @@ contract InternalMarketBase {
         address to,
         uint256 amount
     ) internal virtual {
-        _beforeWithdraw(from, amount);
+        if (
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                from
+            )
+        ) {
+            _beforeWithdraw(from, amount);
+        }
+        daoToken.burn(from, amount);
         require(
-            daoToken.transfer(to, amount),
+            daoTokenExternal.transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
     }

@@ -6,7 +6,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
-import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../extensions/DAORoles.sol";
 import "./INeokingdomToken.sol";
 
@@ -15,7 +14,6 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
 
     IVoting internal _voting;
     InternalMarket internal _internalMarket;
-    IShareholderRegistry internal _shareholderRegistry;
     IRedemptionController internal _redemptionController;
 
     function _initialize(
@@ -41,12 +39,6 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
         _voting = voting;
     }
 
-    function _setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) internal virtual {
-        _shareholderRegistry = shareholderRegistry;
-    }
-
     function _setRedemptionController(
         IRedemptionController redemptionController
     ) internal virtual {
@@ -61,11 +53,7 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
         super._beforeTokenTransfer(from, to, amount);
 
         require(
-            _msgSender() == address(_internalMarket) ||
-                !_shareholderRegistry.isAtLeast(
-                    _shareholderRegistry.CONTRIBUTOR_STATUS(),
-                    from
-                ),
+            _msgSender() == address(_internalMarket),
             "NeokingdomToken: contributor cannot transfer"
         );
     }

@@ -44,21 +44,21 @@ contract InternalMarketProxy {
         internalMarket.setExchangePair(usdc, oracle);
     }
 
-    function market_makeOffer(uint256 amount) public {
+    function market_makeOffer(uint8 amount) public {
         internalMarket.makeOffer(amount);
     }
 
-    function market_matchOffer(uint256 amount, uint256 accountIndex) public {
+    function market_matchOffer(uint8 amount, uint8 accountIndex) public {
         internalMarket.matchOffer(accounts[accountIndex % 3], amount);
     }
 
-    function redemption_withdraw(address to, uint256 amount) public {
+    function redemption_withdraw(address to, uint8 amount) public {
         internalMarket.withdraw(to, amount);
     }
 
     function echidna_verifyBalance() public view returns (bool) {
         return
-            internalMarket.offeredBalanceOf(msg.sender) >=
-            internalMarket.withdrawableBalanceOf(msg.sender);
+            internalMarket.withdrawableBalanceOf(msg.sender) <=
+            internalMarket.offeredBalanceOf(msg.sender);
     }
 }

@@ -976,7 +976,7 @@ describe("Resolution", async () => {
       describe("delegate votes first", async () => {
         async function _prepare(delegateVote: boolean, userVote: boolean) {
           // setup delegation and voting power
-          setupUser(delegate1, delegateVotingPower, 0);
+          setupUser(delegate1, delegateVotingPower);
           setupUser(user1, 0, userBalance, delegate1);
 
           await resolution.connect(delegate1).vote(resolutionId, delegateVote);
@@ -1013,7 +1013,7 @@ describe("Resolution", async () => {
       describe("user votes first", async () => {
         async function _prepare(userVote: boolean, delegateVote: boolean) {
           // setup delegation and voting power
-          setupUser(delegate1, delegateVotingPower, 0);
+          setupUser(delegate1, delegateVotingPower);
           setupUser(user1, 0, userBalance, delegate1);
 
           await resolution.connect(user1).vote(resolutionId, userVote);
@@ -1082,7 +1082,7 @@ describe("Resolution", async () => {
       });
 
       async function _vote(user: SignerWithAddress, isYes: boolean) {
-        setupUser(user, votingPowers[user.address], 0);
+        setupUser(user, votingPowers[user.address]);
         await resolution.connect(user).vote(resolutionId, isYes);
       }
 
@@ -1181,7 +1181,7 @@ describe("Resolution", async () => {
       const votingPowerDelegate = 17 + balanceUser1 + balanceUser2;
 
       beforeEach(async () => {
-        setupUser(delegate1, votingPowerDelegate, 0);
+        setupUser(delegate1, votingPowerDelegate);
         setupUser(user1, 0, balanceUser1, delegate1);
         setupUser(user2, 0, balanceUser2, delegate1);
       });
@@ -1279,7 +1279,7 @@ describe("Resolution", async () => {
 
   describe("resolution outcome", async () => {
     it("should return true when minimum quorum is achieved - 1 user", async () => {
-      setupUser(user1, 51, 0);
+      setupUser(user1, 51);
       await setupResolution(100);
 
       await resolution.connect(user1).vote(1, true);
@@ -1290,8 +1290,8 @@ describe("Resolution", async () => {
     });
 
     it("should return true when minimum quorum is achieved - 2 users", async () => {
-      setupUser(user1, 25, 0);
-      setupUser(user2, 26, 0);
+      setupUser(user1, 25);
+      setupUser(user2, 26);
 
       await setupResolution(100);
 
@@ -1304,7 +1304,7 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is not achieved - 1 user", async () => {
-      setupUser(user1, 50, 0);
+      setupUser(user1, 50);
       await setupResolution(100);
 
       await resolution.connect(user1).vote(1, true);
@@ -1315,8 +1315,8 @@ describe("Resolution", async () => {
     });
 
     it("should return true when minimum quorum is not achieved - 2 users", async () => {
-      setupUser(user1, 50, 0);
-      setupUser(user2, 1, 0);
+      setupUser(user1, 50);
+      setupUser(user2, 1);
 
       await setupResolution(100);
 
@@ -1330,7 +1330,7 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is achieved - 1 user, negative resolution", async () => {
-      setupUser(user1, 51, 0);
+      setupUser(user1, 51);
       await setupResolution(100, true);
 
       const result = await resolution.getResolutionResult(1);
@@ -1338,7 +1338,7 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is not achieved - 1 user, negative resolution", async () => {
-      setupUser(user1, 51, 0);
+      setupUser(user1, 51);
       await setupResolution(100, true);
 
       await resolution.connect(user1).vote(1, true);
@@ -1348,8 +1348,8 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is achieved - 2 users, negative resolution", async () => {
-      setupUser(user1, 50, 0);
-      setupUser(user2, 1, 0);
+      setupUser(user1, 50);
+      setupUser(user2, 1);
       await setupResolution(100, true);
 
       await resolution.connect(user1).vote(1, true);
@@ -1359,8 +1359,8 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is not achieved - 2 users, negative resolution", async () => {
-      setupUser(user1, 50, 0);
-      setupUser(user2, 1, 0);
+      setupUser(user1, 50);
+      setupUser(user2, 1);
       await setupResolution(100, true);
 
       await resolution.connect(user1).vote(1, true);

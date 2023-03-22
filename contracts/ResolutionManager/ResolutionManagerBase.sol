@@ -216,16 +216,20 @@ abstract contract ResolutionManagerBase {
         address delegated;
         if (resolution.distrusted != address(0)) {
             delegated = _voting.getDelegate(resolution.distrusted);
-            _voting.delegateOnBehalf(
-                resolution.distrusted,
-                resolution.distrusted
-            );
+            if (delegated != resolution.distrusted) {
+                _voting.delegateOnBehalf(
+                    resolution.distrusted,
+                    resolution.distrusted
+                );
+            }
         }
 
         resolution.snapshotId = _snapshotAll();
 
         if (resolution.distrusted != address(0)) {
-            _voting.delegateOnBehalf(resolution.distrusted, delegated);
+            if (delegated != resolution.distrusted) {
+                _voting.delegateOnBehalf(resolution.distrusted, delegated);
+            }
         }
     }
 

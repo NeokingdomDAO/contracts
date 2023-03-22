@@ -1587,7 +1587,19 @@ describe("Resolution", async () => {
       await setEVMTimestamp(approveTimestamp + 3 * DAY);
     }
 
-    it("should remove and re-add delegation", async () => {
+    it("should not remove and re-add delegation when not delegating", async () => {
+      await resolution
+        .connect(managingBoard)
+        .createDistrustResolution("test", 0, false, [], [], user2.address);
+
+      voting.getDelegate.whenCalledWith(user2.address).returns(user2.address);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+      expect(voting.delegateOnBehalf).to.have.not.been.called;
+    });
+
+    it("should remove and re-add delegation when delegating", async () => {
       await resolution
         .connect(managingBoard)
         .createDistrustResolution("test", 0, false, [], [], user2.address);

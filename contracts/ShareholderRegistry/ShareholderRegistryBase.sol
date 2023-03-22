@@ -46,9 +46,8 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         );
         bytes32 previous = _statuses[account];
         emit StatusChanged(account, previous, status);
-        _statuses[account] = status;
-
         _beforeSetStatus(account, previous, status);
+        _statuses[account] = status;
         _afterSetStatus(account, previous, status);
     }
 

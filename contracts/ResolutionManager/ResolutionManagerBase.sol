@@ -5,6 +5,7 @@ pragma solidity ^0.8.16;
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../Voting/IVoting.sol";
+import "hardhat/console.sol";
 
 abstract contract ResolutionManagerBase {
     event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
@@ -322,10 +323,12 @@ abstract contract ResolutionManagerBase {
 
     function _vote(uint256 resolutionId, bool isYes) internal virtual {
         Resolution storage resolution = resolutions[resolutionId];
+        require(resolution.approveTimestamp > 0, "Resolution: not approved");
         require(
             msg.sender != resolution.distrusted,
             "Resolution: account cannot vote"
         );
+
         require(
             _voting.canVoteAt(msg.sender, resolution.snapshotId),
             "Resolution: account cannot vote"
@@ -336,7 +339,6 @@ abstract contract ResolutionManagerBase {
                 !resolution.hasVoted[msg.sender],
             "Resolution: can't repeat same vote"
         );
-        require(resolution.approveTimestamp > 0, "Resolution: not approved");
 
         (uint256 votingStart, uint256 votingEnd) = _votingWindow(resolution);
 

@@ -27,7 +27,7 @@ const { expect } = chai;
 
 const DAY = 60 * 60 * 24;
 
-describe.only("Resolution", async () => {
+describe("Resolution", async () => {
   let snapshotId: string;
 
   let resolutionId = 1;

@@ -480,27 +480,6 @@ describe("Resolution", async () => {
         resolution.connect(managingBoard).approveResolution(resolutionId)
       ).revertedWith("Resolution: already rejected");
     });
-
-    describe("when distrust resolution", async () => {
-      it("should remove and re-add delegation", async () => {
-        await resolution
-          .connect(managingBoard)
-          .createDistrustResolution("test", 0, false, [], [], user2.address);
-
-        voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
-
-        await resolution.connect(managingBoard).approveResolution(resolutionId);
-
-        expect(voting.delegateOnBehalf.getCall(0).args).eql([
-          user2.address,
-          user2.address,
-        ]);
-        expect(voting.delegateOnBehalf.getCall(1).args).eql([
-          user2.address,
-          user1.address,
-        ]);
-      });
-    });
   });
 
   describe("rejection logic", async () => {
@@ -1594,7 +1573,7 @@ describe("Resolution", async () => {
 
   describe("distrust resolution", async () => {
     let totalVotingPower = 100;
-    beforeEach(async () => {
+    async function _prepare() {
       await resolution
         .connect(managingBoard)
         .createDistrustResolution("test", 6, false, [], [], user2.address);
@@ -1606,9 +1585,29 @@ describe("Resolution", async () => {
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       const approveTimestamp = await getEVMTimestamp();
       await setEVMTimestamp(approveTimestamp + 3 * DAY);
+    }
+
+    it("should remove and re-add delegation", async () => {
+      await resolution
+        .connect(managingBoard)
+        .createDistrustResolution("test", 0, false, [], [], user2.address);
+
+      voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+      expect(voting.delegateOnBehalf.getCall(0).args).eql([
+        user2.address,
+        user2.address,
+      ]);
+      expect(voting.delegateOnBehalf.getCall(1).args).eql([
+        user2.address,
+        user1.address,
+      ]);
     });
 
     it("should prevent distrusted from voting", async () => {
+      await _prepare();
       setupUser(user2, 0);
 
       await expect(
@@ -1617,6 +1616,7 @@ describe("Resolution", async () => {
     });
 
     it("should not count distrusted balance for quorum", async () => {
+      await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40);
 
@@ -1628,6 +1628,7 @@ describe("Resolution", async () => {
     });
 
     it("should count distrusted delegated's balance for quorum", async () => {
+      await _prepare();
       setupUser(user2, 42, 60, user1);
       setupUser(user1, 42, 40);
 
@@ -1639,6 +1640,7 @@ describe("Resolution", async () => {
     });
 
     it("should count distrusted delegator's balance for quorum", async () => {
+      await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40, user2);
 

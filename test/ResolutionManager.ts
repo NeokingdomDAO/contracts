@@ -482,16 +482,23 @@ describe("Resolution", async () => {
     });
 
     describe("when distrust resolution", async () => {
-      it.skip("should remove and re-add delegation", async () => {
+      it("should remove and re-add delegation", async () => {
         await resolution
           .connect(managingBoard)
-          .createDistrustResolution("test", 6, false, [], [], user2.address);
+          .createDistrustResolution("test", 0, false, [], [], user2.address);
 
-        await resolution.connect(managingBoard).rejectResolution(resolutionId);
+        voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
 
-        await expect(
-          resolution.connect(managingBoard).approveResolution(resolutionId)
-        ).revertedWith("Resolution: already rejected");
+        await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+        expect(voting.delegateOnBehalf.getCall(0).args).eql([
+          user2.address,
+          user2.address,
+        ]);
+        expect(voting.delegateOnBehalf.getCall(1).args).eql([
+          user2.address,
+          user1.address,
+        ]);
       });
     });
   });
@@ -1582,6 +1589,64 @@ describe("Resolution", async () => {
       await expect(resolution.executeResolution(1)).revertedWith(
         "Resolution: execution failed"
       );
+    });
+  });
+
+  describe("distrust resolution", async () => {
+    let totalVotingPower = 100;
+    beforeEach(async () => {
+      await resolution
+        .connect(managingBoard)
+        .createDistrustResolution("test", 6, false, [], [], user2.address);
+
+      voting.getTotalVotingPowerAt
+        .whenCalledWith(resolutionSnapshotId)
+        .returns(totalVotingPower);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+      const approveTimestamp = await getEVMTimestamp();
+      await setEVMTimestamp(approveTimestamp + 3 * DAY);
+    });
+
+    it("should prevent distrusted from voting", async () => {
+      setupUser(user2, 0);
+
+      await expect(
+        resolution.connect(user2).vote(resolutionId, false)
+      ).revertedWith("Resolution: account cannot vote");
+    });
+
+    it("should not count distrusted balance for quorum", async () => {
+      setupUser(user2, 42, 60);
+      setupUser(user1, 42, 40);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
+    it("should count distrusted delegated's balance for quorum", async () => {
+      setupUser(user2, 42, 60, user1);
+      setupUser(user1, 42, 40);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
+    it("should count distrusted delegator's balance for quorum", async () => {
+      setupUser(user2, 42, 60);
+      setupUser(user1, 42, 40, user2);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
     });
   });
 });

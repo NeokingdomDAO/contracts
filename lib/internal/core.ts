@@ -133,6 +133,7 @@ export abstract class NeokingdomDAO {
         if (force) {
           console.error(e);
         } else {
+          console.error(`${i + 1}/${s.length}: ${step.toString()}`);
           throw e;
         }
       }

@@ -10,15 +10,18 @@ import {
   DAORoles,
   InternalMarket,
   NeokingdomToken,
+  NeokingdomTokenExternal,
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
+  TokenGateway,
   TokenMock,
   Voting,
 } from "../typechain";
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
+import { ROLES } from "../lib/utils";
 import {
   getEVMTimestamp,
   mineEVMBlock,
@@ -45,9 +48,11 @@ describe("Integration", async () => {
   let daoRoles: DAORoles;
   let voting: Voting;
   let neokingdomToken: NeokingdomToken;
+  let neokingdomTokenExternal: NeokingdomTokenExternal;
   let resolutionManager: ResolutionManager;
   let shareholderRegistry: ShareholderRegistry;
   let internalMarket: InternalMarket;
+  let tokenGateway: TokenGateway;
   let redemptionController: RedemptionController;
   let tokenMock: TokenMock;
   let contributorStatus: string;
@@ -85,9 +90,12 @@ describe("Integration", async () => {
       daoRoles,
       voting,
       neokingdomToken,
+      neokingdomTokenExternal,
       shareholderRegistry,
+
       resolutionManager,
       internalMarket,
+      tokenGateway,
       redemptionController,
       tokenMock,
     } = await neokingdom.loadContracts());
@@ -147,7 +155,7 @@ describe("Integration", async () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await neokingdomToken.mint(user.address, tokens);
+      await tokenGateway.mint(user.address, tokens);
     }
 
     async function _makeContributor(user: SignerWithAddress, tokens: number) {
@@ -427,7 +435,7 @@ describe("Integration", async () => {
       expect(resolution3Result).false;
     });
 
-    it("expect chaos", async () => {
+    it.only("expect chaos", async () => {
       await _makeContributor(user1, 60);
       await _makeContributor(user2, 30);
       await _makeContributor(user3, 10);

@@ -58,7 +58,7 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
     function mint(
         address to,
         uint256 amount
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyRole(Roles.MINTER_ROLE) {
         _mint(to, amount);
     }
 

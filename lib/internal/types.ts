@@ -1,5 +1,4 @@
 import { TransactionResponse } from "@ethersproject/providers";
-import { Contract, ContractTransaction, Transaction } from "ethers";
 
 import {
   DAORoles,
@@ -7,6 +6,8 @@ import {
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
+  NeokingdomTokenExternal,
+  NeokingdomTokenExternal__factory,
   NeokingdomToken__factory,
   PriceOracle,
   PriceOracle__factory,
@@ -16,6 +17,8 @@ import {
   ResolutionManager__factory,
   ShareholderRegistry,
   ShareholderRegistry__factory,
+  TokenGateway,
+  TokenGateway__factory,
   TokenMock,
   TokenMock__factory,
   Voting,
@@ -27,10 +30,12 @@ export const FACTORIES = {
   DAORoles: DAORoles__factory,
   InternalMarket: InternalMarket__factory,
   NeokingdomToken: NeokingdomToken__factory,
+  NeokingdomTokenExternal: NeokingdomTokenExternal__factory,
   PriceOracle: PriceOracle__factory,
   RedemptionController: RedemptionController__factory,
   ResolutionManager: ResolutionManager__factory,
   ShareholderRegistry: ShareholderRegistry__factory,
+  TokenGateway: TokenGateway__factory,
   TokenMock: TokenMock__factory,
   Voting: Voting__factory,
 } as const;
@@ -44,10 +49,12 @@ export type NeokingdomContracts = {
   daoRoles: DAORoles;
   internalMarket: InternalMarket;
   neokingdomToken: NeokingdomToken;
+  neokingdomTokenExternal: NeokingdomTokenExternal;
   priceOracle: PriceOracle;
   redemptionController: RedemptionController;
   resolutionManager: ResolutionManager;
   shareholderRegistry: ShareholderRegistry;
+  tokenGateway: TokenGateway;
   tokenMock: TokenMock;
   voting: Voting;
 };
@@ -75,10 +82,12 @@ export const CONTRACT_NAMES = [
   "daoRoles",
   "internalMarket",
   "neokingdomToken",
+  "neokingdomTokenExternal",
   "priceOracle",
   "redemptionController",
   "resolutionManager",
   "shareholderRegistry",
+  "tokenGateway",
   "tokenMock",
   "voting",
 ];

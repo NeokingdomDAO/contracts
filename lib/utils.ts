@@ -39,6 +39,7 @@ export const ROLES = {
     toUtf8Bytes("SHAREHOLDER_REGISTRY_ROLE")
   ),
   TOKEN_MANAGER_ROLE: keccak256(toUtf8Bytes("TOKEN_MANAGER_ROLE")),
+  MINTER_ROLE: keccak256(toUtf8Bytes("MINTER_ROLE")),
 } as const;
 
 export function isContractName(name: string): name is ContractNames {

@@ -5,10 +5,12 @@ import {
   DAORoles,
   InternalMarket,
   NeokingdomToken,
+  NeokingdomTokenExternal,
   PriceOracle,
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
+  TokenGateway,
   TokenMock,
   Voting,
 } from "../../typechain";
@@ -71,8 +73,15 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
       case "InternalMarket":
         this.contracts.internalMarket = contract as InternalMarket;
         break;
+      case "TokenGateway":
+        this.contracts.tokenGateway = contract as TokenGateway;
+        break;
       case "NeokingdomToken":
         this.contracts.neokingdomToken = contract as NeokingdomToken;
+        break;
+      case "NeokingdomTokenExternal":
+        this.contracts.neokingdomTokenExternal =
+          contract as NeokingdomTokenExternal;
         break;
       case "PriceOracle":
         this.contracts.priceOracle = contract as PriceOracle;

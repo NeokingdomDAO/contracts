@@ -9,7 +9,6 @@ contract NeokingdomTokenExternal is ERC20, AccessControl {
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
     }
 
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {

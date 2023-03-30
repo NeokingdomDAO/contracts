@@ -1,4 +1,4 @@
-import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -7,7 +7,6 @@ import { ethers, network, upgrades } from "hardhat";
 
 import {
   DAORoles,
-  DAORoles__factory,
   IRedemptionController,
   NeokingdomToken,
   NeokingdomToken__factory,
@@ -22,12 +21,13 @@ import { roles } from "./utils/roles";
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
+const { MaxUint256 } = ethers.constants;
 
 describe("NeokingdomTokenSnapshot", () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
-  let daoRoles: MockContract<DAORoles>;
+  let daoRoles: FakeContract<DAORoles>;
   let neokingdomToken: NeokingdomToken;
   let redemption: FakeContract<IRedemptionController>;
   let voting: VotingMock;
@@ -42,10 +42,8 @@ describe("NeokingdomTokenSnapshot", () => {
     [deployer, account, contributor, contributor2, nonContributor] =
       await ethers.getSigners();
 
+    daoRoles = await smock.fake("DAORoles");
     redemption = await smock.fake("IRedemptionController");
-
-    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
-    daoRoles = await DAORolesFactory.deploy();
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
@@ -83,9 +81,11 @@ describe("NeokingdomTokenSnapshot", () => {
     )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
 
-    daoRoles.hasRole
-      .whenCalledWith(OPERATOR_ROLE, deployer.address)
-      .returns(true);
+    daoRoles.hasRole.returns(true);
+    // To test transfers easily, we assign the role of InternalMarket to the deployer.
+    // In this way the deployer can trigger transfers in behalf of the user (if
+    // there is enough allowance).
+    await neokingdomToken.setInternalMarket(deployer.address);
     await neokingdomToken.setVoting(voting.address);
     await neokingdomToken.setRedemptionController(redemption.address);
 
@@ -117,9 +117,7 @@ describe("NeokingdomTokenSnapshot", () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
-    daoRoles.hasRole
-      .whenCalledWith(RESOLUTION_ROLE, deployer.address)
-      .returns(true);
+    daoRoles.hasRole.returns(true);
   });
 
   afterEach(async () => {
@@ -167,7 +165,11 @@ describe("NeokingdomTokenSnapshot", () => {
 
         await neokingdomToken
           .connect(nonContributor)
-          .transfer(contributor.address, 3);
+          .approve(deployer.address, MaxUint256);
+
+        await neokingdomToken
+          .connect(deployer)
+          .transferFrom(nonContributor.address, contributor.address, 3);
 
         await neokingdomToken.snapshot();
         const snapshotIdAfter = await neokingdomToken.getCurrentSnapshotId();
@@ -193,7 +195,11 @@ describe("NeokingdomTokenSnapshot", () => {
 
         await neokingdomToken
           .connect(nonContributor)
-          .transfer(contributor.address, 4);
+          .approve(deployer.address, MaxUint256);
+
+        await neokingdomToken
+          .connect(deployer)
+          .transferFrom(nonContributor.address, contributor.address, 4);
 
         await neokingdomToken.snapshot();
         const snapshotIdAfter = await neokingdomToken.getCurrentSnapshotId();
@@ -263,7 +269,12 @@ describe("NeokingdomTokenSnapshot", () => {
 
         await neokingdomToken
           .connect(nonContributor)
-          .transfer(contributor.address, 3);
+          .approve(deployer.address, MaxUint256);
+
+        await neokingdomToken
+          .connect(deployer)
+          .transferFrom(nonContributor.address, contributor.address, 3);
+
         await neokingdomToken.snapshot();
         const snapshotIdAfter = await neokingdomToken.getCurrentSnapshotId();
 

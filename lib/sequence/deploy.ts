@@ -119,6 +119,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Token
   (c) => c.neokingdomToken.setVoting(c.voting.address),
   (c) => c.neokingdomToken.setInternalMarket(c.internalMarket.address),
+  (c) => c.neokingdomToken.setTokenGateway(c.tokenGateway.address),
   (c) =>
     c.neokingdomToken.setRedemptionController(c.redemptionController.address),
 

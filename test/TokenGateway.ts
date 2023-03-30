@@ -110,8 +110,7 @@ describe("TokenGateway", async () => {
   describe("withdraw", async () => {
     it("should transfer external tokens to the withdrawer", async () => {
       await tokenGateway.connect(alice).withdraw(parseEther("10"));
-      expect(neokingdomTokenExternal.transferFrom).calledWith(
-        tokenGateway.address,
+      expect(neokingdomTokenExternal.transfer).calledWith(
         alice.address,
         parseEther("10")
       );

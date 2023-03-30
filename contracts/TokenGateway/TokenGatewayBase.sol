@@ -33,6 +33,6 @@ contract TokenGatewayBase {
 
     function _withdraw(address to, uint amount) internal virtual {
         _tokenInternal.burn(to, amount);
-        _tokenExternal.transferFrom(address(this), to, amount);
+        _tokenExternal.transfer(to, amount);
     }
 }

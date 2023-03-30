@@ -167,6 +167,12 @@ describe("Integration", async () => {
       await neokingdomToken
         .connect(user)
         .approve(internalMarket.address, ethers.constants.MaxUint256);
+      await neokingdomToken
+        .connect(user)
+        .approve(tokenGateway.address, ethers.constants.MaxUint256);
+      await neokingdomTokenExternal
+        .connect(user)
+        .approve(tokenGateway.address, ethers.constants.MaxUint256);
       // Mint some tokens
       await _mintTokens(user, tokens);
     }
@@ -435,7 +441,7 @@ describe("Integration", async () => {
       expect(resolution3Result).false;
     });
 
-    it.only("expect chaos", async () => {
+    it("expect chaos", async () => {
       await _makeContributor(user1, 60);
       await _makeContributor(user2, 30);
       await _makeContributor(user3, 10);
@@ -456,9 +462,13 @@ describe("Integration", async () => {
 
       const resolutionId2 = await _prepareResolution();
 
+      // User 3 is now investor, they can wrap and unwrap tokens without first
+      // offering them to the other contributors
       await shareholderRegistry.setStatus(investorStatus, user3.address);
-      await neokingdomToken.connect(user3).transfer(user2.address, 50);
-      await neokingdomToken.mint(user2.address, 50);
+      await tokenGateway.connect(user3).withdraw(50);
+      await neokingdomTokenExternal.connect(user3).transfer(user2.address, 50);
+      await tokenGateway.connect(user2).deposit(50);
+      await _mintTokens(user2, 50);
       // -> user 1 voting power == 60
       // -> user 2 voting power == 130
       // -> user 3 voting power == 0

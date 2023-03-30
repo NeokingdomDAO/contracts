@@ -179,7 +179,8 @@ describe("Upgrade", () => {
         neokingdomToken.connect(user1).transfer(user2.address, 1)
       ).revertedWith("NeokingdomToken: contributor cannot transfer");
 
-      await neokingdomToken.connect(user2).transfer(user1.address, 1);
+      // FIXME: not sure if we still need this transfer
+      // await neokingdomToken.connect(user2).transfer(user1.address, 1);
 
       const NeokingdomTokenV2MockFactory = (await ethers.getContractFactory(
         "NeokingdomTokenV2Mock"

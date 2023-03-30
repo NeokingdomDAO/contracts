@@ -3,7 +3,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
-import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
@@ -16,6 +15,7 @@ import {
   IStdReference,
   InternalMarket,
   InternalMarket__factory,
+  ShareholderRegistry,
 } from "../typechain";
 
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
@@ -35,6 +35,7 @@ describe("InternalMarket", async () => {
   let RESOLUTION_ROLE: string;
   let daoRoles: MockContract<DAORoles>;
   let token: FakeContract<IERC20>;
+  let registry: FakeContract<ShareholderRegistry>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
   let stdReference: FakeContract<IStdReference>;
@@ -68,6 +69,8 @@ describe("InternalMarket", async () => {
 
     redemption = await smock.fake("IRedemptionController");
     stdReference = await smock.fake("IStdReference");
+    registry = await smock.fake("ShareholderRegistry");
+    registry.isAtLeast.returns(true);
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
 
@@ -77,6 +80,7 @@ describe("InternalMarket", async () => {
     await internalMarket.setRedemptionController(redemption.address);
     await internalMarket.setExchangePair(usdc.address, stdReference.address);
     await internalMarket.setReserve(reserve.address);
+    await internalMarket.setShareholderRegistry(registry.address);
 
     offerDuration = (await internalMarket.offerDuration()).toNumber();
   });

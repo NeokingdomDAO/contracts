@@ -48,6 +48,12 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         _setDaoToken(token);
     }
 
+    function setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+        _setShareholderRegistry(shareholderRegistry);
+    }
+
     function setExchangePair(
         ERC20 token,
         IStdReference oracle

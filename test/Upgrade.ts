@@ -12,6 +12,7 @@ import {
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
   ShareholderRegistry,
+  TokenGateway,
 } from "../typechain";
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
@@ -27,6 +28,7 @@ const DAY = 60 * 60 * 24;
 describe("Upgrade", () => {
   let snapshotId: string;
 
+  let tokenGateway: TokenGateway;
   let neokingdomToken: NeokingdomToken;
   let shareholderRegistry: ShareholderRegistry;
   let resolutionManager: ResolutionManager;
@@ -49,7 +51,7 @@ describe("Upgrade", () => {
       reserve: reserve.address,
     });
     await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
-    ({ neokingdomToken, shareholderRegistry, resolutionManager } =
+    ({ neokingdomToken, shareholderRegistry, resolutionManager, tokenGateway } =
       await neokingdom.loadContracts());
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
@@ -79,7 +81,7 @@ describe("Upgrade", () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await neokingdomToken.mint(user.address, tokens);
+      await tokenGateway.mint(user.address, tokens);
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
@@ -102,6 +104,7 @@ describe("Upgrade", () => {
 
     it("should change previous version storage variables", async () => {
       // Change notice period of the a resolution type in the Resolution contract
+
       await _prepareForVoting(user1, 42);
       const resolutionId = await _prepareResolution(6);
       const resolutionObject = await resolutionManager.resolutions(

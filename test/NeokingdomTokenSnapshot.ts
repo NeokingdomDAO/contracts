@@ -87,7 +87,6 @@ describe("NeokingdomTokenSnapshot", () => {
       .whenCalledWith(OPERATOR_ROLE, deployer.address)
       .returns(true);
     await neokingdomToken.setVoting(voting.address);
-    await neokingdomToken.setShareholderRegistry(shareholderRegistry.address);
     await neokingdomToken.setRedemptionController(redemption.address);
 
     const contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();

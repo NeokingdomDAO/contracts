@@ -36,6 +36,6 @@ contract TokenGateway is Initializable, HasRole, TokenGatewayBase {
     }
 
     function withdraw(address to, uint amount) public {
-        _withdraw(to, amount);
+        _withdraw(msg.sender, to, amount);
     }
 }

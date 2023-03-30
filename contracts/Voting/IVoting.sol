@@ -44,5 +44,5 @@ interface IVoting is ISnapshot {
 
     function delegate(address newDelegate) external;
 
-    function delegateOnBehalf(address delegator, address newDelegate) external;
+    function delegateFrom(address delegator, address newDelegate) external;
 }

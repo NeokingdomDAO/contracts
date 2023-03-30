@@ -217,7 +217,7 @@ abstract contract ResolutionManagerBase {
         if (resolution.distrusted != address(0)) {
             delegated = _voting.getDelegate(resolution.distrusted);
             if (delegated != resolution.distrusted) {
-                _voting.delegateOnBehalf(
+                _voting.delegateFrom(
                     resolution.distrusted,
                     resolution.distrusted
                 );
@@ -228,7 +228,7 @@ abstract contract ResolutionManagerBase {
 
         if (resolution.distrusted != address(0)) {
             if (delegated != resolution.distrusted) {
-                _voting.delegateOnBehalf(resolution.distrusted, delegated);
+                _voting.delegateFrom(resolution.distrusted, delegated);
             }
         }
     }

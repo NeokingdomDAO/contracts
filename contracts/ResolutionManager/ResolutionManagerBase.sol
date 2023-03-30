@@ -212,6 +212,11 @@ abstract contract ResolutionManagerBase {
         Resolution storage resolution = resolutions[resolutionId];
         resolution.approveTimestamp = block.timestamp;
 
+        // In case of a distrust vote, we want the voting power of the contributor
+        // that is not going to be able to vote to be remove from the total voting
+        // power. Hence we are forcing the the contributor to have no delegation for this
+        // resolution so to have the voting power "clean". Delegation is restored
+        // after the snapshot.
         address delegated;
         if (resolution.distrusted != address(0)) {
             delegated = _voting.getDelegate(resolution.distrusted);

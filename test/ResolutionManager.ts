@@ -722,7 +722,7 @@ describe("Resolution", async () => {
 
           await expect(
             resolution.getVoterVote(resolutionId, user1.address)
-          ).revertedWith("Resolution: account could not vote resolution");
+          ).revertedWith("Resolution: account cannot vote");
         });
 
         it("should return right stats when updating from no to yes", async () => {
@@ -1596,7 +1596,7 @@ describe("Resolution", async () => {
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
-      expect(voting.delegateOnBehalf).to.have.not.been.called;
+      expect(voting.delegateFrom).to.have.not.been.called;
     });
 
     it("should remove and re-add delegation when delegating", async () => {
@@ -1608,11 +1608,11 @@ describe("Resolution", async () => {
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
-      expect(voting.delegateOnBehalf.getCall(0).args).eql([
+      expect(voting.delegateFrom.getCall(0).args).eql([
         user2.address,
         user2.address,
       ]);
-      expect(voting.delegateOnBehalf.getCall(1).args).eql([
+      expect(voting.delegateFrom.getCall(1).args).eql([
         user2.address,
         user1.address,
       ]);

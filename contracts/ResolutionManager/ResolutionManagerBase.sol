@@ -458,7 +458,7 @@ abstract contract ResolutionManagerBase {
         require(
             msg.sender != resolution.distrusted &&
                 _voting.canVoteAt(voter, resolution.snapshotId),
-            "Resolution: account could not vote resolution"
+            "Resolution: account cannot vote"
         );
 
         isYes = resolution.hasVotedYes[voter];

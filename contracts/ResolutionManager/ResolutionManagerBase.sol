@@ -64,10 +64,10 @@ abstract contract ResolutionManagerBase {
         address[] executionTo;
         bytes[] executionData;
         uint256 executionTimestamp;
+        address addressedContributor;
         mapping(address => bool) hasVoted;
         mapping(address => bool) hasVotedYes;
         mapping(address => uint256) lostVotingPower;
-        address distrusted;
     }
 
     uint256 internal _currentResolutionId;
@@ -158,7 +158,7 @@ abstract contract ResolutionManagerBase {
         bool isNegative,
         address[] memory executionTo,
         bytes[] memory executionData,
-        address distrusted
+        address addressedContributor
     ) internal virtual returns (uint256) {
         ResolutionType storage resolutionType = resolutionTypes[
             resolutionTypeId
@@ -188,7 +188,7 @@ abstract contract ResolutionManagerBase {
         resolution.isNegative = isNegative;
         resolution.executionTo = executionTo;
         resolution.executionData = executionData;
-        resolution.distrusted = distrusted;
+        resolution.addressedContributor = addressedContributor;
 
         return resolutionId;
     }
@@ -208,27 +208,30 @@ abstract contract ResolutionManagerBase {
         Resolution storage resolution = resolutions[resolutionId];
         resolution.approveTimestamp = block.timestamp;
 
-        // In case of a distrust vote, we want the voting power of the contributor
-        // that is not going to be able to vote to be remove from the total voting
+        // In case of a vote with addreeable contributor, we want the voting power of the contributor
+        // that addressed contributor to be removed from the total voting
         // power. Hence we are forcing the the contributor to have no delegation for this
         // resolution so to have the voting power "clean". Delegation is restored
         // after the snapshot.
         address delegated;
-        if (resolution.distrusted != address(0)) {
-            delegated = _voting.getDelegate(resolution.distrusted);
-            if (delegated != resolution.distrusted) {
+        if (resolution.addressedContributor != address(0)) {
+            delegated = _voting.getDelegate(resolution.addressedContributor);
+            if (delegated != resolution.addressedContributor) {
                 _voting.delegateFrom(
-                    resolution.distrusted,
-                    resolution.distrusted
+                    resolution.addressedContributor,
+                    resolution.addressedContributor
                 );
             }
         }
 
         resolution.snapshotId = _snapshotAll();
 
-        if (resolution.distrusted != address(0)) {
-            if (delegated != resolution.distrusted) {
-                _voting.delegateFrom(resolution.distrusted, delegated);
+        if (resolution.addressedContributor != address(0)) {
+            if (delegated != resolution.addressedContributor) {
+                _voting.delegateFrom(
+                    resolution.addressedContributor,
+                    delegated
+                );
             }
         }
     }
@@ -329,7 +332,7 @@ abstract contract ResolutionManagerBase {
         Resolution storage resolution = resolutions[resolutionId];
         require(resolution.approveTimestamp > 0, "Resolution: not approved");
         require(
-            msg.sender != resolution.distrusted,
+            msg.sender != resolution.addressedContributor,
             "Resolution: account cannot vote"
         );
 
@@ -452,7 +455,7 @@ abstract contract ResolutionManagerBase {
     {
         Resolution storage resolution = resolutions[resolutionId];
         require(
-            msg.sender != resolution.distrusted &&
+            msg.sender != resolution.addressedContributor &&
                 _voting.canVoteAt(voter, resolution.snapshotId),
             "Resolution: account cannot vote"
         );
@@ -486,9 +489,9 @@ abstract contract ResolutionManagerBase {
             resolution.snapshotId
         );
 
-        if (resolution.distrusted != address(0)) {
+        if (resolution.addressedContributor != address(0)) {
             totalVotingPower -= _neokingdomToken.balanceOfAt(
-                resolution.distrusted,
+                resolution.addressedContributor,
                 resolution.snapshotId
             );
         }

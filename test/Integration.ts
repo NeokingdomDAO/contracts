@@ -457,7 +457,7 @@ describe("Integration", async () => {
       resolutionId = ++currentResolution;
       await resolutionManager
         .connect(user1)
-        .createDistrustResolution(
+        .createAddressableResolution(
           "Qxdistrust",
           0,
           [shareholderRegistry.address],

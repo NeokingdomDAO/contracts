@@ -74,12 +74,12 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
             );
     }
 
-    function createDistrustResolution(
+    function createAddressableResolution(
         string calldata dataURI,
         uint256 resolutionTypeId,
         address[] memory executionTo,
         bytes[] memory executionData,
-        address distrusted
+        address addressedContributor
     ) external virtual returns (uint256) {
         return
             _createResolution(
@@ -88,7 +88,7 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
                 false,
                 executionTo,
                 executionData,
-                distrusted
+                addressedContributor
             );
     }
 

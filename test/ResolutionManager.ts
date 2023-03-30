@@ -227,22 +227,22 @@ describe("Resolution", async () => {
     });
   });
 
-  describe("createDistrustResolution", async () => {
-    it("allows to create a distrust resolution", async () => {
+  describe("createAddressableResolution", async () => {
+    it("allows to create an addressable resolution", async () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .createDistrustResolution("test", 0, [], [], user2.address)
+          .createAddressableResolution("test", 0, [], [], user2.address)
       )
         .to.emit(resolution, "ResolutionCreated")
         .withArgs(managingBoard.address, resolutionId);
     });
 
-    it("doesn't allow non contributors to create a distrust resolution", async () => {
+    it("doesn't allow non contributors to create an addressable resolution", async () => {
       await expect(
         resolution
           .connect(nonContributor)
-          .createDistrustResolution("test", 0, [], [], user2.address)
+          .createAddressableResolution("test", 0, [], [], user2.address)
       ).revertedWith("Resolution: only contributor can create");
     });
   });
@@ -1563,12 +1563,12 @@ describe("Resolution", async () => {
     });
   });
 
-  describe("distrust resolution", async () => {
+  describe("addressable resolution", async () => {
     let totalVotingPower = 100;
     async function _prepare() {
       await resolution
         .connect(managingBoard)
-        .createDistrustResolution("test", 6, [], [], user2.address);
+        .createAddressableResolution("test", 6, [], [], user2.address);
 
       voting.getTotalVotingPowerAt
         .whenCalledWith(resolutionSnapshotId)
@@ -1582,19 +1582,19 @@ describe("Resolution", async () => {
     it("should not remove and re-add delegation when not delegating", async () => {
       await resolution
         .connect(managingBoard)
-        .createDistrustResolution("test", 0, [], [], user2.address);
+        .createAddressableResolution("test", 0, [], [], user2.address);
 
       voting.getDelegate.whenCalledWith(user2.address).returns(user2.address);
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
-      expect(voting.delegateFrom).to.have.not.been.called;
+      expect(voting.delegateFrom).not.called;
     });
 
     it("should remove and re-add delegation when delegating", async () => {
       await resolution
         .connect(managingBoard)
-        .createDistrustResolution("test", 0, [], [], user2.address);
+        .createAddressableResolution("test", 0, [], [], user2.address);
 
       voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
 
@@ -1610,7 +1610,7 @@ describe("Resolution", async () => {
       ]);
     });
 
-    it("should prevent distrusted from voting", async () => {
+    it("should prevent addressed contributor from voting", async () => {
       await _prepare();
       setupUser(user2, 0);
 
@@ -1619,7 +1619,7 @@ describe("Resolution", async () => {
       ).revertedWith("Resolution: account cannot vote");
     });
 
-    it("should not count distrusted balance for quorum", async () => {
+    it("should not count addressed contributor balance for quorum", async () => {
       await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40);
@@ -1631,7 +1631,7 @@ describe("Resolution", async () => {
       expect(result).to.be.true;
     });
 
-    it("should count distrusted delegated's balance for quorum", async () => {
+    it("should count addressed contributor delegated's balance for quorum", async () => {
       await _prepare();
       setupUser(user2, 42, 60, user1);
       setupUser(user1, 42, 40);
@@ -1643,7 +1643,7 @@ describe("Resolution", async () => {
       expect(result).to.be.true;
     });
 
-    it("should count distrusted delegator's balance for quorum", async () => {
+    it("should count addressed contributor delegator's balance for quorum", async () => {
       await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40, user2);

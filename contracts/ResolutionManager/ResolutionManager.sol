@@ -74,12 +74,12 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
             );
     }
 
-    function createAddressableResolution(
+    function createResolutionWithExclusion(
         string calldata dataURI,
         uint256 resolutionTypeId,
         address[] memory executionTo,
         bytes[] memory executionData,
-        address addressedContributor
+        address excludedContributor
     ) external virtual returns (uint256) {
         return
             _createResolution(
@@ -88,7 +88,7 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
                 false,
                 executionTo,
                 executionData,
-                addressedContributor
+                excludedContributor
             );
     }
 

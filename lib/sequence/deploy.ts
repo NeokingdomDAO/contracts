@@ -140,4 +140,5 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.priceOracle.address
     ),
   (c) => c.internalMarket.setReserve(c.reserve),
+  (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),
 ];

@@ -21,7 +21,6 @@ import {
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
-import { ROLES } from "../lib/utils";
 import {
   getEVMTimestamp,
   mineEVMBlock,
@@ -33,6 +32,7 @@ import { roles } from "./utils/roles";
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
+const { MaxUint256, AddressZero } = ethers.constants;
 
 const DAY = 60 * 60 * 24;
 const INITIAL_USDC = 1000;
@@ -127,17 +127,23 @@ describe("Integration", async () => {
       .connect(reserve)
       .approve(internalMarket.address, INITIAL_USDC);
     await tokenMock.mint(user1.address, INITIAL_USDC);
-    await tokenMock
-      .connect(user1)
-      .approve(internalMarket.address, INITIAL_USDC);
     await tokenMock.mint(user2.address, INITIAL_USDC);
-    await tokenMock
-      .connect(user2)
-      .approve(internalMarket.address, INITIAL_USDC);
     await tokenMock.mint(user3.address, INITIAL_USDC);
-    await tokenMock
-      .connect(user3)
-      .approve(internalMarket.address, INITIAL_USDC);
+
+    for (let signer of [user1, user2, user3, free1, free2, free3]) {
+      await tokenMock
+        .connect(signer)
+        .approve(internalMarket.address, MaxUint256);
+      await neokingdomToken
+        .connect(signer)
+        .approve(internalMarket.address, MaxUint256);
+      await neokingdomToken
+        .connect(signer)
+        .approve(tokenGateway.address, MaxUint256);
+      await neokingdomTokenExternal
+        .connect(signer)
+        .approve(tokenGateway.address, MaxUint256);
+    }
   });
 
   beforeEach(async () => {
@@ -163,16 +169,6 @@ describe("Integration", async () => {
       await shareholderRegistry.mint(user.address, parseEther("1"));
       // Make user contributor
       await shareholderRegistry.setStatus(contributorStatus, user.address);
-      // User approves the market as a spender
-      await neokingdomToken
-        .connect(user)
-        .approve(internalMarket.address, ethers.constants.MaxUint256);
-      await neokingdomToken
-        .connect(user)
-        .approve(tokenGateway.address, ethers.constants.MaxUint256);
-      await neokingdomTokenExternal
-        .connect(user)
-        .approve(tokenGateway.address, ethers.constants.MaxUint256);
       // Mint some tokens
       await _mintTokens(user, tokens);
     }
@@ -465,8 +461,7 @@ describe("Integration", async () => {
       // User 3 is now investor, they can wrap and unwrap tokens without first
       // offering them to the other contributors
       await shareholderRegistry.setStatus(investorStatus, user3.address);
-      await tokenGateway.connect(user3).withdraw(50);
-      await neokingdomTokenExternal.connect(user3).transfer(user2.address, 50);
+      await tokenGateway.connect(user3).withdraw(user2.address, 50);
       await tokenGateway.connect(user2).deposit(50);
       await _mintTokens(user2, 50);
       // -> user 1 voting power == 60
@@ -576,8 +571,10 @@ describe("Integration", async () => {
       ).revertedWith("InternalMarket: amount exceeds balance");
       // Tries now to transfer the right amount
       await internalMarket.connect(user2).withdraw(user3.address, 1);
-      // The external user transfers the token back to user 1, because they can
-      await neokingdomToken.connect(user3).transfer(user1.address, 1);
+      // The external user withdraw the funds to user1
+      await tokenGateway.connect(user3).withdraw(user1.address, 1);
+      // user1 deposits them so they count for voting
+      await tokenGateway.connect(user1).deposit(1);
 
       const resolutionId3 = await _prepareResolution(6);
       await _makeVotable(resolutionId3);
@@ -723,7 +720,7 @@ describe("Integration", async () => {
       const data = iface.encodeFunctionData("mint", [user2.address, 42]);
       const resolutionId = await _prepareResolution(
         6,
-        [neokingdomToken.address],
+        [tokenGateway.address],
         [data]
       );
 

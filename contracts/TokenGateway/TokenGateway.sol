@@ -31,10 +31,11 @@ contract TokenGateway is Initializable, HasRole, TokenGatewayBase {
     }
 
     function deposit(uint amount) public {
+        // FIXME: should we check if the address is in the shareholders' registry?
         _deposit(msg.sender, amount);
     }
 
-    function withdraw(uint amount) public {
-        _withdraw(msg.sender, amount);
+    function withdraw(address to, uint amount) public {
+        _withdraw(to, amount);
     }
 }

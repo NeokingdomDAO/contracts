@@ -109,7 +109,9 @@ describe("TokenGateway", async () => {
 
   describe("withdraw", async () => {
     it("should transfer external tokens to the withdrawer", async () => {
-      await tokenGateway.connect(alice).withdraw(parseEther("10"));
+      await tokenGateway
+        .connect(alice)
+        .withdraw(alice.address, parseEther("10"));
       expect(neokingdomTokenExternal.transfer).calledWith(
         alice.address,
         parseEther("10")
@@ -117,7 +119,9 @@ describe("TokenGateway", async () => {
     });
 
     it("should burn the internal tokens from the withdrawer", async () => {
-      await tokenGateway.connect(alice).withdraw(parseEther("10"));
+      await tokenGateway
+        .connect(alice)
+        .withdraw(alice.address, parseEther("10"));
       expect(neokingdomToken.burn).calledWith(alice.address, parseEther("10"));
     });
   });

@@ -77,7 +77,6 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
     function createDistrustResolution(
         string calldata dataURI,
         uint256 resolutionTypeId,
-        bool isNegative,
         address[] memory executionTo,
         bytes[] memory executionData,
         address distrusted
@@ -86,7 +85,7 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
             _createResolution(
                 dataURI,
                 resolutionTypeId,
-                isNegative,
+                false,
                 executionTo,
                 executionData,
                 distrusted

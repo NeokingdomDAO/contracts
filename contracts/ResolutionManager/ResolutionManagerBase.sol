@@ -175,10 +175,6 @@ abstract contract ResolutionManagerBase {
             "Resolution: cannot be negative"
         );
         require(
-            distrusted == address(0) || !isNegative,
-            "Resolution: no veto resolution for distrust vote"
-        );
-        require(
             executionTo.length == executionData.length,
             "Resolution: length mismatch"
         );

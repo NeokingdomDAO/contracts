@@ -232,7 +232,7 @@ describe("Resolution", async () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .createDistrustResolution("test", 0, false, [], [], user2.address)
+          .createDistrustResolution("test", 0, [], [], user2.address)
       )
         .to.emit(resolution, "ResolutionCreated")
         .withArgs(managingBoard.address, resolutionId);
@@ -242,16 +242,8 @@ describe("Resolution", async () => {
       await expect(
         resolution
           .connect(nonContributor)
-          .createDistrustResolution("test", 0, false, [], [], user2.address)
+          .createDistrustResolution("test", 0, [], [], user2.address)
       ).revertedWith("Resolution: only contributor can create");
-    });
-
-    it("doesn't allow to create a negative distrust resolution", async () => {
-      await expect(
-        resolution
-          .connect(managingBoard)
-          .createDistrustResolution("test", 6, true, [], [], user2.address)
-      ).revertedWith("Resolution: no veto resolution for distrust vote");
     });
   });
 
@@ -1576,7 +1568,7 @@ describe("Resolution", async () => {
     async function _prepare() {
       await resolution
         .connect(managingBoard)
-        .createDistrustResolution("test", 6, false, [], [], user2.address);
+        .createDistrustResolution("test", 6, [], [], user2.address);
 
       voting.getTotalVotingPowerAt
         .whenCalledWith(resolutionSnapshotId)
@@ -1590,7 +1582,7 @@ describe("Resolution", async () => {
     it("should not remove and re-add delegation when not delegating", async () => {
       await resolution
         .connect(managingBoard)
-        .createDistrustResolution("test", 0, false, [], [], user2.address);
+        .createDistrustResolution("test", 0, [], [], user2.address);
 
       voting.getDelegate.whenCalledWith(user2.address).returns(user2.address);
 
@@ -1602,7 +1594,7 @@ describe("Resolution", async () => {
     it("should remove and re-add delegation when delegating", async () => {
       await resolution
         .connect(managingBoard)
-        .createDistrustResolution("test", 0, false, [], [], user2.address);
+        .createDistrustResolution("test", 0, [], [], user2.address);
 
       voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
 

@@ -460,7 +460,6 @@ describe("Integration", async () => {
         .createDistrustResolution(
           "Qxdistrust",
           0,
-          false,
           [shareholderRegistry.address],
           [data],
           user3.address

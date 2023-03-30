@@ -1600,11 +1600,11 @@ describe("Resolution", async () => {
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
-      expect(voting.delegateFrom.getCall(0).args).eql([
+      expect(voting.delegateFrom.getCall(0).args).deep.equal([
         user2.address,
         user2.address,
       ]);
-      expect(voting.delegateFrom.getCall(1).args).eql([
+      expect(voting.delegateFrom.getCall(1).args).deep.equal([
         user2.address,
         user1.address,
       ]);

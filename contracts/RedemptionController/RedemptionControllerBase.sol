@@ -207,6 +207,7 @@ abstract contract RedemptionControllerBase is IRedemptionController {
                 } else {
                     amount -= redeemable.amount;
                     redeemable.amount = 0;
+                    // FIXME: delete object from array?
                 }
             }
         }

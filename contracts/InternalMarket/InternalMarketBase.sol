@@ -10,6 +10,8 @@ import "../PriceOracle/IStdReference.sol";
 import "../NeokingdomTokenExternal/INeokingdomTokenExternal.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 
+import "hardhat/console.sol";
+
 contract InternalMarketBase {
     event OfferCreated(
         uint128 id,
@@ -183,12 +185,21 @@ contract InternalMarketBase {
         tokenInternal.mint(from, amount);
     }
 
-    /*
-    function _withdraw(address from, address to, uint amount) internal virtual {
-        tokenInternal.burn(from, amount);
-        tokenExternal.transfer(to, amount);
+    function _matchOffer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        _beforeMatchOffer(from, to, amount);
+        require(
+            tokenInternal.transfer(to, amount),
+            "InternalMarketBase: transfer failed"
+        );
+        require(
+            exchangeToken.transferFrom(to, from, _convertToUSDC(amount)),
+            "InternalMarketBase: transfer failed"
+        );
     }
-    */
 
     function _withdraw(
         address from,
@@ -213,30 +224,15 @@ contract InternalMarketBase {
         );
     }
 
-    function _matchOffer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {
-        _beforeMatchOffer(from, to, amount);
-        require(
-            tokenInternal.transfer(to, amount),
-            "InternalMarketBase: transfer failed"
-        );
-        require(
-            exchangeToken.transferFrom(to, from, _convertToUSDC(amount)),
-            "InternalMarketBase: transfer failed"
-        );
-    }
-
     function _redeem(address from, uint256 amount) internal virtual {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
+            tokenInternal.burn(from, difference);
             // internalToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
             require(
-                tokenInternal.transferFrom(from, reserve, difference),
+                tokenExternal.transfer(reserve, difference),
                 "InternalMarketBase: transfer failed"
             );
             _withdraw(from, reserve, withdrawableBalance);

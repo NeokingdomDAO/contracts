@@ -394,11 +394,11 @@ describe("InternalMarket", async () => {
 
         describe("and no tokens in the user wallet", async () => {
           it("should fail when the user redeems 70 tokens", async () => {
-            tokenInternal.transferFrom
-              // 50 tokens are withdrawable, so redeeming 70 should take the
-              // missing 20 from the user
-              .whenCalledWith(alice.address, reserve.address, parseEther("20"))
-              .reverts("ERC20: insufficient balance");
+            tokenInternal.burn
+              // 50 tokens are withdrawable, so redeeming 70 should burn the
+              // missing 20 from Alice, but she doesn't have tokens left.
+              .whenCalledWith(alice.address, parseEther("20"))
+              .reverts("ERC20: burn amount exceeds balance");
             // smock2 bug causes this error rather than the faked one
             await expect(
               internalMarket.connect(alice).redeem(parseEther("70"))
@@ -406,11 +406,11 @@ describe("InternalMarket", async () => {
           });
 
           it("should fail when the user redeems 60 tokens", async () => {
-            tokenInternal.transferFrom
+            tokenInternal.burn
               // 50 tokens are withdrawable, so redeeming 60 should take the
-              // missing 10 from the user
-              .whenCalledWith(alice.address, reserve.address, parseEther("10"))
-              .reverts("ERC20: insufficient balance");
+              // missing 10 from Alice, but she doesn't have tokens left.
+              .whenCalledWith(alice.address, parseEther("10"))
+              .reverts("ERC20: burn amount exceeds balance");
             await expect(
               internalMarket.connect(alice).redeem(parseEther("60"))
             ).revertedWith("function returned an unexpected amount of data");
@@ -444,9 +444,10 @@ describe("InternalMarket", async () => {
 
         describe("and 10 tokens in the user wallet", async () => {
           beforeEach(async () => {
-            tokenInternal.transferFrom
-              .whenCalledWith(alice.address, reserve.address, parseEther("20"))
-              .reverts("ERC20: insufficient balance");
+            tokenInternal.burn.reset();
+            tokenInternal.burn
+              .whenCalledWith(alice.address, parseEther("20"))
+              .reverts("ERC20: burn amount exceeds balance");
           });
 
           it("should fail when the user redeems 70 tokens", async () => {
@@ -460,9 +461,15 @@ describe("InternalMarket", async () => {
               await internalMarket.connect(alice).redeem(parseEther("60"));
             });
 
-            it("should transfer 10 tokens from alice to internal market and then to reserve", async () => {
-              expect(tokenInternal.transferFrom).calledWith(
+            it("should burn 10 tokens from alice", async () => {
+              expect(tokenInternal.burn).calledWith(
                 alice.address,
+                parseEther("10")
+              );
+            });
+
+            it("should transfer 10 external tokens from internal market to reserve", async () => {
+              expect(tokenExternal.transfer).calledWith(
                 reserve.address,
                 parseEther("10")
               );

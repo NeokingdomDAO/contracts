@@ -10,7 +10,6 @@ import {
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
-  TokenGateway,
   TokenMock,
   Voting,
 } from "../../typechain";
@@ -72,9 +71,6 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
         break;
       case "InternalMarket":
         this.contracts.internalMarket = contract as InternalMarket;
-        break;
-      case "TokenGateway":
-        this.contracts.tokenGateway = contract as TokenGateway;
         break;
       case "NeokingdomToken":
         this.contracts.neokingdomToken = contract as NeokingdomToken;

@@ -17,8 +17,6 @@ import {
   ResolutionManager__factory,
   ShareholderRegistry,
   ShareholderRegistry__factory,
-  TokenGateway,
-  TokenGateway__factory,
   TokenMock,
   TokenMock__factory,
   Voting,
@@ -35,7 +33,6 @@ export const FACTORIES = {
   RedemptionController: RedemptionController__factory,
   ResolutionManager: ResolutionManager__factory,
   ShareholderRegistry: ShareholderRegistry__factory,
-  TokenGateway: TokenGateway__factory,
   TokenMock: TokenMock__factory,
   Voting: Voting__factory,
 } as const;
@@ -54,7 +51,6 @@ export type NeokingdomContracts = {
   redemptionController: RedemptionController;
   resolutionManager: ResolutionManager;
   shareholderRegistry: ShareholderRegistry;
-  tokenGateway: TokenGateway;
   tokenMock: TokenMock;
   voting: Voting;
 };
@@ -87,7 +83,6 @@ export const CONTRACT_NAMES = [
   "redemptionController",
   "resolutionManager",
   "shareholderRegistry",
-  "tokenGateway",
   "tokenMock",
   "voting",
 ];

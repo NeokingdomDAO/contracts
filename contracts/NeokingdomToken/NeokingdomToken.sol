@@ -49,12 +49,6 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
         _setRedemptionController(redemption);
     }
 
-    function setTokenGateway(
-        address tokenGateway
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        _setTokenGateway(tokenGateway);
-    }
-
     function mint(
         address to,
         uint256 amount

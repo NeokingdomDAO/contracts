@@ -29,22 +29,14 @@ describe("NeokingdomToken", () => {
   let redemption: FakeContract<IRedemptionController>;
   let deployer: SignerWithAddress;
   let internalMarket: SignerWithAddress;
-  let tokenGateway: SignerWithAddress;
   let contributor: SignerWithAddress;
   let contributor2: SignerWithAddress;
   let account: SignerWithAddress;
   let account2: SignerWithAddress;
 
   before(async () => {
-    [
-      deployer,
-      internalMarket,
-      tokenGateway,
-      contributor,
-      contributor2,
-      account,
-      account2,
-    ] = await ethers.getSigners();
+    [deployer, internalMarket, contributor, contributor2, account, account2] =
+      await ethers.getSigners();
 
     daoRoles = await smock.fake("DAORoles");
     redemption = await smock.fake("IRedemptionController");
@@ -64,7 +56,6 @@ describe("NeokingdomToken", () => {
     voting = await smock.fake("IVoting");
 
     daoRoles.hasRole.returns(true);
-    await neokingdomToken.setTokenGateway(tokenGateway.address);
     await neokingdomToken.setInternalMarket(internalMarket.address);
     await neokingdomToken.setVoting(voting.address);
     await neokingdomToken.setRedemptionController(redemption.address);
@@ -75,9 +66,6 @@ describe("NeokingdomToken", () => {
     await neokingdomToken
       .connect(signer)
       .approve(internalMarket.address, MaxUint256);
-    await neokingdomToken
-      .connect(signer)
-      .approve(tokenGateway.address, MaxUint256);
   }
 
   beforeEach(async () => {
@@ -122,7 +110,7 @@ describe("NeokingdomToken", () => {
       await mintAndApprove(contributor, 10);
       redemption.afterMint.reset();
       await neokingdomToken
-        .connect(tokenGateway)
+        .connect(internalMarket)
         .transferFrom(contributor.address, account2.address, 10);
       expect(redemption.afterMint).callCount(0);
     });
@@ -178,8 +166,8 @@ describe("NeokingdomToken", () => {
       ).revertedWith("NeokingdomToken: contributor cannot transfer");
     });
 
-    it("should burn when called by the TokenGateway", async () => {
-      await neokingdomToken.connect(tokenGateway).burn(account.address, 1);
+    it("should burn when called by InternalMarket", async () => {
+      await neokingdomToken.connect(internalMarket).burn(account.address, 1);
       expect(await neokingdomToken.balanceOf(account.address)).equal(9);
     });
   });

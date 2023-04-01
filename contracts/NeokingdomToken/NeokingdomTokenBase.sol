@@ -13,7 +13,6 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     event VestingSet(address to, uint256 amount);
 
     IVoting internal _voting;
-    address internal _tokenGateway;
     InternalMarket internal _internalMarket;
     IRedemptionController internal _redemptionController;
 
@@ -29,10 +28,6 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     mapping(address => uint256) internal _vestingBalance;
 
     // mapping(address => uint256) internal _unlockedBalance;
-
-    function _setTokenGateway(address tokenGateway) internal virtual {
-        _tokenGateway = tokenGateway;
-    }
 
     function _setInternalMarket(
         InternalMarket internalMarket
@@ -58,9 +53,7 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
         super._beforeTokenTransfer(from, to, amount);
 
         require(
-            from == address(0) ||
-                _msgSender() == address(_internalMarket) ||
-                _msgSender() == address(_tokenGateway),
+            from == address(0) || _msgSender() == address(_internalMarket),
             "NeokingdomToken: contributor cannot transfer"
         );
     }

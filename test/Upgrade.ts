@@ -6,13 +6,13 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  InternalMarket,
   NeokingdomToken,
   NeokingdomTokenV2Mock__factory,
   NewNeokingdomTokenMock__factory,
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
   ShareholderRegistry,
-  TokenGateway,
 } from "../typechain";
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
@@ -28,9 +28,9 @@ const DAY = 60 * 60 * 24;
 describe("Upgrade", () => {
   let snapshotId: string;
 
-  let tokenGateway: TokenGateway;
   let neokingdomToken: NeokingdomToken;
   let shareholderRegistry: ShareholderRegistry;
+  let internalMarket: InternalMarket;
   let resolutionManager: ResolutionManager;
   let managingBoardStatus: string;
   let contributorStatus: string;
@@ -51,8 +51,12 @@ describe("Upgrade", () => {
       reserve: reserve.address,
     });
     await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
-    ({ neokingdomToken, shareholderRegistry, resolutionManager, tokenGateway } =
-      await neokingdom.loadContracts());
+    ({
+      neokingdomToken,
+      shareholderRegistry,
+      resolutionManager,
+      internalMarket,
+    } = await neokingdom.loadContracts());
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -81,7 +85,7 @@ describe("Upgrade", () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await tokenGateway.mint(user.address, tokens);
+      await internalMarket.mint(user.address, tokens);
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {

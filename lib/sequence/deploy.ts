@@ -56,13 +56,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.deployProxy("InternalMarket", [
       c.daoRoles.address,
       c.neokingdomToken.address,
-    ]),
-  (c) =>
-    c.deployProxy("TokenGateway", [
-      c.daoRoles.address,
       c.neokingdomTokenExternal.address,
-      c.neokingdomToken.address,
-      c.internalMarket.address,
     ]),
   (c) =>
     c.deployProxy("ShareholderRegistry", [
@@ -98,12 +92,12 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.neokingdomToken.address),
   (c) =>
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
-  (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.tokenGateway.address),
+  (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.internalMarket.address),
 
   (c) =>
     c.neokingdomTokenExternal.grantRole(
       ROLES.MINTER_ROLE,
-      c.tokenGateway.address
+      c.internalMarket.address
     ),
 
   // Set interdependencies
@@ -119,7 +113,6 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Token
   (c) => c.neokingdomToken.setVoting(c.voting.address),
   (c) => c.neokingdomToken.setInternalMarket(c.internalMarket.address),
-  (c) => c.neokingdomToken.setTokenGateway(c.tokenGateway.address),
   (c) =>
     c.neokingdomToken.setRedemptionController(c.redemptionController.address),
 

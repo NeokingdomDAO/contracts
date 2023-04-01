@@ -12,13 +12,24 @@ import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
 
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
-    function initialize(DAORoles roles, IERC20 daoToken) public initializer {
-        _initialize(daoToken, 7 days);
+    function initialize(
+        DAORoles roles,
+        INeokingdomToken tokenInternal,
+        INeokingdomTokenExternal tokenExternal
+    ) public initializer {
+        _initialize(tokenInternal, tokenExternal, 7 days);
         _setRoles(roles);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
+
+    function mint(
+        address to,
+        uint256 amount
+    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+        _mint(to, amount);
+    }
 
     function makeOffer(uint256 amount) public virtual {
         _makeOffer(_msgSender(), amount);
@@ -26,6 +37,11 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
 
     function matchOffer(address account, uint amount) public {
         _matchOffer(account, _msgSender(), amount);
+    }
+
+    function deposit(uint amount) public {
+        // FIXME: should we check if the address is in the shareholders' registry?
+        _deposit(msg.sender, amount);
     }
 
     function withdraw(address to, uint amount) public {
@@ -44,8 +60,10 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         _redeem(_msgSender(), amount);
     }
 
-    function setDaoToken(IERC20 token) public onlyRole(Roles.RESOLUTION_ROLE) {
-        _setDaoToken(token);
+    function setInternalToken(
+        INeokingdomToken token
+    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+        _setInternalToken(token);
     }
 
     function setShareholderRegistry(

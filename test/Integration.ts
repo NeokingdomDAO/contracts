@@ -31,7 +31,7 @@ import { roles } from "./utils/roles";
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
-const { MaxUint256, AddressZero } = ethers.constants;
+const { MaxUint256 } = ethers.constants;
 
 const DAY = 60 * 60 * 24;
 const INITIAL_USDC = 1000;
@@ -154,11 +154,17 @@ describe("Integration", async () => {
       currentResolution = 0;
     });
 
-    async function _mintTokens(user: SignerWithAddress, tokens: number) {
+    async function _mintTokens(
+      user: SignerWithAddress,
+      tokens: number | BigNumber
+    ) {
       await internalMarket.mint(user.address, tokens);
     }
 
-    async function _makeContributor(user: SignerWithAddress, tokens: number) {
+    async function _makeContributor(
+      user: SignerWithAddress,
+      tokens: number | BigNumber
+    ) {
       // Make user shareholder
       await shareholderRegistry.mint(user.address, parseEther("1"));
       // Make user contributor
@@ -974,6 +980,165 @@ describe("Integration", async () => {
       expect(await tokenMock.balanceOf(reserve.address)).equal(
         INITIAL_USDC - tokensRedeemed
       );
+    });
+
+    it("internal and external token amounts", async () => {
+      async function check({
+        internalSupply = 0,
+        externalSupply = 0,
+        marketInternalBalance = 0,
+        marketExternalBalance = 0,
+        user1InternalBalance = 0,
+        user1ExternalBalance = 0,
+        user1UsdcBalance = INITIAL_USDC,
+        user2InternalBalance = 0,
+        user2ExternalBalance = 0,
+        user2UsdcBalance = INITIAL_USDC,
+        user3InternalBalance = 0,
+        user3ExternalBalance = 0,
+        user3UsdcBalance = INITIAL_USDC,
+        reserveExternalBalance = 0,
+        reserveUsdcBalance = INITIAL_USDC,
+      }) {
+        // Total supplies
+        expect(await neokingdomToken.totalSupply()).equal(internalSupply);
+        expect(await neokingdomTokenExternal.totalSupply()).equal(
+          externalSupply
+        );
+
+        // InternalMarket
+        expect(await neokingdomToken.balanceOf(internalMarket.address)).equal(
+          marketInternalBalance
+        );
+
+        expect(
+          await neokingdomTokenExternal.balanceOf(internalMarket.address)
+        ).equal(marketExternalBalance);
+
+        // User1 balances
+        expect(await neokingdomToken.balanceOf(user1.address)).equal(
+          user1InternalBalance
+        );
+        expect(await neokingdomTokenExternal.balanceOf(user1.address)).equal(
+          user1ExternalBalance
+        );
+        expect(await tokenMock.balanceOf(user1.address)).equal(
+          user1UsdcBalance
+        );
+
+        // User2 balances
+        expect(await neokingdomToken.balanceOf(user2.address)).equal(
+          user2InternalBalance
+        );
+        expect(await neokingdomTokenExternal.balanceOf(user2.address)).equal(
+          user2ExternalBalance
+        );
+        expect(await tokenMock.balanceOf(user2.address)).equal(
+          user2UsdcBalance
+        );
+
+        // User3 balances
+        expect(await neokingdomToken.balanceOf(user3.address)).equal(
+          user3InternalBalance
+        );
+        expect(await neokingdomTokenExternal.balanceOf(user3.address)).equal(
+          user3ExternalBalance
+        );
+        expect(await tokenMock.balanceOf(user3.address)).equal(
+          user3UsdcBalance
+        );
+
+        // Reserve balances
+        expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
+          reserveExternalBalance
+        );
+        expect(await tokenMock.balanceOf(reserve.address)).equal(
+          reserveUsdcBalance
+        );
+      }
+
+      await check({});
+
+      await _makeContributor(user1, 100);
+      await _makeContributor(user2, 30);
+
+      await check({
+        internalSupply: 130,
+        externalSupply: 130,
+        marketExternalBalance: 130,
+        user1InternalBalance: 100,
+        user2InternalBalance: 30,
+      });
+
+      // Offering 20 tokens locks them in the internal market contract
+      await internalMarket.connect(user1).makeOffer(20);
+      await check({
+        internalSupply: 130,
+        externalSupply: 130,
+        // +20
+        marketInternalBalance: 20,
+        marketExternalBalance: 130,
+        // -20
+        user1InternalBalance: 80,
+        user2InternalBalance: 30,
+      });
+
+      // user2 matches 5 tokens
+      await internalMarket.connect(user2).matchOffer(user1.address, 5);
+      await check({
+        internalSupply: 130,
+        externalSupply: 130,
+        // -5
+        marketInternalBalance: 15,
+        marketExternalBalance: 130,
+        user1InternalBalance: 80,
+        // +5
+        user1UsdcBalance: INITIAL_USDC + 5,
+        // +5
+        user2InternalBalance: 35,
+        // -5
+        user2UsdcBalance: INITIAL_USDC - 5,
+      });
+
+      // after 1 week the remaining 15 tokens can be withdrawn
+      await timeTravel(offerDurationDays, true);
+      await internalMarket.connect(user1).withdraw(user3.address, 15);
+      await check({
+        // -15
+        internalSupply: 115,
+        externalSupply: 130,
+        // -15
+        marketInternalBalance: 0,
+        // -15
+        marketExternalBalance: 115,
+        user1InternalBalance: 80,
+        user1UsdcBalance: INITIAL_USDC + 5,
+        user2InternalBalance: 35,
+        user2UsdcBalance: INITIAL_USDC - 5,
+        // +15
+        user3ExternalBalance: 15,
+      });
+
+      await timeTravel(redemptionStartDays, true);
+      await internalMarket.connect(user1).redeem(20);
+      await check({
+        // -20
+        internalSupply: 95,
+        // FIXME: we should burn external tokens too
+        externalSupply: 130,
+        marketInternalBalance: 0,
+        // -20
+        marketExternalBalance: 95,
+        // -20
+        user1InternalBalance: 60,
+        // +20
+        user1UsdcBalance: INITIAL_USDC + 5 + 20,
+        user2InternalBalance: 35,
+        user2UsdcBalance: INITIAL_USDC - 5,
+        user3ExternalBalance: 15,
+        reserveExternalBalance: 20,
+        reserveUsdcBalance: INITIAL_USDC - 20,
+      });
     });
   });
 });

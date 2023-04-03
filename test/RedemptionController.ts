@@ -1,3 +1,4 @@
+import { MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -5,11 +6,14 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   RedemptionController,
   RedemptionController__factory,
 } from "../typechain";
 
 import { mineEVMBlock, timeTravel } from "./utils/evm";
+import { roles } from "./utils/roles";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
@@ -18,6 +22,7 @@ const { expect } = chai;
 describe("RedemptionController", () => {
   let snapshotId: string;
 
+  let daoRoles: MockContract<DAORoles>;
   let redemptionController: RedemptionController;
   let deployer: SignerWithAddress, account: SignerWithAddress;
   let redemptionWindow: number;
@@ -27,33 +32,38 @@ describe("RedemptionController", () => {
   before(async () => {
     [deployer, account] = await ethers.getSigners();
 
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
+    daoRoles = await DAORolesFactory.deploy();
+
     const RedemptionControllerFactory = (await ethers.getContractFactory(
       "RedemptionController",
       deployer
     )) as RedemptionController__factory;
 
     redemptionController = (await upgrades.deployProxy(
-      RedemptionControllerFactory
+      RedemptionControllerFactory,
+      [daoRoles.address]
     )) as RedemptionController;
     await redemptionController.deployed();
-    await redemptionController.grantRole(
-      await redemptionController.TOKEN_MANAGER_ROLE(),
-      deployer.address
-    );
+
+    TOKEN_MANAGER_ROLE = await roles.TOKEN_MANAGER_ROLE();
 
     redemptionWindow =
       (await redemptionController.redemptionWindow()).toNumber() /
       (60 * 60 * 24);
-
-    TOKEN_MANAGER_ROLE = await redemptionController.TOKEN_MANAGER_ROLE();
   });
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
+
+    daoRoles.hasRole
+      .whenCalledWith(TOKEN_MANAGER_ROLE, deployer.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    daoRoles.hasRole.reset();
   });
 
   async function expectBalance(amount: number) {

@@ -2,7 +2,7 @@ import { task } from "hardhat/config";
 
 import { Voting__factory } from "../typechain";
 
-import { loadContract } from "./config";
+import { loadContract } from "../lib/config";
 
 task("delegate", "Delegate an address")
   .addPositionalParam("delegate", "The delegate")

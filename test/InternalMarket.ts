@@ -1,12 +1,16 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
+import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
+  ERC20,
   IERC20,
   IRedemptionController,
   IStdReference,
@@ -29,11 +33,12 @@ describe("InternalMarket", async () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string;
+  let daoRoles: MockContract<DAORoles>;
   let token: FakeContract<IERC20>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
   let stdReference: FakeContract<IStdReference>;
-  let usdc: FakeContract<IERC20>;
+  let usdc: FakeContract<ERC20>;
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -45,7 +50,11 @@ describe("InternalMarket", async () => {
     [deployer, alice, bob, carol, reserve] = await ethers.getSigners();
 
     token = await smock.fake("IERC20");
-    usdc = await smock.fake("IERC20");
+    usdc = await smock.fake("ERC20");
+    usdc.decimals.returns(6);
+
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
+    daoRoles = await DAORolesFactory.deploy();
 
     const InternalMarketFactory = (await ethers.getContractFactory(
       "InternalMarket",
@@ -53,6 +62,7 @@ describe("InternalMarket", async () => {
     )) as InternalMarket__factory;
 
     internalMarket = (await upgrades.deployProxy(InternalMarketFactory, [
+      daoRoles.address,
       token.address,
     ])) as InternalMarket;
 
@@ -60,13 +70,15 @@ describe("InternalMarket", async () => {
     stdReference = await smock.fake("IStdReference");
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await internalMarket.grantRole(RESOLUTION_ROLE, deployer.address);
 
-    offerDuration = (await internalMarket.offerDuration()).toNumber();
-
+    daoRoles.hasRole
+      .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+      .returns(true);
     await internalMarket.setRedemptionController(redemption.address);
     await internalMarket.setExchangePair(usdc.address, stdReference.address);
     await internalMarket.setReserve(reserve.address);
+
+    offerDuration = (await internalMarket.offerDuration()).toNumber();
   });
 
   beforeEach(async () => {
@@ -90,7 +102,12 @@ describe("InternalMarket", async () => {
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    daoRoles.hasRole.reset();
   });
+
+  function parseUSDC(usdc: number) {
+    return usdc * 10 ** 6;
+  }
 
   describe("setExchangePair", async () => {
     it("should allow a resolution to set token and oracle addresses", async () => {
@@ -115,6 +132,9 @@ describe("InternalMarket", async () => {
   describe("setDaoToken", async () => {
     it("should allow a resolution to set token and oracle addresses", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
+      daoRoles.hasRole
+        .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+        .returns(true);
       await internalMarket.setDaoToken(alice.address);
       expect(await internalMarket.daoToken()).equal(alice.address);
     });
@@ -132,6 +152,9 @@ describe("InternalMarket", async () => {
   describe("setOfferDuration", async () => {
     it("should allow a resolution to set duration of an offer", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
+      daoRoles.hasRole
+        .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+        .returns(true);
       await internalMarket.setOfferDuration(DAY);
       expect(await internalMarket.offerDuration()).equal(DAY);
     });
@@ -190,13 +213,13 @@ describe("InternalMarket", async () => {
 
         describe("when the exchange rate is 1/1", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
               rate: parseEther("1"),
               lastUpdatedBase: parseEther("0"),
               lastUpdatedQuote: parseEther("0"),
             });
             stdReference.getReferenceData
-              .whenCalledWith("usdc", "usd")
+              .whenCalledWith("USDC", "USD")
               .returns({
                 rate: parseEther("1"),
                 lastUpdatedBase: parseEther("0"),
@@ -214,36 +237,25 @@ describe("InternalMarket", async () => {
             expect(usdc.transferFrom).calledWith(
               reserve.address,
               alice.address,
-              parseEther("10")
+              parseUSDC(10)
             );
           });
         });
 
         describe("when the exchange rate is 1/2", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
               rate: parseEther("2"),
               lastUpdatedBase: parseEther("0"),
               lastUpdatedQuote: parseEther("0"),
             });
             stdReference.getReferenceData
-              .whenCalledWith("usdc", "usd")
+              .whenCalledWith("USDC", "USD")
               .returns({
                 rate: parseEther("1"),
                 lastUpdatedBase: parseEther("0"),
                 lastUpdatedQuote: parseEther("0"),
               });
-          });
-
-          it("should exchange the 10 DAO tokens sats for 20 USDC sats", async () => {
-            await internalMarket.connect(alice).redeem(10);
-
-            expect(token.transfer).calledWith(reserve.address, 10);
-            expect(usdc.transferFrom).calledWith(
-              reserve.address,
-              alice.address,
-              20
-            );
           });
 
           it("should exchange the 10 DAO token for 20 USDC", async () => {
@@ -256,20 +268,20 @@ describe("InternalMarket", async () => {
             expect(usdc.transferFrom).calledWith(
               reserve.address,
               alice.address,
-              parseEther("20")
+              parseUSDC(20)
             );
           });
         });
 
         describe("when the exchange rate is 1.12 eur/usd and 0.998 usdc/usd", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
               rate: parseEther("1.12"),
               lastUpdatedBase: parseEther("0"),
               lastUpdatedQuote: parseEther("0"),
             });
             stdReference.getReferenceData
-              .whenCalledWith("usdc", "usd")
+              .whenCalledWith("USDC", "USD")
               .returns({
                 rate: parseEther("0.998"),
                 lastUpdatedBase: parseEther("0"),
@@ -277,7 +289,7 @@ describe("InternalMarket", async () => {
               });
           });
 
-          it("should exchange the 10 DAO tokens for 11.22244488977956 USDC", async () => {
+          it("should exchange the 10 DAO tokens for 11.222444 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
 
             expect(token.transfer).calledWith(
@@ -287,47 +299,25 @@ describe("InternalMarket", async () => {
             expect(usdc.transferFrom).calledWith(
               reserve.address,
               alice.address,
-              parseEther("11.222444889779559118")
+              parseUSDC(11.222444)
             );
           });
         });
 
         describe("when the exchange rate is 2/1", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
               rate: parseEther("1"),
               lastUpdatedBase: parseEther("0"),
               lastUpdatedQuote: parseEther("0"),
             });
             stdReference.getReferenceData
-              .whenCalledWith("usdc", "usd")
+              .whenCalledWith("USDC", "USD")
               .returns({
                 rate: parseEther("2"),
                 lastUpdatedBase: parseEther("0"),
                 lastUpdatedQuote: parseEther("0"),
               });
-          });
-
-          it("should exchange the 10 DAO token sats for 5 USDC sats", async () => {
-            await internalMarket.connect(alice).redeem(10);
-
-            expect(token.transfer).calledWith(reserve.address, 10);
-            expect(usdc.transferFrom).calledWith(
-              reserve.address,
-              alice.address,
-              5
-            );
-          });
-
-          it("should exchange the 11 DAO token sats for 5 USDC sats", async () => {
-            await internalMarket.connect(alice).redeem(11);
-
-            expect(token.transfer).calledWith(reserve.address, 11);
-            expect(usdc.transferFrom).calledWith(
-              reserve.address,
-              alice.address,
-              5
-            );
           });
 
           it("should exchange the 11 DAO tokens for 5.5 USDC", async () => {
@@ -340,7 +330,7 @@ describe("InternalMarket", async () => {
             expect(usdc.transferFrom).calledWith(
               reserve.address,
               alice.address,
-              parseEther("5.5")
+              parseUSDC(5.5)
             );
           });
 
@@ -359,14 +349,14 @@ describe("InternalMarket", async () => {
 
       describe("with 50 unlocked tokens and 100 locked tokens", async () => {
         beforeEach(async () => {
-          await internalMarket.connect(alice).makeOffer(50);
+          await internalMarket.connect(alice).makeOffer(parseEther("50"));
           let ts = await getEVMTimestamp();
 
           // Unlock 50 tokens
           await setEVMTimestamp(ts + DAY * 7);
 
           // Lock 100 tokens
-          await internalMarket.connect(alice).makeOffer(100);
+          await internalMarket.connect(alice).makeOffer(parseEther("100"));
         });
 
         describe("and no tokens in the user wallet", async () => {
@@ -376,31 +366,34 @@ describe("InternalMarket", async () => {
 
           it("should fail when the user redeems 70 tokens", async () => {
             // smock2 bug causes this error rather than the faked one
-            await expect(internalMarket.connect(alice).redeem(70)).revertedWith(
-              "function returned an unexpected amount of data"
-            );
+            await expect(
+              internalMarket.connect(alice).redeem(parseEther("70"))
+            ).revertedWith("function returned an unexpected amount of data");
           });
 
           it("should fail when the user redeems 60 tokens", async () => {
-            await expect(internalMarket.connect(alice).redeem(60)).revertedWith(
-              "function returned an unexpected amount of data"
-            );
+            await expect(
+              internalMarket.connect(alice).redeem(parseEther("60"))
+            ).revertedWith("function returned an unexpected amount of data");
           });
 
           describe("when user redeems 50 tokens", async () => {
             beforeEach(async () => {
-              await internalMarket.connect(alice).redeem(50);
+              await internalMarket.connect(alice).redeem(parseEther("50"));
             });
 
             it("should transfer 50 tokens from market to reserve", async () => {
-              expect(token.transfer).calledWith(reserve.address, 50);
+              expect(token.transfer).calledWith(
+                reserve.address,
+                parseEther("50")
+              );
             });
 
             it("should transfer 50 usdc from reserve to alice", async () => {
               expect(usdc.transferFrom).calledWith(
                 reserve.address,
                 alice.address,
-                50
+                parseUSDC(50)
               );
             });
           });
@@ -409,64 +402,70 @@ describe("InternalMarket", async () => {
         describe("and 10 tokens in the user wallet", async () => {
           beforeEach(async () => {
             token.transferFrom
-              .whenCalledWith(alice.address, reserve.address, 20)
+              .whenCalledWith(alice.address, reserve.address, parseEther("20"))
               .reverts("ERC20: insufficient balance");
           });
 
           it("should fail when the user redeems 70 tokens", async () => {
-            await expect(internalMarket.connect(alice).redeem(70)).revertedWith(
-              "function returned an unexpected amount of data"
-            );
+            await expect(
+              internalMarket.connect(alice).redeem(parseEther("70"))
+            ).revertedWith("function returned an unexpected amount of data");
           });
 
           describe("when the user redeems 60 tokens", async () => {
             beforeEach(async () => {
-              await internalMarket.connect(alice).redeem(60);
+              await internalMarket.connect(alice).redeem(parseEther("60"));
             });
 
             it("should transfer 10 tokens from alice to internal market and then to reserve", async () => {
               expect(token.transferFrom).calledWith(
                 alice.address,
                 reserve.address,
-                10
+                parseEther("10")
               );
             });
 
             it("should transfer 50 tokens from market to reserve", async () => {
-              expect(token.transfer).calledWith(reserve.address, 50);
+              expect(token.transfer).calledWith(
+                reserve.address,
+                parseEther("50")
+              );
             });
 
             it("should transfer 60 usdc from reserve to alice", async () => {
               expect(usdc.transferFrom).calledWith(
                 reserve.address,
                 alice.address,
-                60
+                parseUSDC(60)
               );
             });
           });
 
           describe("when the user redeems 50 tokens", async () => {
             beforeEach(async () => {
-              await internalMarket.connect(alice).redeem(50);
+              await internalMarket.connect(alice).redeem(parseEther("50"));
             });
 
             it("should not transfer 10 tokens from alice to reserve", async () => {
               expect(token.transferFrom).not.calledWith(
                 alice.address,
                 reserve.address,
-                10
+                parseEther("10")
               );
             });
 
             it("should transfer 50 tokens from market to reserve", async () => {
-              expect(token.transfer).calledWith(reserve.address, 50);
+              expect(token.transfer).calledWith(
+                reserve.address,
+                parseEther("50")
+              );
             });
 
             it("should transfer 50 usdc from reserve to alice", async () => {
               expect(usdc.transferFrom).calledWith(
                 reserve.address,
                 alice.address,
-                50
+                parseUSDC(50)
               );
             });
           });
@@ -539,12 +538,12 @@ describe("InternalMarket", async () => {
 
       describe("when the exchange rate is 1/1", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
             rate: parseEther("1"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("usdc", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
             rate: parseEther("1"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
@@ -552,30 +551,32 @@ describe("InternalMarket", async () => {
         });
 
         it("should exchange the 10 DAO tokens for 10 USDC", async () => {
-          await internalMarket.connect(bob).matchOffer(alice.address, 10);
-          expect(token.transfer).calledWith(bob.address, 10);
-          expect(usdc.transferFrom).calledWith(bob.address, alice.address, 10);
+          await internalMarket.connect(alice).makeOffer(parseEther("10"));
+
+          await internalMarket
+            .connect(bob)
+            .matchOffer(alice.address, parseEther("10"));
+          expect(token.transfer).calledWith(bob.address, parseEther("10"));
+          expect(usdc.transferFrom).calledWith(
+            bob.address,
+            alice.address,
+            parseUSDC(10)
+          );
         });
       });
 
       describe("when the exchange rate is 1/2", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
             rate: parseEther("2"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("usdc", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
             rate: parseEther("1"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
-        });
-
-        it("should exchange the 10 DAO tokens sats for 20 USDC sats", async () => {
-          await internalMarket.connect(bob).matchOffer(alice.address, 10);
-          expect(token.transfer).calledWith(bob.address, 10);
-          expect(usdc.transferFrom).calledWith(bob.address, alice.address, 20);
         });
 
         it("should exchange the 10 DAO token for 20 USDC", async () => {
@@ -588,26 +589,26 @@ describe("InternalMarket", async () => {
           expect(usdc.transferFrom).calledWith(
             bob.address,
             alice.address,
-            parseEther("20")
+            parseUSDC(20)
           );
         });
       });
 
       describe("when the exchange rate is 1.12 eur/usd and 0.998 usdc/usd", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
             rate: parseEther("1.12"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("usdc", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
             rate: parseEther("0.998"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
         });
 
-        it("should exchange the 10 DAO tokens for 11.22244488977956 USDC", async () => {
+        it("should exchange the 10 DAO tokens for 11.222444 USDC", async () => {
           await internalMarket.connect(alice).makeOffer(parseEther("10"));
 
           await internalMarket
@@ -617,35 +618,23 @@ describe("InternalMarket", async () => {
           expect(usdc.transferFrom).calledWith(
             bob.address,
             alice.address,
-            parseEther("11.222444889779559118")
+            parseUSDC(11.222444)
           );
         });
       });
 
       describe("when the exchange rate is 2/1", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("eur", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
             rate: parseEther("1"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("usdc", "usd").returns({
+          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
             rate: parseEther("2"),
             lastUpdatedBase: parseEther("0"),
             lastUpdatedQuote: parseEther("0"),
           });
-        });
-
-        it("should exchange the 10 DAO token sats for 5 USDC sats", async () => {
-          await internalMarket.connect(bob).matchOffer(alice.address, 10);
-          expect(token.transfer).calledWith(bob.address, 10);
-          expect(usdc.transferFrom).calledWith(bob.address, alice.address, 5);
-        });
-
-        it("should exchange the 11 DAO token sats for 5 USDC sats", async () => {
-          await internalMarket.connect(bob).matchOffer(alice.address, 11);
-          expect(token.transfer).calledWith(bob.address, 11);
-          expect(usdc.transferFrom).calledWith(bob.address, alice.address, 5);
         });
 
         it("should exchange the 11 DAO tokens for 5.5 USDC", async () => {
@@ -658,7 +647,7 @@ describe("InternalMarket", async () => {
           expect(usdc.transferFrom).calledWith(
             bob.address,
             alice.address,
-            parseEther("5.5")
+            parseUSDC(5.5)
           );
         });
 

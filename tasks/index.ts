@@ -1,6 +1,5 @@
 import "./delegate";
-import "./deploy";
-import "./echidna";
+import "./dev";
 import "./match";
 import "./oracle";
 import "./resolution";

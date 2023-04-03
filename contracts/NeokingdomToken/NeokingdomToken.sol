@@ -3,22 +3,19 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "./NeokingdomTokenSnapshot.sol";
 import { Roles } from "../extensions/Roles.sol";
+import "../extensions/DAORoles.sol";
+import "../extensions/HasRole.sol";
 
-contract NeokingdomToken is
-    Initializable,
-    NeokingdomTokenSnapshot,
-    AccessControlUpgradeable
-{
+contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
     function initialize(
+        DAORoles roles,
         string memory name,
         string memory symbol
-    ) public override initializer {
-        super.initialize(name, symbol);
-        __AccessControl_init();
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    ) public initializer {
+        _initialize(name, symbol);
+        _setRoles(roles);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor

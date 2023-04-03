@@ -1,4 +1,4 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -6,6 +6,8 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
+  DAORoles,
+  DAORoles__factory,
   IRedemptionController,
   NeokingdomToken,
   NeokingdomToken__factory,
@@ -25,6 +27,7 @@ describe("NeokingdomTokenSnapshot", () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
+  let daoRoles: MockContract<DAORoles>;
   let neokingdomToken: NeokingdomToken;
   let redemption: FakeContract<IRedemptionController>;
   let voting: VotingMock;
@@ -40,6 +43,9 @@ describe("NeokingdomTokenSnapshot", () => {
       await ethers.getSigners();
 
     redemption = await smock.fake("IRedemptionController");
+
+    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
+    daoRoles = await DAORolesFactory.deploy();
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
@@ -58,7 +64,7 @@ describe("NeokingdomTokenSnapshot", () => {
 
     neokingdomToken = (await upgrades.deployProxy(
       NeokingdomTokenFactory,
-      ["Test", "TEST"],
+      [daoRoles.address, "Test", "TEST"],
       { initializer: "initialize" }
     )) as NeokingdomToken;
     await neokingdomToken.deployed();
@@ -67,13 +73,7 @@ describe("NeokingdomTokenSnapshot", () => {
     await voting.deployed();
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    await neokingdomToken.grantRole(RESOLUTION_ROLE, deployer.address);
-
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
-    await neokingdomToken.grantRole(OPERATOR_ROLE, deployer.address);
-
-    const ESCROW_ROLE = await roles.ESCROW_ROLE();
-    await neokingdomToken.grantRole(ESCROW_ROLE, deployer.address);
 
     shareholderRegistry = (await upgrades.deployProxy(
       ShareholderRegistryMockFactory,
@@ -83,6 +83,9 @@ describe("NeokingdomTokenSnapshot", () => {
     )) as ShareholderRegistryMock;
     await shareholderRegistry.deployed();
 
+    daoRoles.hasRole
+      .whenCalledWith(OPERATOR_ROLE, deployer.address)
+      .returns(true);
     await neokingdomToken.setVoting(voting.address);
     await neokingdomToken.setShareholderRegistry(shareholderRegistry.address);
     await neokingdomToken.setRedemptionController(redemption.address);
@@ -115,10 +118,14 @@ describe("NeokingdomTokenSnapshot", () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
+    daoRoles.hasRole
+      .whenCalledWith(RESOLUTION_ROLE, deployer.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    daoRoles.hasRole.reset();
   });
 
   describe("snapshot logic", async () => {

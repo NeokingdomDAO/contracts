@@ -2,21 +2,19 @@
 
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
+import "../extensions/DAORoles.sol";
+import "../extensions/HasRole.sol";
 
-contract InternalMarket is
-    Initializable,
-    InternalMarketBase,
-    AccessControlUpgradeable
-{
-    function initialize(IERC20 daoToken_) public initializer {
-        _initialize(daoToken_, 7 days);
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+    function initialize(DAORoles roles, IERC20 daoToken) public initializer {
+        _initialize(daoToken, 7 days);
+        _setRoles(roles);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -43,7 +41,7 @@ contract InternalMarket is
     }
 
     function setExchangePair(
-        IERC20 token,
+        ERC20 token,
         IStdReference oracle
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
         _setExchangePair(token, oracle);

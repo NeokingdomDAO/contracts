@@ -25,8 +25,6 @@ For instance, if a smart contract exposes `mint(address, uint256)`, `transfer(ad
 
 Given that the role of a fuzzer is to use all sorts of input combination to break the invariants, keeping the surface very broad at the beginning of the verification process would create long waiting times and would prevent the tester to quickly iterate on the important invariants.
 
-For this reason, we decided to start with a limited scope test.
-
 ### Scope
 
 In order to carry out a comprehensive test of our smart contract, we would have needed numerous weeks of work, in order to

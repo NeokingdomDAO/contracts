@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "./IRedemptionController.sol";
 
@@ -20,7 +21,11 @@ import "./IRedemptionController.sol";
 
 // The contract tells how many tokens are redeemable by Contributors
 
-contract RedemptionController is IRedemptionController, AccessControl {
+contract RedemptionController is
+    IRedemptionController,
+    Initializable,
+    AccessControlUpgradeable
+{
     uint256 public redemptionStart;
     uint256 public redemptionWindow;
 
@@ -30,18 +35,16 @@ contract RedemptionController is IRedemptionController, AccessControl {
     bytes32 public constant TOKEN_MANAGER_ROLE =
         keccak256("TOKEN_MANAGER_ROLE");
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
+    function initialize() public initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        grantRole(
-            TOKEN_MANAGER_ROLE,
-            0x00a329c0648769A73afAc7F9381E08FB43dBEA72
-        );
         redemptionStart = 60 days;
         redemptionWindow = 10 days;
         maxDaysInThePast = 30 days * 15;
         activityWindow = 30 days * 3;
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
 
     struct Redeemable {
         uint256 amount;

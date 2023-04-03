@@ -72,9 +72,40 @@ Both properties have been successfully verified.
 
 The config simply tells echidna at which address to deploy the proxy contract. This allowed us to give the necessary grants to the proxy contract.
 
-In a clean setup, the grants should have been given within a setup procedure outside the main smart contracts, but due to some technical issues, for the scope of this test, the granting was temporily done in the contstructors of the smart contracts themselves.
+The granting has been done in the constructor of the target contract, like this:
 
-Also: both smart contracts has been made non-upgradable.
+```
+    // RedemptionController
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        grantRole(
+            TOKEN_MANAGER_ROLE,
+            0x00a329c0648769A73afAc7F9381E08FB43dBEA72
+        );
+        ....
+    }
+```
+
+```
+    // InternalMarket
+    constructor(IERC20 daoToken_) {
+        _initialize(daoToken_, 7 days);
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(
+            Roles.RESOLUTION_ROLE,
+            0x00a329c0648769A73afAc7F9381E08FB43dBEA72
+        );
+    }
+
+```
+
+In a clean setup, the grants should have been given within a setup procedure outside the main smart contracts, as described in [this article](https://ventral.digital/posts/2021/12/21/fuzzing-complex-projects-with-echidna-sushi-bentobox). But due to some technical issues with Etheno that could not be easily addressed and given the the scope of this test, the granting was temporily done in the contstructors of the smart contracts themselves, at least to allow us this proof of concept.
+
+Additionally, both smart contracts need to be made non-upgradable in order for the fuzzing to properly run.
+
+These changes need to be applied manually to the smart contracts in order to execute the verification. We decided not to version them as they would interfere with the main development of the project.
 
 ## How to run
 

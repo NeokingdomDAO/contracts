@@ -109,6 +109,6 @@ These changes need to be applied manually to the smart contracts in order to exe
 
 Make sure echidna is installed, then simply run the following commands:
 
-`echidna-test contracts/fuzzing/InternalMarketProxy.sol --contract InternalMarketProxy --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml`
+`echidna-test echidna/contracts/InternalMarketProxy.sol --contract InternalMarketProxy --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml`
 
-`echidna-test contracts/fuzzing/RedemptionControllerProxy.sol --contract RedemptionControllerProxy --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml`
+`echidna-test echidna/contracts/RedemptionControllerProxy.sol --contract RedemptionControllerProxy --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml`

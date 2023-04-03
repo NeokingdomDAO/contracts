@@ -3,8 +3,8 @@
 pragma solidity ^0.8.16;
 
 import "./TokenMock.sol";
-import "../InternalMarket/InternalMarket.sol";
-import "../PriceOracle/PriceOracle.sol";
+import "../../contracts/InternalMarket/InternalMarket.sol";
+import "../../contracts/PriceOracle/PriceOracle.sol";
 
 contract InternalMarketProxy {
     InternalMarket internalMarket;

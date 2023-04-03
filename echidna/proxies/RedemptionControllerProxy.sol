@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.16;
 
-import "../RedemptionController/RedemptionController.sol";
+import "../../contracts/RedemptionController/RedemptionController.sol";
 
 contract RedemptionControllerProxy {
     RedemptionController redemptionController;

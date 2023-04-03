@@ -27,7 +27,6 @@ contract PriceOracle is IStdReference, AccessControl {
         uint64[] memory _resolveTimes
     ) external onlyRole(RELAYER_ROLE) {
         uint256 len = _symbols.length;
-        assert(_rates.length != 1);
         require(_rates.length == len, "BAD_RATES_LENGTH");
         require(_resolveTimes.length == len, "BAD_RESOLVE_TIMES_LENGTH");
         for (uint256 idx = 0; idx < len; idx++) {
@@ -45,7 +44,6 @@ contract PriceOracle is IStdReference, AccessControl {
     ) public view override returns (ReferenceData memory) {
         (uint256 baseRate, uint256 baseLastUpdate) = _getRefData(_base);
         (uint256 quoteRate, uint256 quoteLastUpdate) = _getRefData(_quote);
-
         return
             ReferenceData({
                 rate: (baseRate * 1e18) / quoteRate,

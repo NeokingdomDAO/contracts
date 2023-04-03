@@ -78,6 +78,8 @@ Also: both smart contracts has been made non-upgradable.
 
 ## How to run
 
+Make sure echidna is installed, then simply run the following commands:
+
 `echidna-test contracts/fuzzing/InternalMarketProxy.sol --contract InternalMarketProxy --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml`
 
 `echidna-test contracts/fuzzing/RedemptionControllerProxy.sol --contract RedemptionControllerProxy --crytic-args "--solc-remaps @openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --config echidna/config.yml`

@@ -217,6 +217,15 @@ describe("Voting", () => {
       await voting.connect(noDelegate).afterAddContributor(noDelegate.address);
     });
 
+    it("should throw an error when anyone but the RESOLUTION calls delegateFrom", async () => {
+      let errorMessage = `AccessControl: account ${noDelegate.address.toLowerCase()} is missing role ${resolutionRole.toLowerCase()}`;
+      await expect(
+        voting
+          .connect(noDelegate)
+          .delegateFrom(delegated2.address, delegator1.address)
+      ).revertedWith(errorMessage);
+    });
+
     it("should not fail if an address calling 'beforeRemoveContributor' on an address with delegate is not a contributor", async () => {
       daoRoles.hasRole
         .whenCalledWith(shareholderRegistryRole, nonContributor.address)
@@ -551,6 +560,19 @@ describe("Voting", () => {
       expect(votingPowerAfter.toNumber()).equal(
         votingPowerBefore.toNumber() - 10
       );
+    });
+  });
+
+  describe("delegateFrom", async () => {
+    it("should allow a RESOLUTION to delegate someone to someone else", async () => {
+      daoRoles.hasRole
+        .whenCalledWith(resolutionRole, deployer.address)
+        .returns(true);
+      await voting.delegateFrom(delegator1.address, delegated1.address);
+
+      const result = await voting.getDelegate(delegator1.address);
+
+      expect(result).equal(delegated1.address);
     });
   });
 

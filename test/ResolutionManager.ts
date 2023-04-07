@@ -1,4 +1,4 @@
-import { MockContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -9,16 +9,13 @@ import { ethers, network, upgrades } from "hardhat";
 import {
   DAORoles,
   DAORoles__factory,
-  NeokingdomTokenMock,
-  NeokingdomTokenMock__factory,
+  NeokingdomToken,
   ResolutionExecutorMock,
   ResolutionExecutorMock__factory,
   ResolutionManager,
   ResolutionManager__factory,
-  ShareholderRegistryMock,
-  ShareholderRegistryMock__factory,
-  VotingMock,
-  VotingMock__factory,
+  ShareholderRegistry,
+  Voting,
 } from "../typechain";
 
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
@@ -33,18 +30,16 @@ const DAY = 60 * 60 * 24;
 describe("Resolution", async () => {
   let snapshotId: string;
 
-  let managingBoardStatus: string;
-  let contributorStatus: string;
-  let shareholderStatus: string;
-  let investorStatus: string;
+  let resolutionId = 1;
+  let resolutionSnapshotId = 42;
 
+  let managingBoardStatus: string;
   let daoRoles: MockContract<DAORoles>;
-  let voting: VotingMock;
-  let token: NeokingdomTokenMock;
+  let voting: FakeContract<Voting>;
+  let token: FakeContract<NeokingdomToken>;
   let resolution: ResolutionManager;
-  let shareholderRegistry: ShareholderRegistryMock;
+  let shareholderRegistry: FakeContract<ShareholderRegistry>;
   let resolutionExecutorMock: ResolutionExecutorMock;
-  let resolutionId: number;
   let deployer: SignerWithAddress,
     managingBoard: SignerWithAddress,
     user1: SignerWithAddress,
@@ -57,20 +52,11 @@ describe("Resolution", async () => {
     [deployer, managingBoard, user1, user2, delegate1, nonContributor] =
       await ethers.getSigners();
 
-    const VotingMockFactory = (await ethers.getContractFactory(
-      "VotingMock",
-      deployer
-    )) as VotingMock__factory;
-
-    const NeokingdomTokenMockFactory = (await ethers.getContractFactory(
-      "NeokingdomTokenMock",
-      deployer
-    )) as NeokingdomTokenMock__factory;
-
-    const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
-      "ShareholderRegistryMock",
-      deployer
-    )) as ShareholderRegistryMock__factory;
+    voting = await smock.fake<Voting>("Voting");
+    token = await smock.fake<NeokingdomToken>("NeokingdomToken");
+    shareholderRegistry = await smock.fake<ShareholderRegistry>(
+      "ShareholderRegistry"
+    );
 
     const ResolutionExecutorMockFactory = (await ethers.getContractFactory(
       "ResolutionExecutorMock",
@@ -85,31 +71,12 @@ describe("Resolution", async () => {
     const daoRolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
     daoRoles = await daoRolesFactory.deploy();
 
-    voting = (await upgrades.deployProxy(VotingMockFactory)) as VotingMock;
-    await voting.deployed();
-
-    token = (await upgrades.deployProxy(
-      NeokingdomTokenMockFactory
-    )) as NeokingdomTokenMock;
-    await token.deployed();
-
-    shareholderRegistry = (await upgrades.deployProxy(
-      ShareholderRegistryMockFactory,
-      {
-        initializer: "initialize",
-      }
-    )) as ShareholderRegistryMock;
-    await shareholderRegistry.deployed();
-
     resolutionExecutorMock = (await upgrades.deployProxy(
       ResolutionExecutorMockFactory
     )) as ResolutionExecutorMock;
     await resolutionExecutorMock.deployed();
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
-    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
-    shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
-    investorStatus = await shareholderRegistry.INVESTOR_STATUS();
 
     resolution = (await upgrades.deployProxy(
       ResolutionFactory,
@@ -132,61 +99,57 @@ describe("Resolution", async () => {
       .whenCalledWith(RESOLUTION_ROLE, deployer.address)
       .returns(true);
 
-    await voting.mock_getDelegateAt(user1.address, user1.address);
-
-    // Set contributors' status to:
-    // - contributor
-    // - shareholder
-    // - investor
-    // The mock is dumb so we need to set everything manually
-    await Promise.all(
-      [managingBoard, user1, user2, delegate1].map(
-        async (user) => await setContributor(user, true)
-      )
-    );
-    await shareholderRegistry.mock_isAtLeast(
-      managingBoardStatus,
-      managingBoard.address,
-      true
-    );
-
-    await Promise.all(
-      [managingBoard, user1, user2, delegate1].map(async (voter) => {
-        await voting.mock_canVoteAt(voter.address, true);
-      })
-    );
+    shareholderRegistry.snapshot.returns(resolutionSnapshotId);
+    voting.snapshot.returns(resolutionSnapshotId);
+    token.snapshot.returns(resolutionSnapshotId);
   });
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
-    resolutionId = 1; // first resolution ID is always 1
+    shareholderRegistry.isAtLeast
+      .whenCalledWith(managingBoardStatus, managingBoard.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
+    shareholderRegistry.isAtLeast.reset();
+    shareholderRegistry.isAtLeastAt.reset();
+    token.balanceOf.reset();
+    token.balanceOfAt.reset();
+    voting.canVoteAt.reset();
+    voting.getDelegate.reset();
+    voting.getDelegateAt.reset();
+    voting.getVotingPower.reset();
+    voting.getVotingPowerAt.reset();
+    voting.getTotalVotingPower.reset();
+    voting.getTotalVotingPowerAt.reset();
   });
 
-  async function setContributor(user: SignerWithAddress, flag: boolean) {
-    await shareholderRegistry.mock_isAtLeast(
-      contributorStatus,
-      user.address,
-      flag
-    );
-    await shareholderRegistry.mock_isAtLeast(
-      shareholderStatus,
-      user.address,
-      flag
-    );
-    await shareholderRegistry.mock_isAtLeast(
-      investorStatus,
-      user.address,
-      flag
-    );
-  }
-
-  async function setupUser(user: SignerWithAddress, votingPower: number) {
-    await voting.mock_getDelegateAt(user.address, user.address);
-    await voting.mock_getVotingPowerAt(user.address, votingPower);
+  // votingPower and balance have their different uses for the calculation of the voting power.
+  // balance is used when overriding a delegation. Hence we need to be able to mock both, depending on
+  // the case under test.
+  function setupUser(
+    user: SignerWithAddress,
+    votingPower: number,
+    balance = 0,
+    delegate: SignerWithAddress | null = null
+  ) {
+    if (delegate === null) {
+      delegate = user;
+    }
+    voting.canVoteAt
+      .whenCalledWith(user.address, resolutionSnapshotId)
+      .returns(true);
+    voting.getDelegateAt
+      .whenCalledWith(user.address, resolutionSnapshotId)
+      .returns(delegate.address);
+    voting.getVotingPowerAt
+      .whenCalledWith(user.address, resolutionSnapshotId)
+      .returns(votingPower);
+    token.balanceOfAt
+      .whenCalledWith(user.address, resolutionSnapshotId)
+      .returns(balance);
   }
 
   async function setupResolution(
@@ -195,23 +158,25 @@ describe("Resolution", async () => {
     executeTo: string[] = [],
     executeData: string[] = []
   ) {
-    await voting.mock_getTotalVotingPowerAt(totalVotingPower);
+    voting.getTotalVotingPowerAt.returns(totalVotingPower);
 
     await resolution
-      .connect(user1)
+      .connect(managingBoard)
       .createResolution("test", 6, negative, executeTo, executeData);
-    await resolution.connect(managingBoard).approveResolution(1);
+    await resolution.connect(managingBoard).approveResolution(resolutionId);
     const approveTimestamp = await getEVMTimestamp();
     await setEVMTimestamp(approveTimestamp + 3 * DAY);
   }
 
-  describe("creation logic", async () => {
+  describe("createResolution", async () => {
     it("allows to create a resolution", async () => {
       await expect(
-        resolution.connect(user1).createResolution("test", 0, false, [], [])
+        resolution
+          .connect(managingBoard)
+          .createResolution("test", 0, false, [], [])
       )
         .to.emit(resolution, "ResolutionCreated")
-        .withArgs(user1.address, resolutionId);
+        .withArgs(managingBoard.address, resolutionId);
     });
     it("doesn't allow non contributors to create a resolution", async () => {
       await expect(
@@ -222,7 +187,7 @@ describe("Resolution", async () => {
     });
     it("allows to create a resolution and read the resolutionId with an event", async () => {
       const tx = await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       function getResolutionId(receipt: ContractReceipt) {
@@ -244,14 +209,16 @@ describe("Resolution", async () => {
 
     it("doesn't allow to create a negative resolution if type is non-negative", async () => {
       await expect(
-        resolution.connect(user1).createResolution("test", 0, true, [], [])
+        resolution
+          .connect(managingBoard)
+          .createResolution("test", 0, true, [], [])
       ).revertedWith("Resolution: cannot be negative");
     });
 
     it("doesn't allow to create a resolution with mismatching length between executor and data", async () => {
       await expect(
         resolution
-          .connect(user1)
+          .connect(managingBoard)
           .createResolution(
             "test",
             0,
@@ -263,27 +230,31 @@ describe("Resolution", async () => {
     });
   });
 
+  describe("createResolutionWithExclusion", async () => {
+    it("allows to create an addressable resolution", async () => {
+      await expect(
+        resolution
+          .connect(managingBoard)
+          .createResolutionWithExclusion("test", 0, [], [], user2.address)
+      )
+        .to.emit(resolution, "ResolutionCreated")
+        .withArgs(managingBoard.address, resolutionId);
+    });
+
+    it("doesn't allow non contributors to create an addressable resolution", async () => {
+      await expect(
+        resolution
+          .connect(nonContributor)
+          .createResolutionWithExclusion("test", 0, [], [], user2.address)
+      ).revertedWith("Resolution: only contributor can create");
+    });
+  });
+
   describe("update logic", async () => {
-    let resolutionId: number;
     beforeEach(async () => {
-      function getResolutionId(receipt: ContractReceipt) {
-        const filter = resolution.filters.ResolutionCreated(resolution.address);
-        for (const e of receipt.events || []) {
-          if (
-            e.address === filter.address &&
-            // `filter.topics` is set
-            e.topics[0] === filter.topics![0]
-          ) {
-            return e.args!["resolutionId"] as BigNumber;
-          }
-        }
-        throw new Error("resolutionId not found");
-      }
-      const tx = await resolution
-        .connect(user1)
+      await resolution
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
-      const receipt = await tx.wait();
-      resolutionId = getResolutionId(receipt).toNumber();
     });
 
     it("allows managingBoard to update a resolution", async () => {
@@ -302,7 +273,7 @@ describe("Resolution", async () => {
 
     it("doesn't allow the managing board to update to a negative resolution if type is non-negative", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
       await expect(
         resolution
@@ -330,6 +301,10 @@ describe("Resolution", async () => {
     });
 
     it("doesn't allow anyone else to update a resolution", async () => {
+      shareholderRegistry.isAtLeast
+        .whenCalledWith(managingBoardStatus, user1.address)
+        .returns(false);
+
       await expect(
         resolution
           .connect(user1)
@@ -396,6 +371,7 @@ describe("Resolution", async () => {
           `is missing role ${OPERATOR_ROLE}`
       );
     });
+
     it("doesn't allow anyone not with OPERATOR_ROLE to setNeokingdomToken", async () => {
       await expect(
         resolution
@@ -452,7 +428,7 @@ describe("Resolution", async () => {
 
     it("should allow the managing board to approve an existing resolution", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await expect(
@@ -468,7 +444,7 @@ describe("Resolution", async () => {
 
     it("should not allow non managing board members to approve an existing resolution", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await expect(
@@ -478,7 +454,7 @@ describe("Resolution", async () => {
 
     it("should fail if already approved", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
@@ -490,7 +466,7 @@ describe("Resolution", async () => {
 
     it("should fail if already rejected", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await resolution.connect(managingBoard).rejectResolution(resolutionId);
@@ -510,7 +486,7 @@ describe("Resolution", async () => {
 
     it("should allow the managing board to reject an existing resolution", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await expect(
@@ -526,7 +502,7 @@ describe("Resolution", async () => {
 
     it("should not allow non managing board members to reject an existing resolution", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await expect(
@@ -536,7 +512,7 @@ describe("Resolution", async () => {
 
     it("should fail if already approved", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
@@ -548,7 +524,7 @@ describe("Resolution", async () => {
 
     it("should fail if already rejected", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
 
       await resolution.connect(managingBoard).rejectResolution(resolutionId);
@@ -560,29 +536,24 @@ describe("Resolution", async () => {
   });
 
   describe("voting prevention logic", async () => {
-    it("should not allow to vote to a non voter", async () => {
-      await voting.mock_canVoteAt(user1.address, false);
+    beforeEach(async () => {
+      voting.canVoteAt
+        .whenCalledWith(user1.address, resolutionSnapshotId)
+        .returns(true);
+      setupUser(user1, 42, 42);
 
-      await expect(
-        resolution.connect(user1).vote(resolutionId, true)
-      ).revertedWith("Resolution: account cannot vote");
+      await resolution
+        .connect(managingBoard)
+        .createResolution("test", 0, false, [], []);
     });
 
     it("should not allow to vote on a non approved resolution", async () => {
-      await resolution
-        .connect(user1)
-        .createResolution("test", 0, false, [], []);
-
       await expect(
         resolution.connect(user1).vote(resolutionId, false)
       ).revertedWith("Resolution: not approved");
     });
 
     it("should not allow to vote on rejected resolution", async () => {
-      await resolution
-        .connect(user1)
-        .createResolution("test", 0, false, [], []);
-
       await resolution.connect(managingBoard).rejectResolution(resolutionId);
 
       await expect(
@@ -590,21 +561,23 @@ describe("Resolution", async () => {
       ).revertedWith("Resolution: not approved");
     });
 
-    it("should not allow to vote on a resolution when voting didn't start", async () => {
-      await resolution
-        .connect(user1)
-        .createResolution("test", 0, false, [], []);
+    it("should not allow to vote to a non voter", async () => {
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
-      await expect(resolution.connect(user1).vote(1, false)).revertedWith(
-        "Resolution: not votable"
-      );
+      await expect(
+        resolution.connect(user2).vote(resolutionId, true)
+      ).revertedWith("Resolution: account cannot vote");
+    });
+
+    it("should not allow to vote on a resolution when voting didn't start", async () => {
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+      await expect(
+        resolution.connect(user1).vote(resolutionId, false)
+      ).revertedWith("Resolution: not votable");
     });
 
     it("should not allow to vote on a resolution when voting ended", async () => {
-      await resolution
-        .connect(user1)
-        .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -617,9 +590,6 @@ describe("Resolution", async () => {
     });
 
     it("should allow to vote on an approved resolution when voting started", async () => {
-      await resolution
-        .connect(user1)
-        .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -633,26 +603,48 @@ describe("Resolution", async () => {
   describe("voting logic", async () => {
     beforeEach(async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution("test", 0, false, [], []);
       await resolution.connect(managingBoard).approveResolution(resolutionId);
       let approvalTimestamp = await getEVMTimestamp();
-
       await setEVMTimestamp(approvalTimestamp + DAY * 15);
     });
 
-    it("should emit a specific event when there is a new YES vote", async () => {
-      expect(await resolution.connect(user1).vote(resolutionId, true)).emit(
-        resolution,
-        "ResolutionVoted"
-      );
-    });
+    describe("basic logic", async () => {
+      beforeEach(async () => {
+        voting.canVoteAt
+          .whenCalledWith(user1.address, resolutionSnapshotId)
+          .returns(true);
+        setupUser(user1, 42, 42);
+      });
 
-    it("should emit a specific event when there is a new NO vote", async () => {
-      expect(await resolution.connect(user1).vote(resolutionId, false)).emit(
-        resolution,
-        "ResolutionVoted"
-      );
+      it("should emit a specific event when there is a new YES vote", async () => {
+        expect(await resolution.connect(user1).vote(resolutionId, true)).emit(
+          resolution,
+          "ResolutionVoted"
+        );
+      });
+
+      it("should emit a specific event when there is a new NO vote", async () => {
+        expect(await resolution.connect(user1).vote(resolutionId, false)).emit(
+          resolution,
+          "ResolutionVoted"
+        );
+      });
+
+      it("should not allow to vote YES a second time", async () => {
+        await resolution.connect(user1).vote(resolutionId, true);
+        await expect(
+          resolution.connect(user1).vote(resolutionId, true)
+        ).revertedWith("Resolution: can't repeat same vote");
+      });
+
+      it("should not allow to vote NO a second time", async () => {
+        await resolution.connect(user1).vote(resolutionId, false);
+        await expect(
+          resolution.connect(user1).vote(resolutionId, false)
+        ).revertedWith("Resolution: can't repeat same vote");
+      });
     });
 
     /*
@@ -676,24 +668,10 @@ describe("Resolution", async () => {
         - returns an error
     */
 
-    it("should not allow to vote YES a second time", async () => {
-      await resolution.connect(user1).vote(resolutionId, true);
-      await expect(
-        resolution.connect(user1).vote(resolutionId, true)
-      ).revertedWith("Resolution: can't repeat same vote");
-    });
-
-    it("should not allow to vote NO a second time", async () => {
-      await resolution.connect(user1).vote(resolutionId, false);
-      await expect(
-        resolution.connect(user1).vote(resolutionId, false)
-      ).revertedWith("Resolution: can't repeat same vote");
-    });
-
     describe("getVoterVote", async () => {
       describe("without delegation", async () => {
         beforeEach(async () => {
-          await voting.mock_getVotingPowerAt(user1.address, 42);
+          setupUser(user1, 42);
         });
 
         it("should return the right stats on a NO vote", async () => {
@@ -732,11 +710,14 @@ describe("Resolution", async () => {
         });
 
         it("should fail when asking stats for a user who could not vote", async () => {
-          await voting.mock_canVoteAt(user1.address, false);
+          voting.canVoteAt.reset();
+          voting.canVoteAt
+            .whenCalledWith(user1.address, resolutionSnapshotId)
+            .returns(false);
 
           await expect(
             resolution.getVoterVote(resolutionId, user1.address)
-          ).revertedWith("Resolution: account could not vote resolution");
+          ).revertedWith("Resolution: account cannot vote");
         });
 
         it("should return right stats when updating from no to yes", async () => {
@@ -755,11 +736,8 @@ describe("Resolution", async () => {
 
       describe("with delegation, delegator votes", async () => {
         beforeEach(async () => {
-          await voting.mock_getDelegateAt(user1.address, user2.address);
-          await voting.mock_getDelegateAt(user2.address, user2.address);
-          await token.mock_balanceOfAt(user1.address, 42);
-          await token.mock_balanceOfAt(user2.address, 1);
-          await voting.mock_getVotingPowerAt(user2.address, 43);
+          setupUser(user1, 42, 42, user2);
+          setupUser(user2, 43, 1);
         });
 
         it("should return the right stats on a NO vote", async () => {
@@ -824,11 +802,8 @@ describe("Resolution", async () => {
 
       describe("with delegation, delegated votes", async () => {
         beforeEach(async () => {
-          await voting.mock_getDelegateAt(user1.address, user2.address);
-          await voting.mock_getDelegateAt(user2.address, user2.address);
-          await token.mock_balanceOfAt(user1.address, 42);
-          await token.mock_balanceOfAt(user2.address, 1);
-          await voting.mock_getVotingPowerAt(user2.address, 43);
+          setupUser(user1, 0, 42, user2);
+          setupUser(user2, 43, 1);
         });
 
         it("should return the right delegator stats on a NO vote", async () => {
@@ -907,7 +882,7 @@ describe("Resolution", async () => {
 
     describe("single voting without delegation", async () => {
       beforeEach(async () => {
-        await voting.mock_getVotingPowerAt(user1.address, 42);
+        setupUser(user1, 42, 42);
       });
 
       it("should increase yesVotesTotal on a YES vote", async () => {
@@ -954,6 +929,7 @@ describe("Resolution", async () => {
         expect(newYes.sub(previousYes).eq(42)).true;
       });
     });
+
     /*
     - with delegate and delegate only has 1 delegator
       - delegate voted yes, user votes no:
@@ -973,6 +949,7 @@ describe("Resolution", async () => {
       - user voted no, delegate votes no:
         - yesVotesTotal = 0
     */
+
     describe("single voting with delegation", async () => {
       const delegateVotingPower = 42; // includes the one of the user
       const userBalance = 13;
@@ -980,14 +957,8 @@ describe("Resolution", async () => {
       describe("delegate votes first", async () => {
         async function _prepare(delegateVote: boolean, userVote: boolean) {
           // setup delegation and voting power
-          await voting.mock_getDelegateAt(delegate1.address, delegate1.address);
-          await voting.mock_getVotingPowerAt(
-            delegate1.address,
-            delegateVotingPower
-          );
-          await voting.mock_getDelegateAt(user1.address, delegate1.address);
-          await voting.mock_getVotingPowerAt(user1.address, 0); // because the power is transferred to the delegate
-          await token.mock_balanceOfAt(user1.address, userBalance);
+          setupUser(delegate1, delegateVotingPower);
+          setupUser(user1, 0, userBalance, delegate1);
 
           await resolution.connect(delegate1).vote(resolutionId, delegateVote);
           await resolution.connect(user1).vote(resolutionId, userVote);
@@ -1023,14 +994,8 @@ describe("Resolution", async () => {
       describe("user votes first", async () => {
         async function _prepare(userVote: boolean, delegateVote: boolean) {
           // setup delegation and voting power
-          await voting.mock_getDelegateAt(delegate1.address, delegate1.address);
-          await voting.mock_getVotingPowerAt(user1.address, 0); // because the power is transferred to the delegate
-          await token.mock_balanceOfAt(user1.address, userBalance);
-          await voting.mock_getDelegateAt(user1.address, delegate1.address);
-          await voting.mock_getVotingPowerAt(
-            delegate1.address,
-            delegateVotingPower
-          );
+          setupUser(delegate1, delegateVotingPower);
+          setupUser(user1, 0, userBalance, delegate1);
 
           await resolution.connect(user1).vote(resolutionId, userVote);
           await resolution.connect(delegate1).vote(resolutionId, delegateVote);
@@ -1063,6 +1028,7 @@ describe("Resolution", async () => {
         });
       });
     });
+
     /*
     - with delegate multiple users vote
       - user 1 votes yes, user 2 votes yes:
@@ -1097,11 +1063,7 @@ describe("Resolution", async () => {
       });
 
       async function _vote(user: SignerWithAddress, isYes: boolean) {
-        await voting.mock_getVotingPowerAt(
-          user.address,
-          votingPowers[user.address]
-        );
-        await voting.mock_getDelegateAt(user.address, user.address);
+        setupUser(user, votingPowers[user.address]);
         await resolution.connect(user).vote(resolutionId, isYes);
       }
 
@@ -1193,23 +1155,16 @@ describe("Resolution", async () => {
       - D yes, U1 no, U2 doesn't vote, D no
         - total = 0
     */
+
     describe("delegate with 2 delegators", async () => {
       const balanceUser1 = 13;
       const balanceUser2 = 3;
       const votingPowerDelegate = 17 + balanceUser1 + balanceUser2;
 
       beforeEach(async () => {
-        await voting.mock_getDelegateAt(delegate1.address, delegate1.address);
-        await voting.mock_getDelegateAt(user1.address, delegate1.address);
-        await voting.mock_getDelegateAt(user2.address, delegate1.address);
-        await voting.mock_getVotingPowerAt(user1.address, 0);
-        await voting.mock_getVotingPowerAt(user2.address, 0);
-        await token.mock_balanceOfAt(user1.address, balanceUser1);
-        await token.mock_balanceOfAt(user2.address, balanceUser2);
-        await voting.mock_getVotingPowerAt(
-          delegate1.address,
-          votingPowerDelegate
-        );
+        setupUser(delegate1, votingPowerDelegate);
+        setupUser(user1, 0, balanceUser1, delegate1);
+        setupUser(user2, 0, balanceUser2, delegate1);
       });
 
       async function _vote(user: SignerWithAddress, isYes: boolean) {
@@ -1305,7 +1260,7 @@ describe("Resolution", async () => {
 
   describe("resolution outcome", async () => {
     it("should return true when minimum quorum is achieved - 1 user", async () => {
-      await setupUser(user1, 51);
+      setupUser(user1, 51);
       await setupResolution(100);
 
       await resolution.connect(user1).vote(1, true);
@@ -1316,8 +1271,8 @@ describe("Resolution", async () => {
     });
 
     it("should return true when minimum quorum is achieved - 2 users", async () => {
-      await setupUser(user1, 25);
-      await setupUser(user2, 26);
+      setupUser(user1, 25);
+      setupUser(user2, 26);
 
       await setupResolution(100);
 
@@ -1330,7 +1285,7 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is not achieved - 1 user", async () => {
-      await setupUser(user1, 50);
+      setupUser(user1, 50);
       await setupResolution(100);
 
       await resolution.connect(user1).vote(1, true);
@@ -1341,8 +1296,8 @@ describe("Resolution", async () => {
     });
 
     it("should return true when minimum quorum is not achieved - 2 users", async () => {
-      await setupUser(user1, 50);
-      await setupUser(user2, 1);
+      setupUser(user1, 50);
+      setupUser(user2, 1);
 
       await setupResolution(100);
 
@@ -1356,7 +1311,7 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is achieved - 1 user, negative resolution", async () => {
-      await setupUser(user1, 51);
+      setupUser(user1, 51);
       await setupResolution(100, true);
 
       const result = await resolution.getResolutionResult(1);
@@ -1364,7 +1319,7 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is not achieved - 1 user, negative resolution", async () => {
-      await setupUser(user1, 51);
+      setupUser(user1, 51);
       await setupResolution(100, true);
 
       await resolution.connect(user1).vote(1, true);
@@ -1374,8 +1329,8 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is achieved - 2 users, negative resolution", async () => {
-      await setupUser(user1, 50);
-      await setupUser(user2, 1);
+      setupUser(user1, 50);
+      setupUser(user2, 1);
       await setupResolution(100, true);
 
       await resolution.connect(user1).vote(1, true);
@@ -1385,8 +1340,8 @@ describe("Resolution", async () => {
     });
 
     it("should return false when minimum quorum is not achieved - 2 users, negative resolution", async () => {
-      await setupUser(user1, 50);
-      await setupUser(user2, 1);
+      setupUser(user1, 50);
+      setupUser(user2, 1);
       await setupResolution(100, true);
 
       await resolution.connect(user1).vote(1, true);
@@ -1416,7 +1371,7 @@ describe("Resolution", async () => {
 
     it("should create a resolution with multiple executors", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution(
           "test",
           0,
@@ -1435,7 +1390,7 @@ describe("Resolution", async () => {
 
     it("should execute a passed resolution with 1 executor", async () => {
       const data = dataSimpleFunction(42);
-      await setupUser(user1, 50);
+      setupUser(user1, 50);
       await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1448,7 +1403,7 @@ describe("Resolution", async () => {
 
     it("should pass the given single parameter to the executor", async () => {
       const data = dataSimpleFunction(42);
-      await setupUser(user1, 1);
+      setupUser(user1, 1);
       await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1463,7 +1418,7 @@ describe("Resolution", async () => {
 
     it("should pass the given list parameter to the executor", async () => {
       const data = dataArrayFunction([42, 43]);
-      await setupUser(user1, 1);
+      setupUser(user1, 1);
       await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1477,7 +1432,7 @@ describe("Resolution", async () => {
     });
 
     it("should not execute a resolution with no executors", async () => {
-      await setupUser(user2, 1);
+      setupUser(user1, 1);
       await setupResolution(1);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1498,7 +1453,7 @@ describe("Resolution", async () => {
     it("should execute a passed resolution with multiple executors", async () => {
       const data1 = dataSimpleFunction(42);
       const data2 = dataSimpleFunction(43);
-      await setupUser(user1, 50);
+      setupUser(user1, 50);
       await setupResolution(
         1,
         false,
@@ -1543,7 +1498,7 @@ describe("Resolution", async () => {
 
     it("should not execute a resolution that is not approved", async () => {
       await resolution
-        .connect(user1)
+        .connect(managingBoard)
         .createResolution(
           "test",
           0,
@@ -1578,7 +1533,7 @@ describe("Resolution", async () => {
 
     it("should not execute a resolution more than once", async () => {
       const data = dataSimpleFunction(42);
-      await setupUser(user1, 1);
+      setupUser(user1, 1);
       await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1597,7 +1552,7 @@ describe("Resolution", async () => {
       const abi = ["function doesNotExist()"];
       const iface = new ethers.utils.Interface(abi);
       const data = iface.encodeFunctionData("doesNotExist");
-      await setupUser(user1, 1);
+      setupUser(user1, 1);
       await setupResolution(1, true, [resolutionExecutorMock.address], [data]);
       let approvalTimestamp = await getEVMTimestamp();
 
@@ -1608,6 +1563,99 @@ describe("Resolution", async () => {
       await expect(resolution.executeResolution(1)).revertedWith(
         "Resolution: execution failed"
       );
+    });
+  });
+
+  describe("addressable resolution", async () => {
+    let totalVotingPower = 100;
+    async function _prepare() {
+      await resolution
+        .connect(managingBoard)
+        .createResolutionWithExclusion("test", 6, [], [], user2.address);
+
+      voting.getTotalVotingPowerAt
+        .whenCalledWith(resolutionSnapshotId)
+        .returns(totalVotingPower);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+      const approveTimestamp = await getEVMTimestamp();
+      await setEVMTimestamp(approveTimestamp + 3 * DAY);
+    }
+
+    it("should not remove and re-add delegation when not delegating", async () => {
+      await resolution
+        .connect(managingBoard)
+        .createResolutionWithExclusion("test", 0, [], [], user2.address);
+
+      voting.getDelegate.whenCalledWith(user2.address).returns(user2.address);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+      expect(voting.delegateFrom).not.called;
+    });
+
+    it("should remove and re-add delegation when delegating", async () => {
+      await resolution
+        .connect(managingBoard)
+        .createResolutionWithExclusion("test", 0, [], [], user2.address);
+
+      voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
+
+      await resolution.connect(managingBoard).approveResolution(resolutionId);
+
+      expect(voting.delegateFrom.getCall(0).args).deep.equal([
+        user2.address,
+        user2.address,
+      ]);
+      expect(voting.delegateFrom.getCall(1).args).deep.equal([
+        user2.address,
+        user1.address,
+      ]);
+    });
+
+    it("should prevent excluded contributor from voting", async () => {
+      await _prepare();
+      setupUser(user2, 0);
+
+      await expect(
+        resolution.connect(user2).vote(resolutionId, false)
+      ).revertedWith("Resolution: account cannot vote");
+    });
+
+    it("should not count excluded contributor balance for quorum", async () => {
+      await _prepare();
+      setupUser(user2, 42, 60);
+      setupUser(user1, 42, 40);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
+    it("should count excluded contributor delegated's balance for quorum", async () => {
+      await _prepare();
+      setupUser(user2, 42, 60, user1);
+      setupUser(user1, 42, 40);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
+    it("should count excluded contributor delegator's balance for quorum", async () => {
+      await _prepare();
+      setupUser(user2, 42, 60);
+      setupUser(user1, 42, 40, user2);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
     });
   });
 });

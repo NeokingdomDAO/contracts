@@ -427,6 +427,79 @@ describe("Integration", async () => {
       expect(resolution3Result).false;
     });
 
+    it("distrust contributor", async () => {
+      // There are 3 contributors
+      await _makeContributor(user1, 42);
+      await _makeContributor(user2, 2);
+      await _makeContributor(user3, 84);
+      await _delegate(user3, user1);
+
+      // A resolution to save the world is created
+      let resolutionId = await _prepareResolution(6);
+      await _makeVotable(resolutionId);
+
+      // user3 likes mahyem and votes against it, making it fail
+      await _vote(user1, true, resolutionId);
+      await _vote(user2, true, resolutionId);
+      await _vote(user3, false, resolutionId);
+
+      expect(await resolutionManager.getResolutionResult(resolutionId)).to.be
+        .false;
+
+      const abi = ["function setStatus(bytes32 status, address account)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("setStatus", [
+        investorStatus,
+        user3.address,
+      ]);
+
+      // Contributors propose a distrust vote against user3
+      resolutionId = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user3.address
+        );
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(resolutionId);
+      await _makeVotable(resolutionId);
+
+      // user3 cannot vote and user1 and user2 votes are sufficient to kick user3 out
+      await _vote(user1, true, resolutionId);
+      await _vote(user2, true, resolutionId);
+      await expect(_vote(user3, false, resolutionId)).revertedWith(
+        "Resolution: account cannot vote"
+      );
+      await _endResolution();
+
+      await resolutionManager.executeResolution(resolutionId);
+
+      // user3 is not a contributor anymore
+      expect(
+        await shareholderRegistry.isAtLeast(contributorStatus, user3.address)
+      ).to.be.false;
+
+      // a new resolution to save the world is created
+      resolutionId = await _prepareResolution(6);
+      await _makeVotable(resolutionId);
+
+      // user3 cannot vote it...
+      await _vote(user1, true, resolutionId);
+      await _vote(user2, true, resolutionId);
+      await expect(_vote(user3, false, resolutionId)).revertedWith(
+        "Resolution: account cannot vote"
+      );
+
+      // ... and finally the world is saved.
+      expect(await resolutionManager.getResolutionResult(resolutionId)).to.be
+        .true;
+    });
+
     it("expect chaos", async () => {
       await _makeContributor(user1, 60);
       await _makeContributor(user2, 30);

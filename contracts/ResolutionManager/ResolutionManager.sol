@@ -69,7 +69,26 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
                 resolutionTypeId,
                 isNegative,
                 executionTo,
-                executionData
+                executionData,
+                address(0)
+            );
+    }
+
+    function createResolutionWithExclusion(
+        string calldata dataURI,
+        uint256 resolutionTypeId,
+        address[] memory executionTo,
+        bytes[] memory executionData,
+        address excludedContributor
+    ) external virtual returns (uint256) {
+        return
+            _createResolution(
+                dataURI,
+                resolutionTypeId,
+                false,
+                executionTo,
+                executionData,
+                excludedContributor
             );
     }
 
@@ -125,12 +144,6 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
     }
 
     function vote(uint256 resolutionId, bool isYes) external virtual {
-        Resolution storage resolution = resolutions[resolutionId];
-        require(
-            _voting.canVoteAt(_msgSender(), resolution.snapshotId),
-            "Resolution: account cannot vote"
-        );
-
         _vote(resolutionId, isYes);
     }
 }

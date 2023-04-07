@@ -126,6 +126,9 @@ describe("Resolution", async () => {
     voting.getTotalVotingPowerAt.reset();
   });
 
+  // votingPower and balance have their different uses for the calculation of the voting power.
+  // balance is used when overriding a delegation. Hence we need to be able to mock both, depending on
+  // the case under test.
   function setupUser(
     user: SignerWithAddress,
     votingPower: number,

@@ -34,7 +34,6 @@ contract InternalMarketBase {
     }
 
     INeokingdomToken public tokenInternal;
-    INeokingdomTokenExternal public tokenExternal;
 
     // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
@@ -52,11 +51,9 @@ contract InternalMarketBase {
 
     function _initialize(
         INeokingdomToken _tokenInternal,
-        INeokingdomTokenExternal _tokenExternal,
         uint256 _offerDuration
     ) internal virtual {
         tokenInternal = _tokenInternal;
-        tokenExternal = _tokenExternal;
         offerDuration = _offerDuration;
     }
 
@@ -174,17 +171,6 @@ contract InternalMarketBase {
         require(amount == 0, "InternalMarket: amount exceeds offer");
     }
 
-    function _mint(address to, uint256 amount) internal virtual {
-        // FIXME: ask marko if we can mint unwrapped tokens to investors.
-        tokenExternal.mint(address(this), amount);
-        tokenInternal.mint(to, amount);
-    }
-
-    function _deposit(address from, uint amount) internal virtual {
-        tokenExternal.transferFrom(from, address(this), amount);
-        tokenInternal.mint(from, amount);
-    }
-
     function _matchOffer(
         address from,
         address to,
@@ -213,28 +199,23 @@ contract InternalMarketBase {
             )
         ) {
             _beforeWithdraw(from, amount);
-            //
-            tokenInternal.burn(address(this), amount);
+            tokenInternal.unwrap(address(this), to, amount);
         } else {
-            tokenInternal.burn(from, amount);
+            tokenInternal.unwrap(from, to, amount);
         }
-        require(
-            tokenExternal.transfer(to, amount),
-            "InternalMarketBase: transfer failed"
-        );
+    }
+
+    function _deposit(address to, uint256 amount) internal virtual {
+        tokenInternal.wrap(to, amount);
     }
 
     function _redeem(address from, uint256 amount) internal virtual {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
-            tokenInternal.burn(from, difference);
             // internalToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
-            require(
-                tokenExternal.transfer(reserve, difference),
-                "InternalMarketBase: transfer failed"
-            );
+            tokenInternal.unwrap(from, reserve, difference); // reserve will become address(0)
             _withdraw(from, reserve, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {

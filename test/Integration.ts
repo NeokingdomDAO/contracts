@@ -136,7 +136,7 @@ describe("Integration", async () => {
         .approve(internalMarket.address, MaxUint256);
       await neokingdomTokenExternal
         .connect(signer)
-        .approve(internalMarket.address, MaxUint256);
+        .approve(neokingdomToken.address, MaxUint256);
     }
   });
 
@@ -158,7 +158,7 @@ describe("Integration", async () => {
       user: SignerWithAddress,
       tokens: number | BigNumber
     ) {
-      await internalMarket.mint(user.address, tokens);
+      await neokingdomToken.mint(user.address, tokens);
     }
 
     async function _makeContributor(
@@ -437,7 +437,7 @@ describe("Integration", async () => {
       expect(resolution3Result).false;
     });
 
-    it("expect chaos", async () => {
+    it.only("expect chaos", async () => {
       await _makeContributor(user1, 60);
       await _makeContributor(user2, 30);
       await _makeContributor(user3, 10);

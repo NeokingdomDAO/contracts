@@ -3,6 +3,7 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "./NeokingdomTokenSnapshot.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
@@ -37,10 +38,10 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
         _setVoting(voting);
     }
 
-    function setInternalMarket(
-        InternalMarket internalMarket
+    function setTokenExternal(
+        address tokenExternalAddress
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        _setInternalMarket(internalMarket);
+        _setTokenExternal(tokenExternalAddress);
     }
 
     function setRedemptionController(
@@ -54,6 +55,21 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
         uint256 amount
     ) public virtual onlyRole(Roles.MINTER_ROLE) {
         _mint(to, amount);
+    }
+
+    function wrap(
+        address from,
+        uint256 amount
+    ) public virtual onlyRole(Roles.MARKET_ROLE) {
+        _wrap(from, amount);
+    }
+
+    function unwrap(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual onlyRole(Roles.MARKET_ROLE) {
+        _unwrap(from, to, amount);
     }
 
     function mintVesting(
@@ -72,5 +88,32 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
 
     function burn(address account, uint256 amount) public virtual {
         super._burn(account, amount);
+    }
+
+    function transfer(
+        address to,
+        uint256 amount
+    )
+        public
+        virtual
+        override(ERC20Upgradeable, IERC20Upgradeable)
+        onlyRole(Roles.MARKET_ROLE)
+        returns (bool)
+    {
+        return super.transfer(to, amount);
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    )
+        public
+        virtual
+        override(ERC20Upgradeable, IERC20Upgradeable)
+        onlyRole(Roles.MARKET_ROLE)
+        returns (bool)
+    {
+        return super.transferFrom(from, to, amount);
     }
 }

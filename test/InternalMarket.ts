@@ -71,7 +71,6 @@ describe("InternalMarket", async () => {
     redemption = await smock.fake("IRedemptionController");
     stdReference = await smock.fake("IStdReference");
     registry = await smock.fake("ShareholderRegistry");
-    registry.isAtLeast.returns(true);
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
 
@@ -93,6 +92,7 @@ describe("InternalMarket", async () => {
     usdc.transfer.reset();
     usdc.transferFrom.reset();
     stdReference.getReferenceData.reset();
+    registry.isAtLeast.returns(true);
 
     // make transferFrom always succeed
     tokenInternal.transferFrom.returns(true);
@@ -108,6 +108,7 @@ describe("InternalMarket", async () => {
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
     daoRoles.hasRole.reset();
+    registry.isAtLeast.reset();
   });
 
   function parseUSDC(usdc: number) {

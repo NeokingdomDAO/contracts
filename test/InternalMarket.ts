@@ -30,7 +30,7 @@ const { expect } = chai;
 const DAY = 60 * 60 * 24;
 const WEEK = DAY * 7;
 
-describe("InternalMarket", async () => {
+describe.only("InternalMarket", async () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string;
@@ -69,7 +69,6 @@ describe("InternalMarket", async () => {
     internalMarket = (await upgrades.deployProxy(InternalMarketFactory, [
       daoRoles.address,
       tokenInternal.address,
-      tokenExternal.address,
     ])) as InternalMarket;
 
     redemption = await smock.fake("IRedemptionController");

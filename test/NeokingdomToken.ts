@@ -7,11 +7,15 @@ import { ethers, network, upgrades } from "hardhat";
 
 import {
   DAORoles,
+  INeokingdomTokenExternal,
   IRedemptionController,
   IVoting,
   NeokingdomToken,
+  NeokingdomTokenExternal,
   NeokingdomToken__factory,
 } from "../typechain";
+
+import { ROLES } from "../lib/utils";
 
 chai.use(smock.matchers);
 chai.use(solidity);
@@ -25,6 +29,7 @@ describe("NeokingdomToken", () => {
 
   let daoRoles: FakeContract<DAORoles>;
   let neokingdomToken: NeokingdomToken;
+  let neokingdomTokenExternal: FakeContract<INeokingdomTokenExternal>;
   let voting: FakeContract<IVoting>;
   let redemption: FakeContract<IRedemptionController>;
   let deployer: SignerWithAddress;
@@ -40,6 +45,7 @@ describe("NeokingdomToken", () => {
 
     daoRoles = await smock.fake("DAORoles");
     redemption = await smock.fake("IRedemptionController");
+    neokingdomTokenExternal = await smock.fake("INeokingdomTokenExternal");
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
@@ -56,9 +62,9 @@ describe("NeokingdomToken", () => {
     voting = await smock.fake("IVoting");
 
     daoRoles.hasRole.returns(true);
-    await neokingdomToken.setInternalMarket(internalMarket.address);
     await neokingdomToken.setVoting(voting.address);
     await neokingdomToken.setRedemptionController(redemption.address);
+    await neokingdomToken.setTokenExternal(neokingdomTokenExternal.address);
   });
 
   async function mintAndApprove(signer: SignerWithAddress, amount: number) {
@@ -122,15 +128,25 @@ describe("NeokingdomToken", () => {
       await mintAndApprove(account, 10);
     });
     it("should revert when called by a contributor", async () => {
+      daoRoles.hasRole.reset();
       await expect(
         neokingdomToken.connect(contributor).transfer(contributor2.address, 1)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
     });
 
     it("should revert when called by a non-contributor", async () => {
+      daoRoles.hasRole.reset();
       await expect(
         neokingdomToken.connect(account).transfer(contributor2.address, 1)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
+      ).revertedWith(
+        `AccessControl: account ${account.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
     });
 
     it("should transfer when called by the market contract", async () => {
@@ -141,34 +157,6 @@ describe("NeokingdomToken", () => {
       )
         .emit(neokingdomToken, "Transfer")
         .withArgs(contributor.address, contributor2.address, 1);
-    });
-
-    // This test is not valid anymore as only two contracts are allowed to
-    // transfer the tokens
-    it.skip("should transfer when called by anyone else", async () => {
-      await expect(
-        neokingdomToken.connect(account).transfer(contributor2.address, 1)
-      )
-        .emit(neokingdomToken, "Transfer")
-        .withArgs(account.address, contributor2.address, 1);
-    });
-  });
-
-  describe("burn", async () => {
-    beforeEach(async () => {
-      await mintAndApprove(contributor, 10);
-      await mintAndApprove(account, 10);
-    });
-
-    it("should revert when called by a contributor", async () => {
-      await expect(
-        neokingdomToken.connect(contributor).burn(contributor.address, 1)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
-    });
-
-    it("should burn when called by InternalMarket", async () => {
-      await neokingdomToken.connect(internalMarket).burn(account.address, 1);
-      expect(await neokingdomToken.balanceOf(account.address)).equal(9);
     });
   });
 

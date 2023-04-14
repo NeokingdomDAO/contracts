@@ -86,10 +86,6 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
         _setVesting(to, amount);
     }
 
-    function burn(address account, uint256 amount) public virtual {
-        super._burn(account, amount);
-    }
-
     function transfer(
         address to,
         uint256 amount

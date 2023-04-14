@@ -6,7 +6,6 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
-  InternalMarket,
   NeokingdomToken,
   NeokingdomTokenV2Mock__factory,
   NewNeokingdomTokenMock__factory,
@@ -17,6 +16,7 @@ import {
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
+import { ROLES } from "../lib/utils";
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 
 chai.use(solidity);
@@ -25,12 +25,11 @@ const { expect } = chai;
 
 const DAY = 60 * 60 * 24;
 
-describe("Upgrade", () => {
+describe.only("Upgrade", () => {
   let snapshotId: string;
 
   let neokingdomToken: NeokingdomToken;
   let shareholderRegistry: ShareholderRegistry;
-  let internalMarket: InternalMarket;
   let resolutionManager: ResolutionManager;
   let managingBoardStatus: string;
   let contributorStatus: string;
@@ -51,12 +50,8 @@ describe("Upgrade", () => {
       reserve: reserve.address,
     });
     await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
-    ({
-      neokingdomToken,
-      shareholderRegistry,
-      resolutionManager,
-      internalMarket,
-    } = await neokingdom.loadContracts());
+    ({ neokingdomToken, shareholderRegistry, resolutionManager } =
+      await neokingdom.loadContracts());
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
     contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -85,7 +80,7 @@ describe("Upgrade", () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await internalMarket.mint(user.address, tokens);
+      await neokingdomToken.mint(user.address, tokens);
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
@@ -181,7 +176,11 @@ describe("Upgrade", () => {
 
       await expect(
         neokingdomToken.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
+      ).revertedWith(
+        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
 
       // FIXME: not sure if we still need this transfer
       // await neokingdomToken.connect(user2).transfer(user1.address, 1);

@@ -29,7 +29,7 @@ const { expect } = chai;
 const DAY = 60 * 60 * 24;
 const WEEK = DAY * 7;
 
-describe.only("InternalMarket", async () => {
+describe("InternalMarket", async () => {
   let snapshotId: string;
 
   let RESOLUTION_ROLE: string;

@@ -6,11 +6,8 @@ import "../NeokingdomToken/NeokingdomToken.sol";
 import "../extensions/Roles.sol";
 
 contract NeokingdomTokenV2Mock is NeokingdomToken {
-    function _beforeTokenTransfer(
-        address,
-        address,
-        uint256
-    ) internal virtual override {
+    function transfer(address, uint256) public virtual override returns (bool) {
         require(false, "NeokingdomTokenV2: nopety nope");
+        return true;
     }
 }

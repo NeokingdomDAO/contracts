@@ -723,6 +723,17 @@ describe("InternalMarket", async () => {
         ).revertedWith("InternalMarket: amount exceeds balance");
       });
 
+      it("should allow to withdraw if caller is not a contributor", async () => {
+        registry.isAtLeast.reset();
+        registry.isAtLeast
+          .whenCalledWith(await registry.CONTRIBUTOR_STATUS(), bob.address)
+          .returns(false);
+
+        await internalMarket.connect(bob).withdraw(alice.address, 10);
+
+        expect(tokenInternal.unwrap).calledWith(bob.address, alice.address, 10);
+      });
+
       it("should not allow to withdraw if the amount is bigger than the amount of the expired offers", async () => {
         await setEVMTimestamp(ts + WEEK + DAY);
         await expect(

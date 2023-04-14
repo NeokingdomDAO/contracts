@@ -12,8 +12,11 @@ import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
 
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
-    function initialize(DAORoles roles, IERC20 daoToken) public initializer {
-        _initialize(daoToken, 7 days);
+    function initialize(
+        DAORoles roles,
+        INeokingdomToken tokenInternal
+    ) public initializer {
+        _initialize(tokenInternal, 7 days);
         _setRoles(roles);
     }
 
@@ -32,12 +35,32 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         _withdraw(_msgSender(), to, amount);
     }
 
+    function deposit(uint amount) public {
+        _deposit(_msgSender(), amount);
+    }
+
+    function withdrawFrom(
+        address from,
+        address to,
+        uint amount
+    ) public onlyRole(Roles.TOKEN_GATEWAY_ROLE) {
+        _withdraw(from, to, amount);
+    }
+
     function redeem(uint amount) public {
         _redeem(_msgSender(), amount);
     }
 
-    function setDaoToken(IERC20 token) public onlyRole(Roles.RESOLUTION_ROLE) {
-        _setDaoToken(token);
+    function setInternalToken(
+        INeokingdomToken token
+    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+        _setInternalToken(token);
+    }
+
+    function setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+        _setShareholderRegistry(shareholderRegistry);
     }
 
     function setExchangePair(

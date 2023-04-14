@@ -34,11 +34,13 @@ export const ROLES = {
     "0x0000000000000000000000000000000000000000000000000000000000000000",
   OPERATOR_ROLE: keccak256(toUtf8Bytes("OPERATOR_ROLE")),
   RESOLUTION_ROLE: keccak256(toUtf8Bytes("RESOLUTION_ROLE")),
+  MARKET_ROLE: keccak256(toUtf8Bytes("MARKET_ROLE")),
   ESCROW_ROLE: keccak256(toUtf8Bytes("ESCROW_ROLE")),
   SHAREHOLDER_REGISTRY_ROLE: keccak256(
     toUtf8Bytes("SHAREHOLDER_REGISTRY_ROLE")
   ),
   TOKEN_MANAGER_ROLE: keccak256(toUtf8Bytes("TOKEN_MANAGER_ROLE")),
+  MINTER_ROLE: keccak256(toUtf8Bytes("MINTER_ROLE")),
 } as const;
 
 export function isContractName(name: string): name is ContractNames {

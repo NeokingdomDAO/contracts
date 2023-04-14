@@ -12,4 +12,10 @@ interface INeokingdomToken is IERC20Upgradeable, ISnapshot {
     ) external view returns (uint256);
 
     function totalSupplyAt(uint256 snapshotId) external view returns (uint256);
+
+    function mint(address to, uint256 amount) external;
+
+    function wrap(address from, uint256 amount) external;
+
+    function unwrap(address from, address to, uint256 amount) external;
 }

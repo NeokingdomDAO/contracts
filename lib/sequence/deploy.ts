@@ -1,6 +1,6 @@
 import { TransactionResponse } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Contract, Wallet } from "ethers";
+import { Wallet } from "ethers";
 
 import type {
   ContextGenerator,
@@ -47,9 +47,10 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) =>
     c.deployProxy("NeokingdomToken", [
       c.daoRoles.address,
-      "NeokingdomToken",
-      "NEOK",
+      "NeokingdomTokenInternal",
+      "NEOKI",
     ]),
+  (c) => c.deploy("NeokingdomTokenExternal", ["NeokingdomToken", "NEOK"]),
   (c) => c.deployProxy("RedemptionController", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("InternalMarket", [
@@ -90,6 +91,13 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.neokingdomToken.address),
   (c) =>
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
+  (c) => c.daoRoles.grantRole(ROLES.MARKET_ROLE, c.internalMarket.address),
+  (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.deployer.address),
+  (c) =>
+    c.neokingdomTokenExternal.grantRole(
+      ROLES.MINTER_ROLE,
+      c.neokingdomToken.address
+    ),
 
   // Set interdependencies
   //////////////////////////
@@ -103,11 +111,14 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
 
   // Token
   (c) => c.neokingdomToken.setVoting(c.voting.address),
-  (c) => c.neokingdomToken.setInternalMarket(c.internalMarket.address),
+  (c) => c.neokingdomToken.setTokenExternal(c.neokingdomTokenExternal.address),
   (c) =>
     c.neokingdomToken.setRedemptionController(c.redemptionController.address),
+
+  // Token
+  (c) => c.neokingdomToken.setVoting(c.voting.address),
   (c) =>
-    c.neokingdomToken.setShareholderRegistry(c.shareholderRegistry.address),
+    c.neokingdomToken.setRedemptionController(c.redemptionController.address),
 
   // Registry
   (c) => c.neokingdomToken.setVoting(c.voting.address),
@@ -120,4 +131,5 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.priceOracle.address
     ),
   (c) => c.internalMarket.setReserve(c.reserve),
+  (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),
 ];

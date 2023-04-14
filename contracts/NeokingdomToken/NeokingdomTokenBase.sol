@@ -6,7 +6,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
-import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../extensions/DAORoles.sol";
 import "./INeokingdomToken.sol";
 
@@ -14,9 +13,8 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     event VestingSet(address to, uint256 amount);
 
     IVoting internal _voting;
-    InternalMarket internal _internalMarket;
-    IShareholderRegistry internal _shareholderRegistry;
     IRedemptionController internal _redemptionController;
+    INeokingdomTokenExternal public tokenExternal;
 
     function _initialize(
         string memory name,
@@ -30,21 +28,8 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     mapping(address => uint256) internal _vestingBalance;
 
     // mapping(address => uint256) internal _unlockedBalance;
-
-    function _setInternalMarket(
-        InternalMarket internalMarket
-    ) internal virtual {
-        _internalMarket = internalMarket;
-    }
-
     function _setVoting(IVoting voting) internal {
         _voting = voting;
-    }
-
-    function _setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) internal virtual {
-        _shareholderRegistry = shareholderRegistry;
     }
 
     function _setRedemptionController(
@@ -53,21 +38,16 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
         _redemptionController = redemptionController;
     }
 
+    function _setTokenExternal(address tokenExternalAddress) internal {
+        tokenExternal = INeokingdomTokenExternal(tokenExternalAddress);
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 amount
     ) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
-
-        require(
-            _msgSender() == address(_internalMarket) ||
-                !_shareholderRegistry.isAtLeast(
-                    _shareholderRegistry.CONTRIBUTOR_STATUS(),
-                    from
-                ),
-            "NeokingdomToken: contributor cannot transfer"
-        );
     }
 
     function _afterTokenTransfer(
@@ -94,6 +74,21 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
         _vestingBalance[to] += amount;
         emit VestingSet(to, _vestingBalance[to]);
         _mint(to, amount);
+    }
+
+    function _mint(address to, uint256 amount) internal virtual override {
+        tokenExternal.mint(address(this), amount);
+        super._mint(to, amount);
+    }
+
+    function _wrap(address from, uint amount) internal virtual {
+        tokenExternal.transferFrom(from, address(this), amount);
+        super._mint(from, amount);
+    }
+
+    function _unwrap(address from, address to, uint amount) internal virtual {
+        tokenExternal.transfer(to, amount);
+        _burn(from, amount);
     }
 
     function _setVesting(address account, uint256 amount) internal virtual {

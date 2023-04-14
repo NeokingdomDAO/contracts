@@ -1,4 +1,4 @@
-import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -7,63 +7,49 @@ import { ethers, network, upgrades } from "hardhat";
 
 import {
   DAORoles,
-  DAORoles__factory,
+  INeokingdomTokenExternal,
   IRedemptionController,
+  IVoting,
   NeokingdomToken,
   NeokingdomToken__factory,
-  ShareholderRegistryMock,
-  ShareholderRegistryMock__factory,
-  VotingMock,
-  VotingMock__factory,
 } from "../typechain";
 
-import { roles } from "./utils/roles";
+import { ROLES } from "../lib/utils";
 
 chai.use(smock.matchers);
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const AddressZero = ethers.constants.AddressZero;
+const { MaxUint256, AddressZero } = ethers.constants;
 
 describe("NeokingdomToken", () => {
   let snapshotId: string;
 
-  let RESOLUTION_ROLE: string, OPERATOR_ROLE: string, ESCROW_ROLE: string;
-  let daoRoles: MockContract<DAORoles>;
+  let daoRoles: FakeContract<DAORoles>;
   let neokingdomToken: NeokingdomToken;
-  let voting: VotingMock;
-  let shareholderRegistry: ShareholderRegistryMock;
+  let neokingdomTokenExternal: FakeContract<INeokingdomTokenExternal>;
+  let voting: FakeContract<IVoting>;
   let redemption: FakeContract<IRedemptionController>;
   let deployer: SignerWithAddress;
+  let internalMarket: SignerWithAddress;
   let contributor: SignerWithAddress;
   let contributor2: SignerWithAddress;
   let account: SignerWithAddress;
   let account2: SignerWithAddress;
 
   before(async () => {
-    [deployer, contributor, contributor2, account, account2] =
+    [deployer, internalMarket, contributor, contributor2, account, account2] =
       await ethers.getSigners();
 
+    daoRoles = await smock.fake("DAORoles");
     redemption = await smock.fake("IRedemptionController");
-
-    const DAORolesFactory = await smock.mock<DAORoles__factory>("DAORoles");
-    daoRoles = await DAORolesFactory.deploy();
+    neokingdomTokenExternal = await smock.fake("INeokingdomTokenExternal");
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
       deployer
     )) as NeokingdomToken__factory;
-
-    const VotingMockFactory = (await ethers.getContractFactory(
-      "VotingMock",
-      deployer
-    )) as VotingMock__factory;
-
-    const ShareholderRegistryMockFactory = (await ethers.getContractFactory(
-      "ShareholderRegistryMock",
-      deployer
-    )) as ShareholderRegistryMock__factory;
 
     neokingdomToken = (await upgrades.deployProxy(
       NeokingdomTokenFactory,
@@ -72,62 +58,24 @@ describe("NeokingdomToken", () => {
     )) as NeokingdomToken;
     await neokingdomToken.deployed();
 
-    voting = (await upgrades.deployProxy(VotingMockFactory)) as VotingMock;
-    await voting.deployed();
+    voting = await smock.fake("IVoting");
 
-    RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
-    OPERATOR_ROLE = await roles.OPERATOR_ROLE();
-    ESCROW_ROLE = await roles.ESCROW_ROLE();
-
-    shareholderRegistry = (await upgrades.deployProxy(
-      ShareholderRegistryMockFactory,
-      {
-        initializer: "initialize",
-      }
-    )) as ShareholderRegistryMock;
-    await shareholderRegistry.deployed();
-
-    daoRoles.hasRole
-      .whenCalledWith(OPERATOR_ROLE, deployer.address)
-      .returns(true);
+    daoRoles.hasRole.returns(true);
     await neokingdomToken.setVoting(voting.address);
-    await neokingdomToken.setShareholderRegistry(shareholderRegistry.address);
     await neokingdomToken.setRedemptionController(redemption.address);
-
-    const contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
-    const shareholderStatus = await shareholderRegistry.SHAREHOLDER_STATUS();
-    const investorStatus = await shareholderRegistry.INVESTOR_STATUS();
-
-    await setContributor(contributor, true);
-    await setContributor(contributor2, true);
-
-    async function setContributor(user: SignerWithAddress, flag: boolean) {
-      await shareholderRegistry.mock_isAtLeast(
-        contributorStatus,
-        user.address,
-        flag
-      );
-      await shareholderRegistry.mock_isAtLeast(
-        shareholderStatus,
-        user.address,
-        flag
-      );
-      await shareholderRegistry.mock_isAtLeast(
-        investorStatus,
-        user.address,
-        flag
-      );
-    }
+    await neokingdomToken.setTokenExternal(neokingdomTokenExternal.address);
   });
+
+  async function mintAndApprove(signer: SignerWithAddress, amount: number) {
+    await neokingdomToken.mint(signer.address, amount);
+    await neokingdomToken
+      .connect(signer)
+      .approve(internalMarket.address, MaxUint256);
+  }
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
-    daoRoles.hasRole
-      .whenCalledWith(RESOLUTION_ROLE, deployer.address)
-      .returns(true);
-    daoRoles.hasRole
-      .whenCalledWith(ESCROW_ROLE, deployer.address)
-      .returns(true);
+    daoRoles.hasRole.returns(true);
   });
 
   afterEach(async () => {
@@ -136,20 +84,26 @@ describe("NeokingdomToken", () => {
     daoRoles.hasRole.reset();
   });
 
-  describe("token transfer logic", async () => {
+  describe("transfer hooks", async () => {
     it("should call the Voting hook after a minting", async () => {
-      await expect(neokingdomToken.mint(account.address, 10))
-        .emit(voting, "AfterTokenTransferCalled")
-        .withArgs(AddressZero, account.address, 10);
+      await neokingdomToken.mint(account.address, 10);
+      expect(voting.afterTokenTransfer).calledWith(
+        AddressZero,
+        account.address,
+        10
+      );
     });
 
     it("should call the Voting hook after a token transfer", async () => {
-      neokingdomToken.mint(account.address, 10);
-      await expect(
-        neokingdomToken.connect(account).transfer(account2.address, 10)
-      )
-        .emit(voting, "AfterTokenTransferCalled")
-        .withArgs(account.address, account2.address, 10);
+      await mintAndApprove(contributor, 10);
+      await neokingdomToken
+        .connect(internalMarket)
+        .transferFrom(contributor.address, account.address, 10);
+      expect(voting.afterTokenTransfer).calledWith(
+        contributor.address,
+        account.address,
+        10
+      );
     });
 
     it("should call the RedemptionController hook when mint", async () => {
@@ -158,130 +112,208 @@ describe("NeokingdomToken", () => {
     });
 
     it("should not call the RedemptionController hook when transfer", async () => {
-      await neokingdomToken.mint(account.address, 10);
+      await mintAndApprove(contributor, 10);
       redemption.afterMint.reset();
-
-      await neokingdomToken.connect(account).transfer(account2.address, 10);
-
+      await neokingdomToken
+        .connect(internalMarket)
+        .transferFrom(contributor.address, account2.address, 10);
       expect(redemption.afterMint).callCount(0);
     });
   });
 
   describe("transfer", async () => {
+    beforeEach(async () => {
+      await mintAndApprove(contributor, 10);
+      await mintAndApprove(account, 10);
+    });
     it("should revert when called by a contributor", async () => {
-      neokingdomToken.mint(contributor.address, 10);
+      daoRoles.hasRole.reset();
       await expect(
         neokingdomToken.connect(contributor).transfer(contributor2.address, 1)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
+    });
+
+    it("should revert when called by a non-contributor", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken.connect(account).transfer(contributor2.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${account.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
     });
 
     it("should transfer when called by the market contract", async () => {
-      const market = account;
-
-      daoRoles.hasRole
-        .whenCalledWith(OPERATOR_ROLE, deployer.address)
-        .returns(true);
-      neokingdomToken.setInternalMarket(market.address);
-      neokingdomToken.mint(contributor.address, 10);
-
-      await neokingdomToken
-        .connect(contributor)
-        .approve(market.address, ethers.constants.MaxUint256);
       await expect(
         neokingdomToken
-          .connect(market)
+          .connect(internalMarket)
           .transferFrom(contributor.address, contributor2.address, 1)
       )
         .emit(neokingdomToken, "Transfer")
         .withArgs(contributor.address, contributor2.address, 1);
     });
-
-    it("should transfer when called by anyone else", async () => {
-      neokingdomToken.mint(account.address, 10);
-      await expect(
-        neokingdomToken.connect(account).transfer(contributor2.address, 1)
-      )
-        .emit(neokingdomToken, "Transfer")
-        .withArgs(account.address, contributor2.address, 1);
-    });
-  });
-
-  describe("burning", async () => {
-    it("should revert when called by a contributor", async () => {
-      neokingdomToken.mint(contributor.address, 10);
-      await expect(neokingdomToken.burn(contributor.address, 1)).revertedWith(
-        "NeokingdomToken: contributor cannot transfer"
-      );
-    });
-
-    it("should burn when called by anyone else", async () => {
-      neokingdomToken.mint(account.address, 10);
-      await expect(neokingdomToken.burn(account.address, 1))
-        .emit(neokingdomToken, "Transfer")
-        .withArgs(account.address, AddressZero, 1);
-    });
   });
 
   describe("vesting", async () => {
-    it("should not allow balance in vesting to be transferred", async () => {
+    beforeEach(async () => {
+      await mintAndApprove(account, 10);
       await neokingdomToken.mintVesting(account.address, 100);
+    });
+
+    it("should not allow balance in vesting to be transferred by the internal market", async () => {
       await expect(
-        neokingdomToken.connect(account).transfer(account2.address, 50)
+        neokingdomToken
+          .connect(internalMarket)
+          // account has only 10 vested (free) tokens
+          .transferFrom(account.address, account2.address, 50)
       ).revertedWith("NeokingdomToken: transfer amount exceeds vesting");
     });
 
     it("should update the vesting balance", async () => {
       await neokingdomToken.mintVesting(account.address, 100);
       expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(
-        100
-      );
-      await neokingdomToken.mintVesting(account.address, 10);
-      expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(
-        110
+        200
       );
     });
 
     it("should emit events on update the vesting balance", async () => {
-      expect(await neokingdomToken.mintVesting(account.address, 100))
-        .emit(neokingdomToken, "VestingSet")
-        .withArgs(account.address, 100);
       expect(await neokingdomToken.mintVesting(account.address, 10))
         .emit(neokingdomToken, "VestingSet")
         .withArgs(account.address, 110);
+      expect(await neokingdomToken.mintVesting(account.address, 20))
+        .emit(neokingdomToken, "VestingSet")
+        .withArgs(account.address, 130);
     });
 
     it("should allow to transfer balance that is not vesting", async () => {
-      await neokingdomToken.mint(account.address, 10);
-      await neokingdomToken.mintVesting(account.address, 100);
       await expect(
-        neokingdomToken.connect(account).transfer(account2.address, 10)
+        neokingdomToken
+          .connect(internalMarket)
+          .transferFrom(account.address, account2.address, 10)
       )
         .emit(neokingdomToken, "Transfer")
         .withArgs(account.address, account2.address, 10);
+
+      // The previous transfer consumed all unvested balance so any other
+      // transfer should fail
       await expect(
-        neokingdomToken.connect(account).transfer(account2.address, 1)
+        neokingdomToken
+          .connect(internalMarket)
+          .transferFrom(account.address, account2.address, 1)
       ).revertedWith("NeokingdomToken: transfer amount exceeds vesting");
     });
 
     it("should allow to decrease the vesting balance", async () => {
-      daoRoles.hasRole
-        .whenCalledWith(OPERATOR_ROLE, deployer.address)
-        .returns(true);
-
-      await neokingdomToken.mintVesting(account.address, 100);
-      await neokingdomToken.setVesting(account.address, 90);
-      expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(90);
+      await neokingdomToken.setVesting(account.address, 5);
+      expect(await neokingdomToken.vestingBalanceOf(account.address)).equal(5);
     });
 
     it("should not allow to increase the vesting balance", async () => {
-      daoRoles.hasRole
-        .whenCalledWith(OPERATOR_ROLE, deployer.address)
-        .returns(true);
-
-      await neokingdomToken.mintVesting(account.address, 100);
       await expect(
-        neokingdomToken.setVesting(account.address, 110)
+        neokingdomToken.setVesting(account.address, 200)
       ).revertedWith("NeokingdomToken: vesting can only be decreased");
+    });
+  });
+
+  describe("wrap", async () => {
+    it("should fail when not called by MARKET_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken.connect(contributor).wrap(contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
+    });
+
+    it("should transfer external token to itself", async () => {
+      await neokingdomToken.wrap(contributor.address, 41);
+      expect(neokingdomTokenExternal.transferFrom).calledWith(
+        contributor.address,
+        neokingdomToken.address,
+        41
+      );
+    });
+
+    it("should mint internal tokens to 'from' address", async () => {
+      await neokingdomToken.wrap(contributor.address, 41);
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(41);
+    });
+  });
+
+  describe("unwrap", async () => {
+    it("should fail when not called by MARKET_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken
+          .connect(contributor)
+          .unwrap(contributor.address, contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
+    });
+
+    it("should fail when user doesn't have enough tokens to unwrap", async () => {
+      await expect(
+        neokingdomToken.unwrap(contributor.address, contributor.address, 1)
+      ).revertedWith("ERC20: burn amount exceeds balance");
+    });
+
+    it("should transfer external token to 'to' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      await neokingdomToken.unwrap(
+        contributor.address,
+        contributor2.address,
+        10
+      );
+      expect(neokingdomTokenExternal.transfer).calledWith(
+        contributor2.address,
+        10
+      );
+    });
+
+    it("should burn internal tokens owned by 'from' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      await neokingdomToken.unwrap(
+        contributor.address,
+        contributor2.address,
+        10
+      );
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(31);
+    });
+  });
+
+  describe("mint", async () => {
+    it("should fail when not called by RESOLUTION_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken.connect(contributor).mint(contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.RESOLUTION_ROLE
+        }`
+      );
+    });
+
+    it("should mint external tokens to itself", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      expect(neokingdomTokenExternal.mint).calledWith(
+        neokingdomToken.address,
+        41
+      );
+    });
+
+    it("should mint internal tokens to 'to' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(41);
     });
   });
 });

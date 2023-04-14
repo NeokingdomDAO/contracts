@@ -5,6 +5,7 @@ import {
   DAORoles,
   InternalMarket,
   NeokingdomToken,
+  NeokingdomTokenExternal,
   PriceOracle,
   RedemptionController,
   ResolutionManager,
@@ -73,6 +74,10 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
         break;
       case "NeokingdomToken":
         this.contracts.neokingdomToken = contract as NeokingdomToken;
+        break;
+      case "NeokingdomTokenExternal":
+        this.contracts.neokingdomTokenExternal =
+          contract as NeokingdomTokenExternal;
         break;
       case "PriceOracle":
         this.contracts.priceOracle = contract as PriceOracle;

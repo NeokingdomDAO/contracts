@@ -1,5 +1,4 @@
 import { TransactionResponse } from "@ethersproject/providers";
-import { Contract, ContractTransaction, Transaction } from "ethers";
 
 import {
   DAORoles,
@@ -7,6 +6,8 @@ import {
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
+  NeokingdomTokenExternal,
+  NeokingdomTokenExternal__factory,
   NeokingdomToken__factory,
   PriceOracle,
   PriceOracle__factory,
@@ -27,6 +28,7 @@ export const FACTORIES = {
   DAORoles: DAORoles__factory,
   InternalMarket: InternalMarket__factory,
   NeokingdomToken: NeokingdomToken__factory,
+  NeokingdomTokenExternal: NeokingdomTokenExternal__factory,
   PriceOracle: PriceOracle__factory,
   RedemptionController: RedemptionController__factory,
   ResolutionManager: ResolutionManager__factory,
@@ -44,6 +46,7 @@ export type NeokingdomContracts = {
   daoRoles: DAORoles;
   internalMarket: InternalMarket;
   neokingdomToken: NeokingdomToken;
+  neokingdomTokenExternal: NeokingdomTokenExternal;
   priceOracle: PriceOracle;
   redemptionController: RedemptionController;
   resolutionManager: ResolutionManager;
@@ -75,6 +78,7 @@ export const CONTRACT_NAMES = [
   "daoRoles",
   "internalMarket",
   "neokingdomToken",
+  "neokingdomTokenExternal",
   "priceOracle",
   "redemptionController",
   "resolutionManager",

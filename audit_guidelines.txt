@@ -1,0 +1,6 @@
+- Mention that all that is currently operated by multisig (and related ACL), will be offloaded to the DAO one day (meaning: only a resolution can execute it)
+    - isDAO will be the role to enable inwards dependencies -> functions that can only be called after a resolution is approved
+        this role can be delegated to the operators or to a multisig temporarily
+    - the rest of the roles will be the so called "interface dependencies" roles and they 
+        will be used to enable the cross communication between inter-dependent smart contracts  
+- Should we move "executeResolution" outside on a different smart contract?

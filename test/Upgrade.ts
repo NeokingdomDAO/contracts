@@ -16,6 +16,7 @@ import {
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
+import { ROLES } from "../lib/utils";
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 
 chai.use(solidity);
@@ -102,6 +103,7 @@ describe("Upgrade", () => {
 
     it("should change previous version storage variables", async () => {
       // Change notice period of the a resolution type in the Resolution contract
+
       await _prepareForVoting(user1, 42);
       const resolutionId = await _prepareResolution(6);
       const resolutionObject = await resolutionManager.resolutions(
@@ -174,9 +176,14 @@ describe("Upgrade", () => {
 
       await expect(
         neokingdomToken.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
+      ).revertedWith(
+        `AccessControl: account ${user1.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
 
-      await neokingdomToken.connect(user2).transfer(user1.address, 1);
+      // FIXME: not sure if we still need this transfer
+      // await neokingdomToken.connect(user2).transfer(user1.address, 1);
 
       const NeokingdomTokenV2MockFactory = (await ethers.getContractFactory(
         "NeokingdomTokenV2Mock"

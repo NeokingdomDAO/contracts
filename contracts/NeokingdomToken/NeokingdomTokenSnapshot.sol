@@ -3,6 +3,7 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/utils/Arrays.sol";
+import "./INeokingdomToken.sol";
 import "./NeokingdomTokenBase.sol";
 import "../extensions/Snapshottable.sol";
 

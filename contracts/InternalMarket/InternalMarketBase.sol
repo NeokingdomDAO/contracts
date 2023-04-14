@@ -3,8 +3,14 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
+
+import "../NeokingdomTokenExternal/INeokingdomTokenExternal.sol";
+import "../NeokingdomToken/INeokingdomToken.sol";
+
+import "hardhat/console.sol";
 
 contract InternalMarketBase {
     event OfferCreated(
@@ -27,11 +33,14 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    IERC20 public daoToken;
+    INeokingdomToken public tokenInternal;
+
+    // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
     IStdReference public priceOracle;
+    IShareholderRegistry internal _shareholderRegistry;
 
     address public reserve;
     uint256 public offerDuration;
@@ -41,10 +50,10 @@ contract InternalMarketBase {
     mapping(address => uint256) internal _vaultContributors;
 
     function _initialize(
-        IERC20 _daoToken,
+        INeokingdomToken _tokenInternal,
         uint256 _offerDuration
     ) internal virtual {
-        daoToken = _daoToken;
+        tokenInternal = _tokenInternal;
         offerDuration = _offerDuration;
     }
 
@@ -56,8 +65,14 @@ contract InternalMarketBase {
         return offers.end++;
     }
 
-    function _setDaoToken(IERC20 token) internal virtual {
-        daoToken = token;
+    function _setInternalToken(INeokingdomToken token) internal virtual {
+        tokenInternal = token;
+    }
+
+    function _setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) internal virtual {
+        _shareholderRegistry = shareholderRegistry;
     }
 
     function _setExchangePair(
@@ -91,7 +106,7 @@ contract InternalMarketBase {
         emit OfferCreated(id, from, amount, expiredAt);
 
         require(
-            daoToken.transferFrom(from, address(this), amount),
+            tokenInternal.transferFrom(from, address(this), amount),
             "InternalMarketBase: transfer failed"
         );
         redemptionController.afterOffer(from, amount);
@@ -156,18 +171,6 @@ contract InternalMarketBase {
         require(amount == 0, "InternalMarket: amount exceeds offer");
     }
 
-    function _withdraw(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {
-        _beforeWithdraw(from, amount);
-        require(
-            daoToken.transfer(to, amount),
-            "InternalMarketBase: transfer failed"
-        );
-    }
-
     function _matchOffer(
         address from,
         address to,
@@ -175,7 +178,7 @@ contract InternalMarketBase {
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
         require(
-            daoToken.transfer(to, amount),
+            tokenInternal.transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
         require(
@@ -184,16 +187,35 @@ contract InternalMarketBase {
         );
     }
 
+    function _withdraw(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        if (
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                from
+            )
+        ) {
+            _beforeWithdraw(from, amount);
+            tokenInternal.unwrap(address(this), to, amount);
+        } else {
+            tokenInternal.unwrap(from, to, amount);
+        }
+    }
+
+    function _deposit(address to, uint256 amount) internal virtual {
+        tokenInternal.wrap(to, amount);
+    }
+
     function _redeem(address from, uint256 amount) internal virtual {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {
             uint256 difference = amount - withdrawableBalance;
-            // daoToken is an address set by the operators of the DAO, hence trustworthy
+            // internalToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
-            require(
-                daoToken.transferFrom(from, reserve, difference),
-                "InternalMarketBase: transfer failed"
-            );
+            tokenInternal.unwrap(from, reserve, difference); // reserve will become address(0)
             _withdraw(from, reserve, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {

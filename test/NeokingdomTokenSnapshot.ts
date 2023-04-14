@@ -7,6 +7,7 @@ import { ethers, network, upgrades } from "hardhat";
 
 import {
   DAORoles,
+  INeokingdomTokenExternal,
   IRedemptionController,
   NeokingdomToken,
   NeokingdomToken__factory,
@@ -29,6 +30,7 @@ describe("NeokingdomTokenSnapshot", () => {
   let RESOLUTION_ROLE: string, OPERATOR_ROLE: string;
   let daoRoles: FakeContract<DAORoles>;
   let neokingdomToken: NeokingdomToken;
+  let neokingdomTokenExternal: FakeContract<INeokingdomTokenExternal>;
   let redemption: FakeContract<IRedemptionController>;
   let voting: VotingMock;
   let shareholderRegistry: ShareholderRegistryMock;
@@ -44,6 +46,7 @@ describe("NeokingdomTokenSnapshot", () => {
 
     daoRoles = await smock.fake("DAORoles");
     redemption = await smock.fake("IRedemptionController");
+    neokingdomTokenExternal = await smock.fake("INeokingdomTokenExternal");
 
     const NeokingdomTokenFactory = (await ethers.getContractFactory(
       "NeokingdomToken",
@@ -85,7 +88,7 @@ describe("NeokingdomTokenSnapshot", () => {
     // To test transfers easily, we assign the role of InternalMarket to the deployer.
     // In this way the deployer can trigger transfers in behalf of the user (if
     // there is enough allowance).
-    await neokingdomToken.setInternalMarket(deployer.address);
+    await neokingdomToken.setTokenExternal(neokingdomTokenExternal.address);
     await neokingdomToken.setVoting(voting.address);
     await neokingdomToken.setRedemptionController(redemption.address);
 
@@ -217,12 +220,16 @@ describe("NeokingdomTokenSnapshot", () => {
         expect(balanceAfter).equal(7);
       });
 
-      it("should return the balance at the time of the snapshot - burn", async () => {
+      it("should return the balance at the time of the snapshot - unwrap", async () => {
         await neokingdomToken.mint(nonContributor.address, 10);
         await neokingdomToken.snapshot();
         const snapshotIdBefore = await neokingdomToken.getCurrentSnapshotId();
 
-        await neokingdomToken.burn(nonContributor.address, 4);
+        await neokingdomToken.unwrap(
+          nonContributor.address,
+          nonContributor.address,
+          4
+        );
 
         await neokingdomToken.snapshot();
         const snapshotIdAfter = await neokingdomToken.getCurrentSnapshotId();
@@ -289,12 +296,16 @@ describe("NeokingdomTokenSnapshot", () => {
         expect(balanceAfter).equal(10);
       });
 
-      it("should return the totalSupply at the time of the snapshot - burn", async () => {
+      it("should return the totalSupply at the time of the snapshot - unwrap", async () => {
         await neokingdomToken.mint(nonContributor.address, 10);
         await neokingdomToken.snapshot();
         const snapshotIdBefore = await neokingdomToken.getCurrentSnapshotId();
 
-        await neokingdomToken.burn(nonContributor.address, 7);
+        await neokingdomToken.unwrap(
+          nonContributor.address,
+          nonContributor.address,
+          7
+        );
         await neokingdomToken.snapshot();
         const snapshotIdAfter = await neokingdomToken.getCurrentSnapshotId();
 

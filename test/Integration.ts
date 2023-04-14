@@ -437,7 +437,7 @@ describe("Integration", async () => {
       expect(resolution3Result).false;
     });
 
-    it.only("expect chaos", async () => {
+    it("expect chaos", async () => {
       await _makeContributor(user1, 60);
       await _makeContributor(user2, 30);
       await _makeContributor(user3, 10);

@@ -11,7 +11,6 @@ import {
   IRedemptionController,
   IVoting,
   NeokingdomToken,
-  NeokingdomTokenExternal,
   NeokingdomToken__factory,
 } from "../typechain";
 
@@ -218,6 +217,103 @@ describe("NeokingdomToken", () => {
       await expect(
         neokingdomToken.setVesting(account.address, 200)
       ).revertedWith("NeokingdomToken: vesting can only be decreased");
+    });
+  });
+
+  describe("wrap", async () => {
+    it("should fail when not called by MARKET_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken.connect(contributor).wrap(contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
+    });
+
+    it("should transfer external token to itself", async () => {
+      await neokingdomToken.wrap(contributor.address, 41);
+      expect(neokingdomTokenExternal.transferFrom).calledWith(
+        contributor.address,
+        neokingdomToken.address,
+        41
+      );
+    });
+
+    it("should mint internal tokens to 'from' address", async () => {
+      await neokingdomToken.wrap(contributor.address, 41);
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(41);
+    });
+  });
+
+  describe("unwrap", async () => {
+    it("should fail when not called by MARKET_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken
+          .connect(contributor)
+          .unwrap(contributor.address, contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
+    });
+
+    it("should fail when user doesn't have enough tokens to unwrap", async () => {
+      await expect(
+        neokingdomToken.unwrap(contributor.address, contributor.address, 1)
+      ).revertedWith("ERC20: burn amount exceeds balance");
+    });
+
+    it("should transfer external token to 'to' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      await neokingdomToken.unwrap(
+        contributor.address,
+        contributor2.address,
+        10
+      );
+      expect(neokingdomTokenExternal.transfer).calledWith(
+        contributor2.address,
+        10
+      );
+    });
+
+    it("should burn internal tokens owned by 'from' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      await neokingdomToken.unwrap(
+        contributor.address,
+        contributor2.address,
+        10
+      );
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(31);
+    });
+  });
+
+  describe("mint", async () => {
+    it("should fail when not called by RESOLUTION_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken.connect(contributor).mint(contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.RESOLUTION_ROLE
+        }`
+      );
+    });
+
+    it("should mint external tokens to itself", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      expect(neokingdomTokenExternal.mint).calledWith(
+        neokingdomToken.address,
+        41
+      );
+    });
+
+    it("should mint internal tokens to 'to' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(41);
     });
   });
 });

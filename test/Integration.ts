@@ -20,6 +20,7 @@ import {
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
+import { ROLES } from "../lib/utils";
 import {
   getEVMTimestamp,
   mineEVMBlock,
@@ -543,7 +544,11 @@ describe("Integration", async () => {
 
       await expect(
         neokingdomToken.connect(user2).transfer(user3.address, 2)
-      ).revertedWith("NeokingdomToken: contributor cannot transfer");
+      ).revertedWith(
+        `AccessControl: account ${user2.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
 
       await internalMarket.connect(user2).makeOffer(2);
       await internalMarket.connect(user1).matchOffer(user2.address, 1);
@@ -725,7 +730,7 @@ describe("Integration", async () => {
       const data = iface.encodeFunctionData("mint", [user2.address, 42]);
       const resolutionId = await _prepareResolution(
         6,
-        [internalMarket.address],
+        [neokingdomToken.address],
         [data]
       );
 
@@ -788,7 +793,7 @@ describe("Integration", async () => {
       await _makeContributor(user2, 100);
       await _makeContributor(user3, 1);
       expect(
-        await neokingdomTokenExternal.balanceOf(internalMarket.address)
+        await neokingdomTokenExternal.balanceOf(neokingdomToken.address)
       ).equal(151);
 
       await internalMarket.connect(user1).makeOffer(10);
@@ -849,7 +854,7 @@ describe("Integration", async () => {
 
       // then tries to redeem but fails because not enough balance.
       await expect(internalMarket.connect(user2).redeem(90)).revertedWith(
-        "ERC20: burn amount exceeds balance"
+        "ERC20: transfer amount exceeds balance"
       );
 
       // then tries to redeem 6 and succeeds.
@@ -986,8 +991,8 @@ describe("Integration", async () => {
       async function check({
         internalSupply = 0,
         externalSupply = 0,
+        neokingdomTokenWrappedBalance = 0,
         marketInternalBalance = 0,
-        marketExternalBalance = 0,
         user1InternalBalance = 0,
         user1ExternalBalance = 0,
         user1UsdcBalance = INITIAL_USDC,
@@ -1011,9 +1016,10 @@ describe("Integration", async () => {
           marketInternalBalance
         );
 
+        // neokingdomToken wrapped balance
         expect(
-          await neokingdomTokenExternal.balanceOf(internalMarket.address)
-        ).equal(marketExternalBalance);
+          await neokingdomTokenExternal.balanceOf(neokingdomToken.address)
+        ).equal(neokingdomTokenWrappedBalance);
 
         // User1 balances
         expect(await neokingdomToken.balanceOf(user1.address)).equal(
@@ -1065,7 +1071,7 @@ describe("Integration", async () => {
       await check({
         internalSupply: 130,
         externalSupply: 130,
-        marketExternalBalance: 130,
+        neokingdomTokenWrappedBalance: 130,
         user1InternalBalance: 100,
         user2InternalBalance: 30,
       });
@@ -1075,9 +1081,9 @@ describe("Integration", async () => {
       await check({
         internalSupply: 130,
         externalSupply: 130,
+        neokingdomTokenWrappedBalance: 130,
         // +20
         marketInternalBalance: 20,
-        marketExternalBalance: 130,
         // -20
         user1InternalBalance: 80,
         user2InternalBalance: 30,
@@ -1088,9 +1094,9 @@ describe("Integration", async () => {
       await check({
         internalSupply: 130,
         externalSupply: 130,
+        neokingdomTokenWrappedBalance: 130,
         // -5
         marketInternalBalance: 15,
-        marketExternalBalance: 130,
         user1InternalBalance: 80,
         // +5
         user1UsdcBalance: INITIAL_USDC + 5,
@@ -1108,9 +1114,9 @@ describe("Integration", async () => {
         internalSupply: 115,
         externalSupply: 130,
         // -15
-        marketInternalBalance: 0,
+        neokingdomTokenWrappedBalance: 115,
         // -15
-        marketExternalBalance: 115,
+        marketInternalBalance: 0,
         user1InternalBalance: 80,
         user1UsdcBalance: INITIAL_USDC + 5,
         user2InternalBalance: 35,
@@ -1128,7 +1134,7 @@ describe("Integration", async () => {
         externalSupply: 130,
         marketInternalBalance: 0,
         // -20
-        marketExternalBalance: 95,
+        neokingdomTokenWrappedBalance: 95,
         // -20
         user1InternalBalance: 60,
         // +20

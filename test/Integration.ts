@@ -333,27 +333,22 @@ describe("Integration", async () => {
       });
     });
 
-    // Mint token to a multiple shareholder
-    // Promote them to contributor
-    // Self-delegate
-    // Give some tokens
-    // Create and approve resolution
-    // Enough contributors vote yes to resolution
-    // Mint more token to some of the contributors
-    // Create and approve new resolution
-    // Contributor with not sufficient voting power vote yes to resolution
-    // Resolution fails
     it("multiple resolutions, different voting power over time, multiple contributors", async () => {
       // board member has 1 share
       // user1 has 1 share + 65 tokens
       // user2 has 1 share + 32 tokens
       // total voting power = 100
       // resolution type is 0, quorum 66%
-      await _makeContributor(user1, 66);
-      await _makeContributor(user2, 34);
+      await _makeContributor(user1, 65);
+      await _makeContributor(user2, 32);
       const resolutionId1 = await _prepareResolution();
 
-      await _mintTokens(user2, 96); // make them the most powerful user
+      // board member has 1 share
+      // user1 has 1 share + 65 tokens
+      // user2 has 1 share + 32 + 100 tokens
+      // total voting power = 200
+      // resolution type is 0, quorum 66% that is 132
+      await _mintTokens(user2, 100); // make them the most powerful user
       const resolutionId2 = await _prepareResolution();
 
       await _makeVotable(resolutionId2); // this will automatically put resolutionId1 also up for voting
@@ -372,12 +367,24 @@ describe("Integration", async () => {
     });
 
     it("multiple resolutions, different voting power over time, delegation, multiple contributors", async () => {
-      await _makeContributor(user1, 66);
-      await _makeContributor(user2, 34);
+      // board member has 1 share
+      // user1 has 1 share + 65 tokens
+      // user2 has 1 share + 32 tokens
+      // total voting power = 100
+      // resolution type is 0, quorum 66%
+      await _makeContributor(user1, 65);
+      await _makeContributor(user2, 32);
+      // user1 voting power = 99
       await _delegate(user2, user1);
       const resolutionId1 = await _prepareResolution();
 
-      await _mintTokens(user2, 96); // user2 has more voting power, but it's transferred to user1 (the delegate)
+      // board member has 1 share
+      // user1 has 1 share + 65 tokens
+      // user2 has 1 share + 32 + 100 tokens
+      // total voting power = 200
+      // resolution type is 0, quorum 66% that is 132
+      // user1 voting power = 199
+      await _mintTokens(user2, 100); // user2 has more voting power, but it's transferred to user1 (the delegate)
       const resolutionId2 = await _prepareResolution();
 
       await _makeVotable(resolutionId2); // this will automatically put resolutionId1 also up for voting
@@ -399,7 +406,7 @@ describe("Integration", async () => {
         user1.address
       );
       expect(resolution1User1.isYes).true;
-      expect(resolution1User1.votingPower).equal(e(100));
+      expect(resolution1User1.votingPower).equal(e(99));
       expect(resolution1User1.hasVoted).true;
 
       const resolution1User2 = await resolutionManager.getVoterVote(
@@ -415,7 +422,7 @@ describe("Integration", async () => {
         user1.address
       );
       expect(resolution2User1.isYes).true;
-      expect(resolution2User1.votingPower).equal(e(196));
+      expect(resolution2User1.votingPower).equal(e(199));
       expect(resolution2User1.hasVoted).true;
 
       const resolution2User2 = await resolutionManager.getVoterVote(
@@ -632,23 +639,15 @@ describe("Integration", async () => {
       expect(resolution4Result).equal(true);
     });
 
-    // Mint 49 tokens to contributor A
-    // Mint 51 tokens to contributor B
-    // Resolution is created
-    // A votes yes, B votes no. Resolution doesn't pass
-    // Contributor B tries to transfer 2 tokens, fails
-    // Contributor B offers 2 tokens
-    // 1 token is bought by contributor A
-    // Another resolution is created and approved
-    // A votes yes, B votes no. Resolutions doesn't pass
-    // After 7 days, B transfers 1 token to an external address
-    // The external address transfers 1 token back to A
-    // Resolution is created
-    // A votes yes, B votes no. Resolution passes
     it("token economics + voting", async () => {
-      await _makeContributor(user1, 49);
-      await _makeContributor(user2, 51);
+      // board member has 1 share
+      // user1 has 1 share + 47 tokens
+      // user2 has 1 share + 50 tokens
+      // total voting power = 100
+      await _makeContributor(user1, 47);
+      await _makeContributor(user2, 50);
 
+      // Resolution type 6 is "routine", 51% quorum
       const resolutionId1 = await _prepareResolution(6);
       await _makeVotable(resolutionId1);
       await _vote(user1, true, resolutionId1);
@@ -670,6 +669,11 @@ describe("Integration", async () => {
       await internalMarket.connect(user2).makeOffer(e(2));
       await internalMarket.connect(user1).matchOffer(user2.address, e(1));
 
+      // board member has 1 share
+      // user1 has 1 share + 48 tokens
+      // user2 has 1 share + 49 tokens
+      // total voting power = 100
+
       const resolutionId2 = await _prepareResolution(6);
       await _makeVotable(resolutionId2);
       await _vote(user1, true, resolutionId2);
@@ -687,17 +691,23 @@ describe("Integration", async () => {
       await setEVMTimestamp(offerExpires);
       await mineEVMBlock();
 
-      // Tries first to transfer 2 tokens (becuase the user forgot that 1 was sold to user 1)
+      // Tries first to transfer 2 tokens (because the user forgot that 1 was sold to user 1)
       await expect(
         internalMarket.connect(user2).withdraw(user3.address, e(2))
       ).revertedWith("InternalMarket: amount exceeds balance");
       // Tries now to transfer the right amount
       await internalMarket.connect(user2).withdraw(user3.address, e(1));
       // User3 transfers the funds to user1
-      await neokingdomTokenExternal.connect(user3).transfer(user1.address, 1);
+      await neokingdomTokenExternal
+        .connect(user3)
+        .transfer(user1.address, e(1));
       // user1 deposits them so they count for voting
       await internalMarket.connect(user1).deposit(e(1));
 
+      // board member has 1 share
+      // user1 has 1 share + 49 tokens
+      // user2 has 1 share + 49 tokens
+      // total voting power = 101
       const resolutionId3 = await _prepareResolution(6);
       await _makeVotable(resolutionId3);
       await _vote(user1, true, resolutionId3);
@@ -706,7 +716,25 @@ describe("Integration", async () => {
       const resolution3Result = await resolutionManager.getResolutionResult(
         resolutionId3
       );
-      expect(resolution3Result).equal(true);
+      expect(resolution3Result).equal(false);
+
+      // +2 for user1
+      await _mintTokens(user1, 2);
+      // -1 for user2
+      await internalMarket.connect(user2).makeOffer(e(1));
+      // board member has 1 share
+      // user1 has 1 share + 51 tokens
+      // user2 has 1 share + 48 tokens
+      // total voting power = 102
+      const resolutionId4 = await _prepareResolution(6);
+      await _makeVotable(resolutionId4);
+      await _vote(user1, true, resolutionId4);
+      await _vote(user2, false, resolutionId4);
+
+      const resolution4Result = await resolutionManager.getResolutionResult(
+        resolutionId4
+      );
+      expect(resolution4Result).equal(true);
     });
 
     it("internal market + voting power", async () => {

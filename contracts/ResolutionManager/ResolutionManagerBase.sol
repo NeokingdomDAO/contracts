@@ -365,10 +365,15 @@ abstract contract ResolutionManagerBase {
 
         // If sender has a delegate load voting power from NeokingdomToken
         if (delegate != msg.sender) {
-            votingPower = _neokingdomToken.balanceOfAt(
-                msg.sender,
-                resolution.snapshotId
-            );
+            votingPower =
+                _neokingdomToken.balanceOfAt(
+                    msg.sender,
+                    resolution.snapshotId
+                ) +
+                _shareholderRegistry.balanceOfAt(
+                    msg.sender,
+                    resolution.snapshotId
+                );
             // If sender didn't vote before and has a delegate
             //if (!resolution.hasVoted[msg.sender]) {
             // Did sender's delegate vote?
@@ -467,10 +472,9 @@ abstract contract ResolutionManagerBase {
             _voting.getDelegateAt(voter, resolution.snapshotId) != voter &&
             hasVoted
         ) {
-            votingPower = _neokingdomToken.balanceOfAt(
-                voter,
-                resolution.snapshotId
-            );
+            votingPower =
+                _neokingdomToken.balanceOfAt(voter, resolution.snapshotId) +
+                _shareholderRegistry.balanceOfAt(voter, resolution.snapshotId);
         } else {
             votingPower =
                 _voting.getVotingPowerAt(voter, resolution.snapshotId) -
@@ -490,10 +494,15 @@ abstract contract ResolutionManagerBase {
         );
 
         if (resolution.addressedContributor != address(0)) {
-            totalVotingPower -= _neokingdomToken.balanceOfAt(
-                resolution.addressedContributor,
-                resolution.snapshotId
-            );
+            totalVotingPower -=
+                _neokingdomToken.balanceOfAt(
+                    resolution.addressedContributor,
+                    resolution.snapshotId
+                ) +
+                _shareholderRegistry.balanceOfAt(
+                    resolution.addressedContributor,
+                    resolution.snapshotId
+                );
         }
 
         bool hasQuorum = resolution.yesVotesTotal * 100 >=

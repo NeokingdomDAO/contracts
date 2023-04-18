@@ -138,11 +138,12 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
 
     function _afterTokenTransfer(
         address from,
-        address,
-        uint256
+        address to,
+        uint256 amount
     ) internal virtual override {
         if (balanceOf(from) == 0) {
             _setStatus(0, from);
         }
+        _voting.afterTokenTransfer(from, to, amount);
     }
 }

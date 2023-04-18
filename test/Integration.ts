@@ -34,6 +34,8 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 const { MaxUint256 } = ethers.constants;
 
+const e = (v: number) => parseEther(v.toString());
+
 const DAY = 60 * 60 * 24;
 const INITIAL_USDC = 1000;
 
@@ -101,7 +103,7 @@ describe("Integration", async () => {
     const managingBoardStatus =
       await shareholderRegistry.MANAGING_BOARD_STATUS();
 
-    await shareholderRegistry.mint(managingBoard.address, parseEther("1"));
+    await shareholderRegistry.mint(managingBoard.address, e(1));
     await shareholderRegistry.setStatus(
       managingBoardStatus,
       managingBoard.address
@@ -120,13 +122,13 @@ describe("Integration", async () => {
     redemptionActivityWindow =
       (await redemptionController.activityWindow()).toNumber() / DAY;
 
-    await tokenMock.mint(reserve.address, INITIAL_USDC);
+    await tokenMock.mint(reserve.address, e(INITIAL_USDC));
     await tokenMock
       .connect(reserve)
-      .approve(internalMarket.address, INITIAL_USDC);
-    await tokenMock.mint(user1.address, INITIAL_USDC);
-    await tokenMock.mint(user2.address, INITIAL_USDC);
-    await tokenMock.mint(user3.address, INITIAL_USDC);
+      .approve(internalMarket.address, e(INITIAL_USDC));
+    await tokenMock.mint(user1.address, e(INITIAL_USDC));
+    await tokenMock.mint(user2.address, e(INITIAL_USDC));
+    await tokenMock.mint(user3.address, e(INITIAL_USDC));
 
     for (let signer of [user1, user2, user3, free1, free2, free3]) {
       await tokenMock
@@ -155,19 +157,13 @@ describe("Integration", async () => {
       currentResolution = 0;
     });
 
-    async function _mintTokens(
-      user: SignerWithAddress,
-      tokens: number | BigNumber
-    ) {
-      await neokingdomToken.mint(user.address, tokens);
+    async function _mintTokens(user: SignerWithAddress, tokens: number) {
+      await neokingdomToken.mint(user.address, e(tokens));
     }
 
-    async function _makeContributor(
-      user: SignerWithAddress,
-      tokens: number | BigNumber
-    ) {
+    async function _makeContributor(user: SignerWithAddress, tokens: number) {
       // Make user shareholder
-      await shareholderRegistry.mint(user.address, parseEther("1"));
+      await shareholderRegistry.mint(user.address, e(1));
       // Make user contributor
       await shareholderRegistry.setStatus(contributorStatus, user.address);
       // Mint some tokens
@@ -254,8 +250,14 @@ describe("Integration", async () => {
     // Enough contributors vote yes to resolution
     // Resolution passes
     it("successful resolution (multiple contributors)", async () => {
-      await _makeContributor(user1, 66);
-      await _makeContributor(user2, 34);
+      // board member has 1 share
+      // user1 has 1 share + 65 tokens
+      // user2 has 1 share + 32 tokens
+      // total voting power = 100
+      // resolution type is 0, quorum 66%
+      await _makeContributor(user1, 65);
+      await _makeContributor(user2, 32);
+
       const resolutionId = await _prepareResolution();
       await _makeVotable(resolutionId);
 
@@ -278,8 +280,13 @@ describe("Integration", async () => {
     // Not enough contributors vote yes to resolution
     // Resolution passes
     it("unsuccessful resolution (multiple contributors)", async () => {
-      await _makeContributor(user1, 34);
-      await _makeContributor(user2, 66);
+      // board member has 1 share
+      // user1 has 1 share + 32 tokens = 33 voting power
+      // user2 has 1 share + 65 tokens = 66 voting power
+      // total voting power = 100
+      // resolution type is 0, quorum 66%
+      await _makeContributor(user1, 32);
+      await _makeContributor(user2, 65);
       const resolutionId = await _prepareResolution();
       await _makeVotable(resolutionId);
 
@@ -294,6 +301,38 @@ describe("Integration", async () => {
       expect(resolutionResult).equal(false);
     });
 
+    it("shares + tokens = voting power", async () => {
+      async function check({
+        totalVotingPower = 0,
+        user1VotingPower = 0,
+        user2VotingPower = 0,
+      }) {
+        expect(await voting.getTotalVotingPower()).equal(e(totalVotingPower));
+        expect(await voting.getVotingPower(user1.address)).equal(
+          e(user1VotingPower)
+        );
+        expect(await voting.getVotingPower(user2.address)).equal(
+          e(user2VotingPower)
+        );
+      }
+
+      await check({
+        totalVotingPower: 1,
+      });
+      await _makeContributor(user1, 66);
+      await check({
+        totalVotingPower: 1 + 66 + 1,
+        user1VotingPower: 66 + 1,
+      });
+
+      await _makeContributor(user2, 34);
+      await check({
+        totalVotingPower: 1 + 34 + 1 + 66 + 1,
+        user1VotingPower: 66 + 1,
+        user2VotingPower: 34 + 1,
+      });
+    });
+
     // Mint token to a multiple shareholder
     // Promote them to contributor
     // Self-delegate
@@ -305,6 +344,11 @@ describe("Integration", async () => {
     // Contributor with not sufficient voting power vote yes to resolution
     // Resolution fails
     it("multiple resolutions, different voting power over time, multiple contributors", async () => {
+      // board member has 1 share
+      // user1 has 1 share + 65 tokens
+      // user2 has 1 share + 32 tokens
+      // total voting power = 100
+      // resolution type is 0, quorum 66%
       await _makeContributor(user1, 66);
       await _makeContributor(user2, 34);
       const resolutionId1 = await _prepareResolution();
@@ -355,7 +399,7 @@ describe("Integration", async () => {
         user1.address
       );
       expect(resolution1User1.isYes).true;
-      expect(resolution1User1.votingPower).equal(100);
+      expect(resolution1User1.votingPower).equal(e(100));
       expect(resolution1User1.hasVoted).true;
 
       const resolution1User2 = await resolutionManager.getVoterVote(
@@ -371,7 +415,7 @@ describe("Integration", async () => {
         user1.address
       );
       expect(resolution2User1.isYes).true;
-      expect(resolution2User1.votingPower).equal(196);
+      expect(resolution2User1.votingPower).equal(e(196));
       expect(resolution2User1.hasVoted).true;
 
       const resolution2User2 = await resolutionManager.getVoterVote(
@@ -535,8 +579,8 @@ describe("Integration", async () => {
       // User 3 is now investor, they can wrap and unwrap tokens without first
       // offering them to the other contributors
       await shareholderRegistry.setStatus(investorStatus, user3.address);
-      await internalMarket.connect(user3).withdraw(user2.address, 50);
-      await internalMarket.connect(user2).deposit(50);
+      await internalMarket.connect(user3).withdraw(user2.address, e(50));
+      await internalMarket.connect(user2).deposit(e(50));
       await _mintTokens(user2, 50);
       // -> user 1 voting power == 60
       // -> user 2 voting power == 130
@@ -623,8 +667,8 @@ describe("Integration", async () => {
         }`
       );
 
-      await internalMarket.connect(user2).makeOffer(2);
-      await internalMarket.connect(user1).matchOffer(user2.address, 1);
+      await internalMarket.connect(user2).makeOffer(e(2));
+      await internalMarket.connect(user1).matchOffer(user2.address, e(1));
 
       const resolutionId2 = await _prepareResolution(6);
       await _makeVotable(resolutionId2);
@@ -645,14 +689,14 @@ describe("Integration", async () => {
 
       // Tries first to transfer 2 tokens (becuase the user forgot that 1 was sold to user 1)
       await expect(
-        internalMarket.connect(user2).withdraw(user3.address, 2)
+        internalMarket.connect(user2).withdraw(user3.address, e(2))
       ).revertedWith("InternalMarket: amount exceeds balance");
       // Tries now to transfer the right amount
-      await internalMarket.connect(user2).withdraw(user3.address, 1);
+      await internalMarket.connect(user2).withdraw(user3.address, e(1));
       // User3 transfers the funds to user1
       await neokingdomTokenExternal.connect(user3).transfer(user1.address, 1);
       // user1 deposits them so they count for voting
-      await internalMarket.connect(user1).deposit(1);
+      await internalMarket.connect(user1).deposit(e(1));
 
       const resolutionId3 = await _prepareResolution(6);
       await _makeVotable(resolutionId3);
@@ -666,34 +710,34 @@ describe("Integration", async () => {
     });
 
     it("internal market + voting power", async () => {
-      await _makeContributor(user1, 49);
-      await _makeContributor(user2, 51);
+      await _makeContributor(user1, 48);
+      await _makeContributor(user2, 50);
 
       const resolutionId1 = await _prepareResolution(6);
       await _makeVotable(resolutionId1);
 
-      expect(await voting.getVotingPower(user1.address)).equal(49);
-      expect(await voting.getVotingPower(user2.address)).equal(51);
+      expect(await voting.getVotingPower(user1.address)).equal(e(49));
+      expect(await voting.getVotingPower(user2.address)).equal(e(51));
 
-      await internalMarket.connect(user2).makeOffer(2);
-      await internalMarket.connect(user1).matchOffer(user2.address, 1);
+      await internalMarket.connect(user2).makeOffer(e(2));
+      await internalMarket.connect(user1).matchOffer(user2.address, e(1));
 
       const resolutionId2 = await _prepareResolution(6);
       await _makeVotable(resolutionId2);
 
-      expect(await voting.getVotingPower(user1.address)).equal(50);
-      expect(await voting.getVotingPower(user2.address)).equal(49);
+      expect(await voting.getVotingPower(user1.address)).equal(e(50));
+      expect(await voting.getVotingPower(user2.address)).equal(e(49));
 
       await setEVMTimestamp((await getEVMTimestamp()) + DAY * 8);
 
       // An internal token is swapped for an external one, so user2 loses 1 vote
-      await internalMarket.connect(user2).withdraw(user2.address, 1);
+      await internalMarket.connect(user2).withdraw(user2.address, e(1));
 
       const resolutionId3 = await _prepareResolution(6);
       await _makeVotable(resolutionId3);
 
-      expect(await voting.getVotingPower(user1.address)).equal(50);
-      expect(await voting.getVotingPower(user2.address)).equal(49);
+      expect(await voting.getVotingPower(user1.address)).equal(e(50));
+      expect(await voting.getVotingPower(user2.address)).equal(e(49));
     });
 
     // Mint 50 tokens to A
@@ -720,23 +764,23 @@ describe("Integration", async () => {
       await _makeContributor(user2, 100);
       await _makeContributor(user3, 1);
 
-      await internalMarket.connect(user2).makeOffer(60);
-      await internalMarket.connect(user3).matchOffer(user2.address, 10);
-      await internalMarket.connect(user1).matchOffer(user2.address, 40);
-      await internalMarket.connect(user3).makeOffer(5);
-      await internalMarket.connect(user1).makeOffer(10);
-      await internalMarket.connect(user2).matchOffer(user1.address, 10);
+      await internalMarket.connect(user2).makeOffer(e(60));
+      await internalMarket.connect(user3).matchOffer(user2.address, e(10));
+      await internalMarket.connect(user1).matchOffer(user2.address, e(40));
+      await internalMarket.connect(user3).makeOffer(e(5));
+      await internalMarket.connect(user1).makeOffer(e(10));
+      await internalMarket.connect(user2).matchOffer(user1.address, e(10));
 
       // Two days pass
       let offerExpires = (await getEVMTimestamp()) + 2 * DAY;
       await setEVMTimestamp(offerExpires);
       await mineEVMBlock();
 
-      await internalMarket.connect(user2).makeOffer(10);
-      await internalMarket.connect(user3).matchOffer(user2.address, 15);
+      await internalMarket.connect(user2).makeOffer(e(10));
+      await internalMarket.connect(user3).matchOffer(user2.address, e(15));
 
       await expect(
-        internalMarket.connect(user3).withdraw(user1.address, 10)
+        internalMarket.connect(user3).withdraw(user1.address, e(10))
       ).revertedWith("InternalMarket: amount exceeds balance");
 
       // 5 days pass (first offer expires)
@@ -746,25 +790,25 @@ describe("Integration", async () => {
 
       // Still fails, because first offers was already drained
       await expect(
-        internalMarket.connect(user2).withdraw(user3.address, 5)
+        internalMarket.connect(user2).withdraw(user3.address, e(5))
       ).revertedWith("InternalMarket: amount exceeds balance");
 
-      expect(await neokingdomToken.balanceOf(user1.address)).equal(80);
+      expect(await neokingdomToken.balanceOf(user1.address)).equal(e(80));
       expect(await internalMarket.offeredBalanceOf(user1.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user1.address)).equal(
         0
       );
 
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(40);
-      expect(await internalMarket.offeredBalanceOf(user2.address)).equal(5);
+      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(40));
+      expect(await internalMarket.offeredBalanceOf(user2.address)).equal(e(5));
       expect(await internalMarket.withdrawableBalanceOf(user2.address)).equal(
         0
       );
 
-      expect(await neokingdomToken.balanceOf(user3.address)).equal(21);
+      expect(await neokingdomToken.balanceOf(user3.address)).equal(e(21));
       expect(await internalMarket.offeredBalanceOf(user3.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user3.address)).equal(
-        5
+        e(5)
       );
 
       // 3 days pass (last user2 offer expires)
@@ -774,24 +818,24 @@ describe("Integration", async () => {
 
       // first tries wrong amount
       await expect(
-        internalMarket.connect(user2).withdraw(user3.address, 10)
+        internalMarket.connect(user2).withdraw(user3.address, e(10))
       ).revertedWith("InternalMarket: amount exceeds balance");
-      await internalMarket.connect(user2).withdraw(user3.address, 5);
+      await internalMarket.connect(user2).withdraw(user3.address, e(5));
 
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(40);
+      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(40));
       expect(await internalMarket.offeredBalanceOf(user2.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user2.address)).equal(
         0
       );
 
-      expect(await neokingdomToken.balanceOf(user3.address)).equal(21);
+      expect(await neokingdomToken.balanceOf(user3.address)).equal(e(21));
       expect(await internalMarket.offeredBalanceOf(user3.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user3.address)).equal(
-        5
+        e(5)
       );
 
-      await internalMarket.connect(user3).deposit(5);
-      expect(await neokingdomToken.balanceOf(user3.address)).equal(26);
+      await internalMarket.connect(user3).deposit(e(5));
+      expect(await neokingdomToken.balanceOf(user3.address)).equal(e(26));
     });
 
     it("Mints tokens to a contributor after a resolution passes", async () => {
@@ -800,7 +844,7 @@ describe("Integration", async () => {
 
       const abi = ["function mint(address to, uint256 amount)"];
       const iface = new ethers.utils.Interface(abi);
-      const data = iface.encodeFunctionData("mint", [user2.address, 42]);
+      const data = iface.encodeFunctionData("mint", [user2.address, e(42)]);
       const resolutionId = await _prepareResolution(
         6,
         [neokingdomToken.address],
@@ -815,9 +859,7 @@ describe("Integration", async () => {
 
       await resolutionManager.executeResolution(resolutionId);
 
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(
-        BigNumber.from(92)
-      );
+      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(92));
     });
 
     it("Adds a resolution type after a resolution passes", async () => {
@@ -867,30 +909,30 @@ describe("Integration", async () => {
       await _makeContributor(user3, 1);
       expect(
         await neokingdomTokenExternal.balanceOf(neokingdomToken.address)
-      ).equal(151);
+      ).equal(e(151));
 
-      await internalMarket.connect(user1).makeOffer(10);
-
-      await expect(() =>
-        internalMarket.connect(user2).matchOffer(user1.address, 4)
-      ).to.changeTokenBalances(tokenMock, [user1, user2], [4, -4]);
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(104);
+      await internalMarket.connect(user1).makeOffer(e(10));
 
       await expect(() =>
-        internalMarket.connect(user3).matchOffer(user1.address, 2)
-      ).to.changeTokenBalances(tokenMock, [user1, user3], [2, -2]);
+        internalMarket.connect(user2).matchOffer(user1.address, e(4))
+      ).to.changeTokenBalances(tokenMock, [user1, user2], [e(4), e(-4)]);
+      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(104));
+
+      await expect(() =>
+        internalMarket.connect(user3).matchOffer(user1.address, e(2))
+      ).to.changeTokenBalances(tokenMock, [user1, user3], [e(2), e(-2)]);
 
       // Make the tokens redeemable
       await timeTravel(redemptionStartDays, true);
 
       expect(await redemptionController.redeemableBalance(user1.address)).equal(
-        10
+        e(10)
       );
       expect(await internalMarket.withdrawableBalanceOf(user1.address)).equal(
-        4
+        e(4)
       );
 
-      await internalMarket.connect(user1).redeem(10);
+      await internalMarket.connect(user1).redeem(e(10));
       // Chaining two changeTokenBalances seems to execute the "redeem"
       // function twice. Anyway, this second redeem should fail.
       /*
@@ -899,44 +941,44 @@ describe("Integration", async () => {
       */
 
       expect(await neokingdomToken.balanceOf(user1.address)).equal(
-        50 - 4 - 2 - 10
+        e(50 - 4 - 2 - 10)
       );
       expect(await tokenMock.balanceOf(user1.address)).equal(
-        INITIAL_USDC + 4 + 2 + 10
+        e(INITIAL_USDC + 4 + 2 + 10)
       );
       expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
-        10
+        e(10)
       );
       expect(await tokenMock.balanceOf(reserve.address)).equal(
-        INITIAL_USDC - 10
+        e(INITIAL_USDC - 10)
       );
       expect(await neokingdomToken.balanceOf(internalMarket.address)).equal(
-        10 - 4 - 2 - 4
+        e(10 - 4 - 2 - 4)
       );
       expect(await tokenMock.balanceOf(internalMarket.address)).equal(0);
 
-      await expect(internalMarket.connect(user1).redeem(4)).revertedWith(
+      await expect(internalMarket.connect(user1).redeem(e(4))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
 
       // User 2 exits their tokens to the secondary market
-      await internalMarket.connect(user2).makeOffer(90);
+      await internalMarket.connect(user2).makeOffer(e(90));
       await timeTravel(offerDurationDays, true);
-      await internalMarket.connect(user2).withdraw(free2.address, 90);
+      await internalMarket.connect(user2).withdraw(free2.address, e(90));
       await timeTravel(redemptionStartDays - offerDurationDays, true);
 
       // then tries to redeem but fails because not enough balance.
-      await expect(internalMarket.connect(user2).redeem(90)).revertedWith(
+      await expect(internalMarket.connect(user2).redeem(e(90))).revertedWith(
         "ERC20: transfer amount exceeds balance"
       );
 
       // then tries to redeem 6 and succeeds.
-      await internalMarket.connect(user2).redeem(6);
+      await internalMarket.connect(user2).redeem(e(6));
 
       // then 4 after the redeem window and fails
       await timeTravel(redemptionWindowDays, true);
 
-      await expect(internalMarket.connect(user2).redeem(4)).revertedWith(
+      await expect(internalMarket.connect(user2).redeem(e(4))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
     });
@@ -946,36 +988,36 @@ describe("Integration", async () => {
       await _makeContributor(user2, 0);
 
       // pre-conditions
-      expect(await neokingdomToken.balanceOf(user1.address)).equal(10);
+      expect(await neokingdomToken.balanceOf(user1.address)).equal(e(10));
       expect(await neokingdomToken.balanceOf(user2.address)).equal(0);
       expect(await neokingdomToken.balanceOf(reserve.address)).equal(0);
 
-      expect(await tokenMock.balanceOf(user1.address)).equal(INITIAL_USDC);
-      expect(await tokenMock.balanceOf(user2.address)).equal(INITIAL_USDC);
-      expect(await tokenMock.balanceOf(reserve.address)).equal(INITIAL_USDC);
+      expect(await tokenMock.balanceOf(user1.address)).equal(e(INITIAL_USDC));
+      expect(await tokenMock.balanceOf(user2.address)).equal(e(INITIAL_USDC));
+      expect(await tokenMock.balanceOf(reserve.address)).equal(e(INITIAL_USDC));
 
       let daysSinceMinting = 0;
       let tokensRedeemed = 0;
 
       // user1 offers 10 tokens
-      await internalMarket.connect(user1).makeOffer(10);
+      await internalMarket.connect(user1).makeOffer(e(10));
 
       // user2 buys
-      await internalMarket.connect(user2).matchOffer(user1.address, 10);
+      await internalMarket.connect(user2).matchOffer(user1.address, e(10));
 
       // user2 offers 10 tokens and offer expires
-      await internalMarket.connect(user2).makeOffer(10);
+      await internalMarket.connect(user2).makeOffer(e(10));
       await timeTravel(offerDurationDays, true);
       daysSinceMinting += offerDurationDays;
 
       // user2 transfers 10 tokens to user1
-      await internalMarket.connect(user2).withdraw(user1.address, 10);
-      await internalMarket.connect(user1).deposit(10);
+      await internalMarket.connect(user2).withdraw(user1.address, e(10));
+      await internalMarket.connect(user1).deposit(e(10));
 
       // 53 days later (60 since beginning) user1 redeems 3 tokens
       await timeTravel(redemptionStartDays - offerDurationDays, true);
       daysSinceMinting += redemptionStartDays - offerDurationDays;
-      await internalMarket.connect(user1).redeem(3);
+      await internalMarket.connect(user1).redeem(e(3));
       tokensRedeemed += 3;
 
       // at the end of the redemption window, redemption of the 7 remaining
@@ -983,17 +1025,17 @@ describe("Integration", async () => {
       await timeTravel(redemptionWindowDays, true);
       daysSinceMinting += redemptionWindowDays;
 
-      await expect(internalMarket.connect(user1).redeem(7)).revertedWith(
+      await expect(internalMarket.connect(user1).redeem(e(7))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
 
       // user1 reoffers 7 the tokens
-      await internalMarket.connect(user1).makeOffer(7);
+      await internalMarket.connect(user1).makeOffer(e(7));
 
       // after 60 days, user1 redeems 4 tokens
       await timeTravel(redemptionStartDays, true);
       daysSinceMinting += redemptionStartDays;
-      await internalMarket.connect(user1).redeem(4);
+      await internalMarket.connect(user1).redeem(e(4));
       tokensRedeemed += 4;
 
       // redemption window expires
@@ -1006,21 +1048,21 @@ describe("Integration", async () => {
 
       // user1 offers 3 remaining tokens (after withdrawing them, as they are
       // still in the vault)
-      await internalMarket.connect(user1).withdraw(user1.address, 3);
-      await internalMarket.connect(user1).deposit(3);
-      await internalMarket.connect(user1).makeOffer(3);
+      await internalMarket.connect(user1).withdraw(user1.address, e(3));
+      await internalMarket.connect(user1).deposit(e(3));
+      await internalMarket.connect(user1).makeOffer(e(3));
 
       // FIXME: not sure how this test worked before
       // 67 days later, redemption fails
       await timeTravel(redemptionStartDays + redemptionWindowDays, true);
 
-      await expect(internalMarket.connect(user1).redeem(3)).revertedWith(
+      await expect(internalMarket.connect(user1).redeem(e(3))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
 
       // user1 re-withdraws the tokens, sobbing
-      await internalMarket.connect(user1).withdraw(user1.address, 3);
-      await internalMarket.connect(user1).deposit(3);
+      await internalMarket.connect(user1).withdraw(user1.address, e(3));
+      await internalMarket.connect(user1).deposit(e(3));
 
       // 13 tokens are minted to user1
       await _mintTokens(user1, 13);
@@ -1029,34 +1071,36 @@ describe("Integration", async () => {
       // 1 token is minted to user1
       await _mintTokens(user1, 1);
       // 14 tokens are offered
-      await internalMarket.connect(user1).makeOffer(14);
+      await internalMarket.connect(user1).makeOffer(e(14));
       // 60 days later, 1 token is redeemable
       await timeTravel(redemptionStartDays, true);
       expect(await redemptionController.redeemableBalance(user1.address)).equal(
-        1
+        e(1)
       );
 
       // user1 redeems their only token and withdraws the others, sobbing again
-      await internalMarket.connect(user1).redeem(1);
+      await internalMarket.connect(user1).redeem(e(1));
       tokensRedeemed += 1;
-      await internalMarket.connect(user1).withdraw(user1.address, 13);
-      await internalMarket.connect(user1).deposit(13);
+      await internalMarket.connect(user1).withdraw(user1.address, e(13));
+      await internalMarket.connect(user1).deposit(e(13));
 
       // post-conditions
       expect(await neokingdomToken.balanceOf(user1.address)).equal(
-        24 - tokensRedeemed
+        e(24 - tokensRedeemed)
       );
       expect(await neokingdomToken.balanceOf(user2.address)).equal(0);
       expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
-        tokensRedeemed
+        e(tokensRedeemed)
       );
 
       expect(await tokenMock.balanceOf(user1.address)).equal(
-        INITIAL_USDC + 10 + tokensRedeemed
+        e(INITIAL_USDC + 10 + tokensRedeemed)
       );
-      expect(await tokenMock.balanceOf(user2.address)).equal(INITIAL_USDC - 10);
+      expect(await tokenMock.balanceOf(user2.address)).equal(
+        e(INITIAL_USDC - 10)
+      );
       expect(await tokenMock.balanceOf(reserve.address)).equal(
-        INITIAL_USDC - tokensRedeemed
+        e(INITIAL_USDC - tokensRedeemed)
       );
     });
 
@@ -1079,60 +1123,60 @@ describe("Integration", async () => {
         reserveUsdcBalance = INITIAL_USDC,
       }) {
         // Total supplies
-        expect(await neokingdomToken.totalSupply()).equal(internalSupply);
+        expect(await neokingdomToken.totalSupply()).equal(e(internalSupply));
         expect(await neokingdomTokenExternal.totalSupply()).equal(
-          externalSupply
+          e(externalSupply)
         );
 
         // InternalMarket
         expect(await neokingdomToken.balanceOf(internalMarket.address)).equal(
-          marketInternalBalance
+          e(marketInternalBalance)
         );
 
         // neokingdomToken wrapped balance
         expect(
           await neokingdomTokenExternal.balanceOf(neokingdomToken.address)
-        ).equal(neokingdomTokenWrappedBalance);
+        ).equal(e(neokingdomTokenWrappedBalance));
 
         // User1 balances
         expect(await neokingdomToken.balanceOf(user1.address)).equal(
-          user1InternalBalance
+          e(user1InternalBalance)
         );
         expect(await neokingdomTokenExternal.balanceOf(user1.address)).equal(
-          user1ExternalBalance
+          e(user1ExternalBalance)
         );
         expect(await tokenMock.balanceOf(user1.address)).equal(
-          user1UsdcBalance
+          e(user1UsdcBalance)
         );
 
         // User2 balances
         expect(await neokingdomToken.balanceOf(user2.address)).equal(
-          user2InternalBalance
+          e(user2InternalBalance)
         );
         expect(await neokingdomTokenExternal.balanceOf(user2.address)).equal(
-          user2ExternalBalance
+          e(user2ExternalBalance)
         );
         expect(await tokenMock.balanceOf(user2.address)).equal(
-          user2UsdcBalance
+          e(user2UsdcBalance)
         );
 
         // User3 balances
         expect(await neokingdomToken.balanceOf(user3.address)).equal(
-          user3InternalBalance
+          e(user3InternalBalance)
         );
         expect(await neokingdomTokenExternal.balanceOf(user3.address)).equal(
-          user3ExternalBalance
+          e(user3ExternalBalance)
         );
         expect(await tokenMock.balanceOf(user3.address)).equal(
-          user3UsdcBalance
+          e(user3UsdcBalance)
         );
 
         // Reserve balances
         expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
-          reserveExternalBalance
+          e(reserveExternalBalance)
         );
         expect(await tokenMock.balanceOf(reserve.address)).equal(
-          reserveUsdcBalance
+          e(reserveUsdcBalance)
         );
       }
 
@@ -1150,7 +1194,7 @@ describe("Integration", async () => {
       });
 
       // Offering 20 tokens locks them in the internal market contract
-      await internalMarket.connect(user1).makeOffer(20);
+      await internalMarket.connect(user1).makeOffer(e(20));
       await check({
         internalSupply: 130,
         externalSupply: 130,
@@ -1163,7 +1207,7 @@ describe("Integration", async () => {
       });
 
       // user2 matches 5 tokens
-      await internalMarket.connect(user2).matchOffer(user1.address, 5);
+      await internalMarket.connect(user2).matchOffer(user1.address, e(5));
       await check({
         internalSupply: 130,
         externalSupply: 130,
@@ -1181,7 +1225,7 @@ describe("Integration", async () => {
 
       // after 1 week the remaining 15 tokens can be withdrawn
       await timeTravel(offerDurationDays, true);
-      await internalMarket.connect(user1).withdraw(user3.address, 15);
+      await internalMarket.connect(user1).withdraw(user3.address, e(15));
       await check({
         // -15
         internalSupply: 115,
@@ -1199,7 +1243,7 @@ describe("Integration", async () => {
       });
 
       await timeTravel(redemptionStartDays, true);
-      await internalMarket.connect(user1).redeem(20);
+      await internalMarket.connect(user1).redeem(e(20));
       await check({
         // -20
         internalSupply: 95,

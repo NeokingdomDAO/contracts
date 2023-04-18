@@ -18,7 +18,8 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     modifier onlyToken() virtual {
         require(
-            msg.sender == address(_token),
+            msg.sender == address(_token) ||
+                msg.sender == address(_shareholderRegistry),
             "Voting: only Token contract can call this method."
         );
         _;

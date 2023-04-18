@@ -157,13 +157,23 @@ describe("Integration", async () => {
       user2VotingPower: 0,
     });
 
+    // user2 receives more shares (not a real use case, but needed to check the
+    // logic doesn't fail calculating the totals)
+    await shareholderRegistry.mint(user2.address, e(2));
+    await check({
+      totalVotingPower: 7000 + 6000 + 3000 + 2,
+      boardVotingPower: 7000 - 1 - 1,
+      user1VotingPower: 1 + 6000 + 1 + 3000 + 2,
+      user2VotingPower: 0,
+    });
+
     // user2 delegates user2
     await voting.connect(user2).delegate(user2.address);
     await check({
-      totalVotingPower: 7000 + 6000 + 3000,
+      totalVotingPower: 7000 + 6000 + 3000 + 2,
       boardVotingPower: 7000 - 1 - 1,
       user1VotingPower: 1 + 6000,
-      user2VotingPower: 1 + 3000,
+      user2VotingPower: 1 + 3000 + 2,
     });
   });
 });

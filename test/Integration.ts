@@ -405,8 +405,8 @@ describe("Integration", async () => {
 
     it("only with shares, multiple resolutions, different voting power over time, delegation, multiple contributors", async () => {
       // board member has 1 share
-      // user1 has 1 share + 65 tokens
-      // user2 has 1 share + 32 tokens
+      // user1 has 66 tokens
+      // user2 has 33 tokens
       // total voting power = 100
       // resolution type is 0, quorum 66%
 
@@ -421,8 +421,8 @@ describe("Integration", async () => {
       const resolutionId1 = await _prepareResolution();
 
       // board member has 1 share
-      // user1 has 1 share + 65 tokens
-      // user2 has 1 share + 32 + 100 tokens
+      // user1 has 66 tokens
+      // user2 has 33 + 100 tokens
       // total voting power = 200
       // resolution type is 0, quorum 66% that is 132
       // user1 voting power = 199
@@ -474,6 +474,68 @@ describe("Integration", async () => {
       expect(resolution2User2.isYes).false;
       expect(resolution2User2.votingPower).equal(0);
       expect(resolution2User2.hasVoted).false;
+
+      // board member has 1 share
+      // user1 has 66 - 50 tokens
+      // user2 has 33 + 100 + 50 tokens
+      // total voting power = 200
+      // resolution type is 0, quorum 66% that is 132
+      // user1 voting power = 199
+      await shareholderRegistry.transferFrom(
+        user1.address,
+        user2.address,
+        e(50)
+      );
+
+      // New resolution
+      const resolutionId3 = await _prepareResolution();
+      await _makeVotable(resolutionId3);
+
+      // User1 votes using voting power of user1+user2
+      await _vote(user1, true, resolutionId3);
+
+      const resolution3ResultBefore =
+        await resolutionManager.getResolutionResult(resolutionId3);
+      expect(resolution3ResultBefore).equal(true);
+
+      const resolution3User1 = await resolutionManager.getVoterVote(
+        resolutionId3,
+        user1.address
+      );
+      expect(resolution3User1.isYes).true;
+      expect(resolution3User1.votingPower).equal(e(199));
+      expect(resolution3User1.hasVoted).true;
+
+      const resolution3User2 = await resolutionManager.getVoterVote(
+        resolutionId3,
+        user2.address
+      );
+      expect(resolution3User2.isYes).false;
+      expect(resolution3User2.votingPower).equal(0);
+      expect(resolution3User2.hasVoted).false;
+
+      // User2 overrides user1's vote
+      await _vote(user2, false, resolutionId3);
+
+      const resolution3ResultAfter =
+        await resolutionManager.getResolutionResult(resolutionId3);
+      expect(resolution3ResultAfter).equal(false);
+
+      const resolution3User1After = await resolutionManager.getVoterVote(
+        resolutionId3,
+        user1.address
+      );
+      expect(resolution3User1After.isYes).true;
+      expect(resolution3User1After.votingPower).equal(e(16));
+      expect(resolution3User1After.hasVoted).true;
+
+      const resolution3User2After = await resolutionManager.getVoterVote(
+        resolutionId3,
+        user2.address
+      );
+      expect(resolution3User2After.isYes).false;
+      expect(resolution3User2After.votingPower).equal(e(183));
+      expect(resolution3User2After.hasVoted).true;
     });
 
     it("invalid voting should not be counted", async () => {

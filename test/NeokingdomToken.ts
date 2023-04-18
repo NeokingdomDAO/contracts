@@ -316,4 +316,29 @@ describe("NeokingdomToken", () => {
       expect(await neokingdomToken.balanceOf(contributor.address)).equal(41);
     });
   });
+
+  describe("burn", async () => {
+    it("should fail when not called by MARKET_ROLE", async () => {
+      daoRoles.hasRole.reset();
+      await expect(
+        neokingdomToken.connect(contributor).burn(contributor.address, 1)
+      ).revertedWith(
+        `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
+          ROLES.MARKET_ROLE
+        }`
+      );
+    });
+
+    it("should burn external tokens from itself", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      await neokingdomToken.burn(contributor.address, 20);
+      expect(neokingdomTokenExternal.burn).calledWith(20);
+    });
+
+    it("should burn internal tokens from 'from' address", async () => {
+      await neokingdomToken.mint(contributor.address, 41);
+      await neokingdomToken.burn(contributor.address, 20);
+      expect(await neokingdomToken.balanceOf(contributor.address)).equal(21);
+    });
+  });
 });

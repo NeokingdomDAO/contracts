@@ -233,11 +233,10 @@ describe("InternalMarket", async () => {
               });
           });
 
-          it("should exchange the 10 DAO tokens for 10 USDC of the reserve", async () => {
+          it("should burn the 10 DAO tokens for 10 USDC of the reserve", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
-            expect(tokenInternal.unwrap).calledWith(
+            expect(tokenInternal.burn).calledWith(
               internalMarket.address,
-              reserve.address,
               parseEther("10")
             );
             expect(usdc.transferFrom).calledWith(
@@ -264,12 +263,11 @@ describe("InternalMarket", async () => {
               });
           });
 
-          it("should exchange the 10 DAO token for 20 USDC", async () => {
+          it("should burn 10 DAO token for 20 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
 
-            expect(tokenInternal.unwrap).calledWith(
+            expect(tokenInternal.burn).calledWith(
               internalMarket.address,
-              reserve.address,
               parseEther("10")
             );
             expect(usdc.transferFrom).calledWith(
@@ -296,11 +294,10 @@ describe("InternalMarket", async () => {
               });
           });
 
-          it("should exchange the 10 DAO tokens for 11.222444 USDC", async () => {
+          it("should burn the 10 DAO tokens for 11.222444 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
-            expect(tokenInternal.unwrap).calledWith(
+            expect(tokenInternal.burn).calledWith(
               internalMarket.address,
-              reserve.address,
               parseEther("10")
             );
             expect(usdc.transferFrom).calledWith(
@@ -327,11 +324,10 @@ describe("InternalMarket", async () => {
               });
           });
 
-          it("should exchange the 11 DAO tokens for 5.5 USDC", async () => {
+          it("should burn the 11 DAO tokens for 5.5 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("11"));
-            expect(tokenInternal.unwrap).calledWith(
+            expect(tokenInternal.burn).calledWith(
               internalMarket.address,
-              reserve.address,
               parseEther("11")
             );
             expect(usdc.transferFrom).calledWith(
@@ -343,11 +339,7 @@ describe("InternalMarket", async () => {
 
           it("should exchange the 1 DAO token sat for 0 USDC sats", async () => {
             await internalMarket.connect(alice).redeem(1);
-            expect(tokenInternal.unwrap).calledWith(
-              internalMarket.address,
-              reserve.address,
-              1
-            );
+            expect(tokenInternal.burn).calledWith(internalMarket.address, 1);
             expect(usdc.transferFrom).calledWith(
               reserve.address,
               alice.address,
@@ -371,10 +363,10 @@ describe("InternalMarket", async () => {
 
         describe("and no tokens in the user wallet", async () => {
           it("should fail when the user redeems 70 tokens", async () => {
-            tokenInternal.unwrap
+            tokenInternal.burn
               // 50 tokens are withdrawable, so redeeming 70 should burn the
               // missing 20 from Alice, but she doesn't have tokens left.
-              .whenCalledWith(alice.address, reserve.address, parseEther("20"))
+              .whenCalledWith(alice.address, parseEther("20"))
               .reverts("ERC20: burn amount exceeds balance");
             // smock2 bug causes this error rather than the faked one
             await expect(
@@ -383,10 +375,10 @@ describe("InternalMarket", async () => {
           });
 
           it("should fail when the user redeems 60 tokens", async () => {
-            tokenInternal.unwrap
+            tokenInternal.burn
               // 50 tokens are withdrawable, so redeeming 60 should take the
               // missing 10 from Alice, but she doesn't have tokens left.
-              .whenCalledWith(alice.address, reserve.address, parseEther("10"))
+              .whenCalledWith(alice.address, parseEther("10"))
               .reverts("ERC20: burn amount exceeds balance");
             await expect(
               internalMarket.connect(alice).redeem(parseEther("60"))
@@ -398,10 +390,9 @@ describe("InternalMarket", async () => {
               await internalMarket.connect(alice).redeem(parseEther("50"));
             });
 
-            it("should transfer 50 tokens from market to reserve", async () => {
-              expect(tokenInternal.unwrap).calledWith(
+            it("should burn 50 tokens from market", async () => {
+              expect(tokenInternal.burn).calledWith(
                 internalMarket.address,
-                reserve.address,
                 parseEther("50")
               );
             });
@@ -418,9 +409,9 @@ describe("InternalMarket", async () => {
 
         describe("and 10 tokens in the user wallet", async () => {
           beforeEach(async () => {
-            tokenInternal.unwrap.reset();
-            tokenInternal.unwrap
-              .whenCalledWith(alice.address, reserve.address, parseEther("20"))
+            tokenInternal.burn.reset();
+            tokenInternal.burn
+              .whenCalledWith(alice.address, parseEther("20"))
               .reverts("ERC20: burn amount exceeds balance");
           });
 
@@ -435,18 +426,16 @@ describe("InternalMarket", async () => {
               await internalMarket.connect(alice).redeem(parseEther("60"));
             });
 
-            it("should unwrap 10 tokens from alice", async () => {
-              expect(tokenInternal.unwrap).calledWith(
+            it("should burn 10 tokens from alice", async () => {
+              expect(tokenInternal.burn).calledWith(
                 alice.address,
-                reserve.address,
                 parseEther("10")
               );
             });
 
-            it("should unwrap 50 tokens from market to reserve", async () => {
-              expect(tokenInternal.unwrap).calledWith(
+            it("should burn 50 tokens from market", async () => {
+              expect(tokenInternal.burn).calledWith(
                 internalMarket.address,
-                reserve.address,
                 parseEther("50")
               );
             });
@@ -465,18 +454,16 @@ describe("InternalMarket", async () => {
               await internalMarket.connect(alice).redeem(parseEther("50"));
             });
 
-            it("should not transfer 10 tokens from alice to reserve", async () => {
-              expect(tokenInternal.unwrap).not.calledWith(
+            it("should not burn 10 tokens from alice", async () => {
+              expect(tokenInternal.burn).not.calledWith(
                 alice.address,
-                reserve.address,
                 parseEther("10")
               );
             });
 
-            it("should transfer 50 tokens from market to reserve", async () => {
-              expect(tokenInternal.unwrap).calledWith(
+            it("should burn 50 tokens from market", async () => {
+              expect(tokenInternal.burn).calledWith(
                 internalMarket.address,
-                reserve.address,
                 parseEther("50")
               );
             });

@@ -22,6 +22,7 @@ import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 import { roles } from "./utils/roles";
 
 chai.use(solidity);
+chai.use(smock.matchers);
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
@@ -115,6 +116,7 @@ describe("Resolution", async () => {
     await network.provider.send("evm_revert", [snapshotId]);
     shareholderRegistry.isAtLeast.reset();
     shareholderRegistry.isAtLeastAt.reset();
+    shareholderRegistry.balanceOfAt.reset();
     token.balanceOf.reset();
     token.balanceOfAt.reset();
     voting.canVoteAt.reset();
@@ -735,16 +737,30 @@ describe("Resolution", async () => {
       });
 
       describe("with delegation, delegator votes", async () => {
+        let delegator: SignerWithAddress;
+        let delegated: SignerWithAddress;
+        let delegatorVotingPower = 42;
+        let delegatorBalance = 42;
+        let delegatedVotingPower = 43;
+        let delegatedBalance = 1;
+
         beforeEach(async () => {
-          setupUser(user1, 42, 42, user2);
-          setupUser(user2, 43, 1);
+          delegator = user1;
+          delegated = user2;
+          setupUser(
+            delegator,
+            delegatorVotingPower,
+            delegatorBalance,
+            delegated
+          );
+          setupUser(delegated, delegatedVotingPower, delegatedBalance);
         });
 
         it("should return the right stats on a NO vote", async () => {
-          await resolution.connect(user1).vote(resolutionId, false);
+          await resolution.connect(delegator).vote(resolutionId, false);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
           expect(isYes).equal(false);
           expect(hasVoted).equal(true);
@@ -752,10 +768,10 @@ describe("Resolution", async () => {
         });
 
         it("should return the right stats on a YES vote", async () => {
-          await resolution.connect(user1).vote(resolutionId, true);
+          await resolution.connect(delegator).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
           expect(isYes).equal(true);
           expect(hasVoted).equal(true);
@@ -763,11 +779,11 @@ describe("Resolution", async () => {
         });
 
         it("should return right stats when updating from yes to no", async () => {
-          await resolution.connect(user1).vote(resolutionId, true);
-          await resolution.connect(user1).vote(resolutionId, false);
+          await resolution.connect(delegator).vote(resolutionId, true);
+          await resolution.connect(delegator).vote(resolutionId, false);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
 
           expect(isYes).equal(false);
@@ -776,11 +792,11 @@ describe("Resolution", async () => {
         });
 
         it("should return right stats when updating from no to yes", async () => {
-          await resolution.connect(user1).vote(resolutionId, false);
-          await resolution.connect(user1).vote(resolutionId, true);
+          await resolution.connect(delegator).vote(resolutionId, false);
+          await resolution.connect(delegator).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
 
           expect(isYes).equal(true);
@@ -789,28 +805,67 @@ describe("Resolution", async () => {
         });
 
         it("should return the right stats for a delegator that didn't vote", async () => {
-          await resolution.connect(user1).vote(resolutionId, true);
+          await resolution.connect(delegator).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user2.address
+            delegated.address
           );
           expect(isYes).equal(false);
           expect(hasVoted).equal(false);
           expect(votingPower).eq(1);
         });
+
+        describe("when delegator and delegate have shares", async () => {
+          const delegatedShares = 3;
+          const delegatorShares = 1;
+
+          beforeEach(async () => {
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(delegated.address, resolutionSnapshotId)
+              .returns(delegatedShares);
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(delegator.address, resolutionSnapshotId)
+              .returns(delegatorShares);
+          });
+
+          it("should return the right stats for a delegator that didn't vote", async () => {
+            await resolution.connect(delegator).vote(resolutionId, true);
+            const [isYes, hasVoted, votingPower] =
+              await resolution.getVoterVote(resolutionId, delegated.address);
+            expect(isYes).equal(false);
+            expect(hasVoted).equal(false);
+            expect(votingPower).eq(
+              delegatedVotingPower - delegatorBalance - delegatorShares
+            );
+          });
+        });
       });
 
       describe("with delegation, delegated votes", async () => {
+        let delegator: SignerWithAddress;
+        let delegated: SignerWithAddress;
+        let delegatorVotingPower = 0;
+        let delegatorBalance = 42;
+        let delegatedVotingPower = 43;
+        let delegatedBalance = 1;
+
         beforeEach(async () => {
-          setupUser(user1, 0, 42, user2);
-          setupUser(user2, 43, 1);
+          delegator = user1;
+          delegated = user2;
+          setupUser(
+            delegator,
+            delegatorVotingPower,
+            delegatorBalance,
+            delegated
+          );
+          setupUser(delegated, delegatedVotingPower, delegatedBalance);
         });
 
         it("should return the right delegator stats on a NO vote", async () => {
-          await resolution.connect(user2).vote(resolutionId, false);
+          await resolution.connect(delegated).vote(resolutionId, false);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
           expect(isYes).equal(false); // default value
           expect(hasVoted).equal(false);
@@ -818,10 +873,10 @@ describe("Resolution", async () => {
         });
 
         it("should return the right delegator stats on a YES vote", async () => {
-          await resolution.connect(user2).vote(resolutionId, true);
+          await resolution.connect(delegated).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
           expect(isYes).equal(false); // default value
           expect(hasVoted).equal(false);
@@ -829,11 +884,11 @@ describe("Resolution", async () => {
         });
 
         it("should return right delegator stats when updating from yes to no", async () => {
-          await resolution.connect(user2).vote(resolutionId, true);
-          await resolution.connect(user2).vote(resolutionId, false);
+          await resolution.connect(delegated).vote(resolutionId, true);
+          await resolution.connect(delegated).vote(resolutionId, false);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
 
           expect(isYes).equal(false); // default value
@@ -842,11 +897,11 @@ describe("Resolution", async () => {
         });
 
         it("should return right delegator stats when updating from no to yes", async () => {
-          await resolution.connect(user2).vote(resolutionId, false);
-          await resolution.connect(user2).vote(resolutionId, true);
+          await resolution.connect(delegated).vote(resolutionId, false);
+          await resolution.connect(delegated).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user1.address
+            delegator.address
           );
 
           expect(isYes).equal(false); // default value
@@ -855,10 +910,10 @@ describe("Resolution", async () => {
         });
 
         it("should return the right delegated stats", async () => {
-          await resolution.connect(user2).vote(resolutionId, true);
+          await resolution.connect(delegated).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user2.address
+            delegated.address
           );
 
           expect(isYes).equal(true); // default value
@@ -867,15 +922,41 @@ describe("Resolution", async () => {
         });
 
         it("should return the right delegated stats when delegated votes as well", async () => {
-          await resolution.connect(user1).vote(resolutionId, false);
-          await resolution.connect(user2).vote(resolutionId, true);
+          await resolution.connect(delegator).vote(resolutionId, false);
+          await resolution.connect(delegated).vote(resolutionId, true);
           const [isYes, hasVoted, votingPower] = await resolution.getVoterVote(
             resolutionId,
-            user2.address
+            delegated.address
           );
           expect(isYes).equal(true);
           expect(hasVoted).equal(true);
           expect(votingPower).eq(1);
+        });
+
+        describe("when delegator and delegate have shares", async () => {
+          const delegatedShares = 3;
+          const delegatorShares = 1;
+
+          beforeEach(async () => {
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(delegated.address, resolutionSnapshotId)
+              .returns(delegatedShares);
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(delegator.address, resolutionSnapshotId)
+              .returns(delegatorShares);
+          });
+
+          it("should return the right delegated stats when delegated votes as well", async () => {
+            await resolution.connect(delegator).vote(resolutionId, false);
+            await resolution.connect(delegated).vote(resolutionId, true);
+            const [isYes, hasVoted, votingPower] =
+              await resolution.getVoterVote(resolutionId, delegated.address);
+            expect(isYes).equal(true);
+            expect(hasVoted).equal(true);
+            expect(votingPower).eq(
+              delegatedVotingPower - delegatorBalance - delegatorShares
+            );
+          });
         });
       });
     });
@@ -989,6 +1070,54 @@ describe("Resolution", async () => {
           const totalYesVotes = (await resolution.resolutions(resolutionId))[4];
           expect(totalYesVotes.toNumber()).equal(0);
         });
+
+        describe("when user and delegate have shares", async () => {
+          const delegate1Shares = 3;
+          const user1Shares = 1;
+
+          beforeEach(async () => {
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(delegate1.address, resolutionSnapshotId)
+              .returns(delegate1Shares);
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(user1.address, resolutionSnapshotId)
+              .returns(user1Shares);
+          });
+
+          it("should return delegate voting power when delegate voted yes and then user votes yes", async () => {
+            await _prepare(true, true);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(delegateVotingPower);
+          });
+
+          it("should return delegate voting power - user balance - user share when delegate voted yes and then user votes no", async () => {
+            await _prepare(true, false);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(
+              delegateVotingPower - userBalance - user1Shares
+            );
+          });
+
+          it("should return user balance + user share as total yes when delegate voted no and then user votes yes", async () => {
+            await _prepare(false, true);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(userBalance + user1Shares);
+          });
+
+          it("should return 0 total yes when delegate voted no and then user votes no", async () => {
+            await _prepare(false, false);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(0);
+          });
+        });
       });
 
       describe("user votes first", async () => {
@@ -1025,6 +1154,54 @@ describe("Resolution", async () => {
           await _prepare(false, false);
           const totalYesVotes = (await resolution.resolutions(resolutionId))[4];
           expect(totalYesVotes.toNumber()).equal(0);
+        });
+
+        describe("when user and delegate have shares", async () => {
+          const delegate1Shares = 3;
+          const user1Shares = 1;
+
+          beforeEach(async () => {
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(delegate1.address, resolutionSnapshotId)
+              .returns(delegate1Shares);
+            shareholderRegistry.balanceOfAt
+              .whenCalledWith(user1.address, resolutionSnapshotId)
+              .returns(user1Shares);
+          });
+
+          it("should return delegate voting power when user voted yes and then delegate votes yes", async () => {
+            await _prepare(true, true);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(delegateVotingPower);
+          });
+
+          it("should return user balance + shares when user voted yes and then delegate votes no", async () => {
+            await _prepare(true, false);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(userBalance + user1Shares);
+          });
+
+          it("should return delegate's voting power - (user balance + share) when user voted no and then delegate votes yes", async () => {
+            await _prepare(false, true);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(
+              delegateVotingPower - (userBalance + user1Shares)
+            );
+          });
+
+          it("should return 0 total yes when user voted no and then delegate votes no", async () => {
+            await _prepare(false, false);
+            const totalYesVotes = (
+              await resolution.resolutions(resolutionId)
+            )[4];
+            expect(totalYesVotes.toNumber()).equal(0);
+          });
         });
       });
     });
@@ -1634,6 +1811,21 @@ describe("Resolution", async () => {
       expect(result).to.be.true;
     });
 
+    it("should not count excluded contributor shares for quorum", async () => {
+      await _prepare();
+      setupUser(user2, 42, 0);
+      setupUser(user1, 42, 40);
+      shareholderRegistry.balanceOfAt
+        .whenCalledWith(user2.address, resolutionSnapshotId)
+        .returns(60);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
     it("should count excluded contributor delegated's balance for quorum", async () => {
       await _prepare();
       setupUser(user2, 42, 60, user1);
@@ -1646,10 +1838,40 @@ describe("Resolution", async () => {
       expect(result).to.be.true;
     });
 
+    it("should count excluded contributor delegated's shares for quorum", async () => {
+      await _prepare();
+      setupUser(user2, 42, 60, user1);
+      setupUser(user1, 42, 0);
+      shareholderRegistry.balanceOfAt
+        .whenCalledWith(user1.address, resolutionSnapshotId)
+        .returns(40);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
     it("should count excluded contributor delegator's balance for quorum", async () => {
       await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40, user2);
+
+      await resolution.connect(user1).vote(resolutionId, true);
+
+      const result = await resolution.getResolutionResult(resolutionId);
+
+      expect(result).to.be.true;
+    });
+
+    it("should count excluded contributor delegator's shares for quorum", async () => {
+      await _prepare();
+      setupUser(user2, 42, 60);
+      setupUser(user1, 42, 0, user2);
+      shareholderRegistry.balanceOfAt
+        .whenCalledWith(user1.address, resolutionSnapshotId)
+        .returns(40);
 
       await resolution.connect(user1).vote(resolutionId, true);
 

@@ -138,7 +138,8 @@ abstract contract VotingBase is IVoting {
 
         _beforeDelegate(delegator);
 
-        uint256 delegatorBalance = _token.balanceOf(delegator);
+        uint256 delegatorBalance = _token.balanceOf(delegator) +
+            _shareholderRegistry.balanceOf(delegator);
         _delegates[delegator] = newDelegate;
 
         if (delegator != newDelegate && newDelegate != address(0)) {
@@ -196,7 +197,8 @@ abstract contract VotingBase is IVoting {
 
         delete _delegates[account];
 
-        uint256 individualVotingPower = _token.balanceOf(account);
+        uint256 individualVotingPower = _token.balanceOf(account) +
+            _shareholderRegistry.balanceOf(account);
         if (individualVotingPower > 0) {
             _moveVotingPower(account, address(0), individualVotingPower);
         }

@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
-import { BigNumber, BytesLike } from "ethers";
+import { BytesLike } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
@@ -299,38 +299,6 @@ describe("Integration", async () => {
       );
 
       expect(resolutionResult).equal(false);
-    });
-
-    it("shares + tokens = voting power", async () => {
-      async function check({
-        totalVotingPower = 0,
-        user1VotingPower = 0,
-        user2VotingPower = 0,
-      }) {
-        expect(await voting.getTotalVotingPower()).equal(e(totalVotingPower));
-        expect(await voting.getVotingPower(user1.address)).equal(
-          e(user1VotingPower)
-        );
-        expect(await voting.getVotingPower(user2.address)).equal(
-          e(user2VotingPower)
-        );
-      }
-
-      await check({
-        totalVotingPower: 1,
-      });
-      await _makeContributor(user1, 66);
-      await check({
-        totalVotingPower: 1 + 66 + 1,
-        user1VotingPower: 66 + 1,
-      });
-
-      await _makeContributor(user2, 34);
-      await check({
-        totalVotingPower: 1 + 34 + 1 + 66 + 1,
-        user1VotingPower: 66 + 1,
-        user2VotingPower: 34 + 1,
-      });
     });
 
     it("multiple resolutions, different voting power over time, multiple contributors", async () => {

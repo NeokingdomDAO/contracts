@@ -57,6 +57,13 @@ contract NeokingdomToken is Initializable, HasRole, NeokingdomTokenSnapshot {
         _mint(to, amount);
     }
 
+    function burn(
+        address from,
+        uint256 amount
+    ) public virtual onlyRole(Roles.MARKET_ROLE) {
+        _burn(from, amount);
+    }
+
     function wrap(
         address from,
         uint256 amount

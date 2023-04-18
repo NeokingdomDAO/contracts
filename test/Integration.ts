@@ -36,6 +36,7 @@ const { MaxUint256 } = ethers.constants;
 
 const DAY = 60 * 60 * 24;
 const INITIAL_USDC = 1000;
+const AddressZero = ethers.constants.AddressZero;
 
 describe("Integration", async () => {
   let snapshotId: string;
@@ -794,7 +795,7 @@ describe("Integration", async () => {
       expect(await neokingdomToken.balanceOf(user3.address)).equal(26);
     });
 
-    it("Mints tokens to a contributor after a resolution passes", async () => {
+    it("mints tokens to a contributor after a resolution passes", async () => {
       await _makeContributor(user1, 100);
       await _makeContributor(user2, 50);
 
@@ -820,7 +821,7 @@ describe("Integration", async () => {
       );
     });
 
-    it("Adds a resolution type after a resolution passes", async () => {
+    it("adds a resolution type after a resolution passes", async () => {
       await _makeContributor(user1, 100);
       await _makeContributor(user2, 50);
 
@@ -860,8 +861,9 @@ describe("Integration", async () => {
       expect(result.canBeNegative).equal(false);
     });
 
-    it("Match offer, move to external wallet, redeem when ready", async () => {
+    it("match offer, move to external wallet, redeem when ready", async () => {
       // Create three contributors
+
       await _makeContributor(user1, 50);
       await _makeContributor(user2, 100);
       await _makeContributor(user3, 1);
@@ -891,6 +893,7 @@ describe("Integration", async () => {
       );
 
       await internalMarket.connect(user1).redeem(10);
+
       // Chaining two changeTokenBalances seems to execute the "redeem"
       // function twice. Anyway, this second redeem should fail.
       /*
@@ -904,9 +907,7 @@ describe("Integration", async () => {
       expect(await tokenMock.balanceOf(user1.address)).equal(
         INITIAL_USDC + 4 + 2 + 10
       );
-      expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
-        10
-      );
+      expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(0);
       expect(await tokenMock.balanceOf(reserve.address)).equal(
         INITIAL_USDC - 10
       );
@@ -924,10 +925,9 @@ describe("Integration", async () => {
       await timeTravel(offerDurationDays, true);
       await internalMarket.connect(user2).withdraw(free2.address, 90);
       await timeTravel(redemptionStartDays - offerDurationDays, true);
-
       // then tries to redeem but fails because not enough balance.
       await expect(internalMarket.connect(user2).redeem(90)).revertedWith(
-        "ERC20: transfer amount exceeds balance"
+        "ERC20: burn amount exceeds balance"
       );
 
       // then tries to redeem 6 and succeeds.
@@ -941,7 +941,7 @@ describe("Integration", async () => {
       );
     });
 
-    it("Redemption edge cases", async () => {
+    it("redemption edge cases", async () => {
       await _makeContributor(user1, 10);
       await _makeContributor(user2, 0);
 
@@ -1047,9 +1047,7 @@ describe("Integration", async () => {
         24 - tokensRedeemed
       );
       expect(await neokingdomToken.balanceOf(user2.address)).equal(0);
-      expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
-        tokensRedeemed
-      );
+      expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(0); // they have all been burnt
 
       expect(await tokenMock.balanceOf(user1.address)).equal(
         INITIAL_USDC + 10 + tokensRedeemed
@@ -1203,8 +1201,7 @@ describe("Integration", async () => {
       await check({
         // -20
         internalSupply: 95,
-        // FIXME: we should burn external tokens too
-        externalSupply: 130,
+        externalSupply: 110,
         marketInternalBalance: 0,
         // -20
         neokingdomTokenWrappedBalance: 95,
@@ -1215,7 +1212,7 @@ describe("Integration", async () => {
         user2InternalBalance: 35,
         user2UsdcBalance: INITIAL_USDC - 5,
         user3ExternalBalance: 15,
-        reserveExternalBalance: 20,
+        reserveExternalBalance: 0, // tokens were burnt
         reserveUsdcBalance: INITIAL_USDC - 20,
       });
     });

@@ -15,6 +15,8 @@ interface INeokingdomToken is IERC20Upgradeable, ISnapshot {
 
     function mint(address to, uint256 amount) external;
 
+    function burn(address from, uint256 amount) external;
+
     function wrap(address from, uint256 amount) external;
 
     function unwrap(address from, address to, uint256 amount) external;

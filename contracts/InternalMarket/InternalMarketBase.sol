@@ -205,6 +205,21 @@ contract InternalMarketBase {
         }
     }
 
+    function _burn(address from, uint256 amount) internal virtual {
+        // TODO: check if non-contributors should be able to burn this token
+        if (
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                from
+            )
+        ) {
+            _beforeWithdraw(from, amount);
+            tokenInternal.burn(address(this), amount);
+        } else {
+            tokenInternal.burn(from, amount);
+        }
+    }
+
     function _deposit(address to, uint256 amount) internal virtual {
         tokenInternal.wrap(to, amount);
     }
@@ -215,11 +230,11 @@ contract InternalMarketBase {
             uint256 difference = amount - withdrawableBalance;
             // internalToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
-            tokenInternal.unwrap(from, reserve, difference); // reserve will become address(0)
-            _withdraw(from, reserve, withdrawableBalance);
+            tokenInternal.burn(from, difference);
+            _burn(from, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {
-            _withdraw(from, reserve, amount);
+            _burn(from, amount);
         }
 
         // The "from" value is always the msg.sender according to the public implementation (see InternalMarket.sol)

@@ -88,7 +88,12 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
 
     function _unwrap(address from, address to, uint amount) internal virtual {
         tokenExternal.transfer(to, amount);
-        _burn(from, amount);
+        super._burn(from, amount);
+    }
+
+    function _burn(address from, uint amount) internal virtual override {
+        tokenExternal.burn(amount);
+        super._burn(from, amount);
     }
 
     function _setVesting(address account, uint256 amount) internal virtual {

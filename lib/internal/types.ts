@@ -3,11 +3,11 @@ import { TransactionResponse } from "@ethersproject/providers";
 import {
   DAORoles,
   DAORoles__factory,
+  GovernanceToken,
+  GovernanceToken__factory,
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
-  NeokingdomTokenExternal,
-  NeokingdomTokenExternal__factory,
   NeokingdomToken__factory,
   PriceOracle,
   PriceOracle__factory,
@@ -27,8 +27,8 @@ import { NeokingdomDAO } from "./core";
 export const FACTORIES = {
   DAORoles: DAORoles__factory,
   InternalMarket: InternalMarket__factory,
+  GovernanceToken: GovernanceToken__factory,
   NeokingdomToken: NeokingdomToken__factory,
-  NeokingdomTokenExternal: NeokingdomTokenExternal__factory,
   PriceOracle: PriceOracle__factory,
   RedemptionController: RedemptionController__factory,
   ResolutionManager: ResolutionManager__factory,
@@ -45,8 +45,8 @@ export type ContextGenerator<T extends Context> = (
 export type NeokingdomContracts = {
   daoRoles: DAORoles;
   internalMarket: InternalMarket;
+  governanceToken: GovernanceToken;
   neokingdomToken: NeokingdomToken;
-  neokingdomTokenExternal: NeokingdomTokenExternal;
   priceOracle: PriceOracle;
   redemptionController: RedemptionController;
   resolutionManager: ResolutionManager;
@@ -77,8 +77,8 @@ export type ProcessedSequence<T extends Context> = Step<T>[];
 export const CONTRACT_NAMES = [
   "daoRoles",
   "internalMarket",
+  "governanceToken",
   "neokingdomToken",
-  "neokingdomTokenExternal",
   "priceOracle",
   "redemptionController",
   "resolutionManager",

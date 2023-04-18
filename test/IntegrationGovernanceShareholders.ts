@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { NeokingdomToken, ShareholderRegistry, Voting } from "../typechain";
+import { GovernanceToken, ShareholderRegistry, Voting } from "../typechain";
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
@@ -19,7 +19,7 @@ const e = (v: number) => parseEther(v.toString());
 describe("Integration", async () => {
   let snapshotId: string;
   let voting: Voting;
-  let neokingdomToken: NeokingdomToken;
+  let governanceToken: GovernanceToken;
   let shareholderRegistry: ShareholderRegistry;
   let managingBoardStatus: string;
   let contributorStatus: string;
@@ -44,7 +44,7 @@ describe("Integration", async () => {
 
     await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
 
-    ({ voting, neokingdomToken, shareholderRegistry } =
+    ({ voting, governanceToken, shareholderRegistry } =
       await neokingdom.loadContracts());
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
@@ -110,7 +110,7 @@ describe("Integration", async () => {
     });
 
     // user1 is rewarded with 6000 tokens
-    await neokingdomToken.mint(user1.address, e(6000));
+    await governanceToken.mint(user1.address, e(6000));
     await check({
       totalVotingPower: 7000 + 6000,
       boardVotingPower: 7000 - 1,
@@ -122,7 +122,7 @@ describe("Integration", async () => {
     // user2 is promoted to contributor
     await shareholderRegistry.setStatus(contributorStatus, user2.address);
     // user2 is rewarded with 3000 tokens
-    await neokingdomToken.mint(user2.address, e(3000));
+    await governanceToken.mint(user2.address, e(3000));
 
     await check({
       totalVotingPower: 7000 + 6000 + 3000,

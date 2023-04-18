@@ -55,7 +55,7 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(
       (contributor) => (c) =>
-        c.neokingdomToken.mint(
+        c.governanceToken.mint(
           contributor.address,
           parseEther(contributor.tokens.toString())
         )

@@ -6,9 +6,9 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 import {
-  NeokingdomToken,
-  NeokingdomTokenV2Mock__factory,
-  NewNeokingdomTokenMock__factory,
+  GovernanceToken,
+  GovernanceTokenV2Mock__factory,
+  NewGovernanceTokenMock__factory,
   ResolutionManager,
   ResolutionManagerV2Mock__factory,
   ShareholderRegistry,
@@ -28,7 +28,7 @@ const DAY = 60 * 60 * 24;
 describe("Upgrade", () => {
   let snapshotId: string;
 
-  let neokingdomToken: NeokingdomToken;
+  let governanceToken: GovernanceToken;
   let shareholderRegistry: ShareholderRegistry;
   let resolutionManager: ResolutionManager;
   let managingBoardStatus: string;
@@ -50,7 +50,7 @@ describe("Upgrade", () => {
       reserve: reserve.address,
     });
     await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE);
-    ({ neokingdomToken, shareholderRegistry, resolutionManager } =
+    ({ governanceToken, shareholderRegistry, resolutionManager } =
       await neokingdom.loadContracts());
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
@@ -80,7 +80,7 @@ describe("Upgrade", () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await neokingdomToken.mint(user.address, tokens);
+      await governanceToken.mint(user.address, tokens);
     }
 
     async function _prepareForVoting(user: SignerWithAddress, tokens: number) {
@@ -165,7 +165,7 @@ describe("Upgrade", () => {
     });
 
     it("should change contract logic", async () => {
-      // Prevents also shareholder from transfering their tokens on NeokingdomToken
+      // Prevents also shareholder from transfering their tokens on GovernanceToken
       await shareholderRegistry.mint(user1.address, parseEther("1"));
       await shareholderRegistry.setStatus(contributorStatus, user1.address);
       await _mintTokens(user1, 42);
@@ -175,7 +175,7 @@ describe("Upgrade", () => {
       await _mintTokens(user2, 42);
 
       await expect(
-        neokingdomToken.connect(user1).transfer(user2.address, 1)
+        governanceToken.connect(user1).transfer(user2.address, 1)
       ).revertedWith(
         `AccessControl: account ${user1.address.toLowerCase()} is missing role ${
           ROLES.MARKET_ROLE
@@ -183,43 +183,43 @@ describe("Upgrade", () => {
       );
 
       // FIXME: not sure if we still need this transfer
-      // await neokingdomToken.connect(user2).transfer(user1.address, 1);
+      // await governanceToken.connect(user2).transfer(user1.address, 1);
 
-      const NeokingdomTokenV2MockFactory = (await ethers.getContractFactory(
-        "NeokingdomTokenV2Mock"
-      )) as NeokingdomTokenV2Mock__factory;
+      const GovernanceTokenV2MockFactory = (await ethers.getContractFactory(
+        "GovernanceTokenV2Mock"
+      )) as GovernanceTokenV2Mock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
-        neokingdomToken.address,
-        NeokingdomTokenV2MockFactory
+        governanceToken.address,
+        GovernanceTokenV2MockFactory
       );
       await tokenV2Contract.deployed();
 
       await expect(
-        neokingdomToken.connect(user1).transfer(user2.address, 1)
-      ).revertedWith("NeokingdomTokenV2: nopety nope");
+        governanceToken.connect(user1).transfer(user2.address, 1)
+      ).revertedWith("GovernanceTokenV2: nopety nope");
 
       await expect(
-        neokingdomToken.connect(user2).transfer(user1.address, 1)
-      ).revertedWith("NeokingdomTokenV2: nopety nope");
+        governanceToken.connect(user2).transfer(user1.address, 1)
+      ).revertedWith("GovernanceTokenV2: nopety nope");
     });
 
     it("should change events", async () => {
-      await expect(neokingdomToken.mintVesting(user1.address, 31))
-        .emit(neokingdomToken, "VestingSet")
+      await expect(governanceToken.mintVesting(user1.address, 31))
+        .emit(governanceToken, "VestingSet")
         .withArgs(user1.address, 31);
 
-      const NewNeokingdomTokenMockFactory = (await ethers.getContractFactory(
-        "NewNeokingdomTokenMock"
-      )) as NewNeokingdomTokenMock__factory;
+      const NewGovernanceTokenMockFactory = (await ethers.getContractFactory(
+        "NewGovernanceTokenMock"
+      )) as NewGovernanceTokenMock__factory;
 
       const tokenV2Contract = await upgrades.upgradeProxy(
-        neokingdomToken.address,
-        NewNeokingdomTokenMockFactory
+        governanceToken.address,
+        NewGovernanceTokenMockFactory
       );
       await tokenV2Contract.deployed();
 
-      await expect(neokingdomToken.mintVesting(user1.address, 31))
+      await expect(governanceToken.mintVesting(user1.address, 31))
         .emit(tokenV2Contract, "VestingSet2")
         .withArgs(deployer.address, user1.address, 31);
     });

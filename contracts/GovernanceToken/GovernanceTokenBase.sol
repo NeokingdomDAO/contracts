@@ -7,14 +7,14 @@ import "../RedemptionController/IRedemptionController.sol";
 import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
 import "../extensions/DAORoles.sol";
-import "./INeokingdomToken.sol";
+import "./IGovernanceToken.sol";
 
-abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
+abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
     event VestingSet(address to, uint256 amount);
 
     IVoting internal _voting;
     IRedemptionController internal _redemptionController;
-    INeokingdomTokenExternal public tokenExternal;
+    INeokingdomToken public tokenExternal;
 
     function _initialize(
         string memory name,
@@ -39,7 +39,7 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     }
 
     function _setTokenExternal(address tokenExternalAddress) internal {
-        tokenExternal = INeokingdomTokenExternal(tokenExternalAddress);
+        tokenExternal = INeokingdomToken(tokenExternalAddress);
     }
 
     function _beforeTokenTransfer(
@@ -65,7 +65,7 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
         // Invariants
         require(
             balanceOf(from) >= _vestingBalance[from],
-            "NeokingdomToken: transfer amount exceeds vesting"
+            "GovernanceToken: transfer amount exceeds vesting"
         );
     }
 
@@ -99,7 +99,7 @@ abstract contract NeokingdomTokenBase is ERC20Upgradeable, INeokingdomToken {
     function _setVesting(address account, uint256 amount) internal virtual {
         require(
             amount < _vestingBalance[account],
-            "NeokingdomToken: vesting can only be decreased"
+            "GovernanceToken: vesting can only be decreased"
         );
         emit VestingSet(account, amount);
         _vestingBalance[account] = amount;

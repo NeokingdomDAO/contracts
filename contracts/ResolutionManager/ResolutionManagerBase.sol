@@ -3,7 +3,7 @@
 pragma solidity ^0.8.16;
 
 import "../ShareholderRegistry/IShareholderRegistry.sol";
-import "../NeokingdomToken/INeokingdomToken.sol";
+import "../GovernanceToken/IGovernanceToken.sol";
 import "../Voting/IVoting.sol";
 import "hardhat/console.sol";
 
@@ -74,7 +74,7 @@ abstract contract ResolutionManagerBase {
     uint256 internal _currentResolutionId;
 
     IShareholderRegistry internal _shareholderRegistry;
-    INeokingdomToken internal _neokingdomToken;
+    IGovernanceToken internal _governanceToken;
     IVoting internal _voting;
 
     ResolutionType[] public resolutionTypes;
@@ -83,11 +83,11 @@ abstract contract ResolutionManagerBase {
 
     function _initialize(
         IShareholderRegistry shareholderRegistry,
-        INeokingdomToken neokingdomToken,
+        IGovernanceToken governanceToken,
         IVoting voting
     ) internal {
         _shareholderRegistry = shareholderRegistry;
-        _neokingdomToken = neokingdomToken;
+        _governanceToken = governanceToken;
         _voting = voting;
 
         // TODO: check if there are any rounding errors
@@ -132,10 +132,10 @@ abstract contract ResolutionManagerBase {
         _shareholderRegistry = shareholderRegistry;
     }
 
-    function _setNeokingdomToken(
-        INeokingdomToken neokingdomToken
+    function _setGovernanceToken(
+        IGovernanceToken governanceToken
     ) internal virtual {
-        _neokingdomToken = neokingdomToken;
+        _governanceToken = governanceToken;
     }
 
     function _setVoting(IVoting voting) internal virtual {
@@ -145,7 +145,7 @@ abstract contract ResolutionManagerBase {
     function _snapshotAll() internal virtual returns (uint256) {
         uint256 snapshotId = _shareholderRegistry.snapshot();
         require(
-            _neokingdomToken.snapshot() == snapshotId &&
+            _governanceToken.snapshot() == snapshotId &&
                 _voting.snapshot() == snapshotId,
             "ResolutionManager: snapshot ids are inconsistent"
         );
@@ -364,10 +364,10 @@ abstract contract ResolutionManagerBase {
             resolution.snapshotId
         );
 
-        // If sender has a delegate load voting power from NeokingdomToken
+        // If sender has a delegate load voting power from GovernanceToken
         if (delegate != msg.sender) {
             votingPower =
-                _neokingdomToken.balanceOfAt(
+                _governanceToken.balanceOfAt(
                     msg.sender,
                     resolution.snapshotId
                 ) +
@@ -474,7 +474,7 @@ abstract contract ResolutionManagerBase {
             hasVoted
         ) {
             votingPower =
-                _neokingdomToken.balanceOfAt(voter, resolution.snapshotId) +
+                _governanceToken.balanceOfAt(voter, resolution.snapshotId) +
                 _shareholderRegistry.balanceOfAt(voter, resolution.snapshotId);
         } else {
             votingPower =
@@ -496,7 +496,7 @@ abstract contract ResolutionManagerBase {
 
         if (resolution.addressedContributor != address(0)) {
             totalVotingPower -=
-                _neokingdomToken.balanceOfAt(
+                _governanceToken.balanceOfAt(
                     resolution.addressedContributor,
                     resolution.snapshotId
                 ) +

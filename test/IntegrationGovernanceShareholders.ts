@@ -138,5 +138,32 @@ describe("Integration", async () => {
       boardVotingPower: 7000 - 1 - 1,
       user1VotingPower: 1 + 6000,
     });
+
+    // user2 comes back!
+    await shareholderRegistry.setStatus(contributorStatus, user2.address);
+    await check({
+      totalVotingPower: 7000 + 6000 + 3000,
+      boardVotingPower: 7000 - 1 - 1,
+      user1VotingPower: 1 + 6000,
+      user2VotingPower: 1 + 3000,
+    });
+
+    // user2 delegates user1
+    await voting.connect(user2).delegate(user1.address);
+    await check({
+      totalVotingPower: 7000 + 6000 + 3000,
+      boardVotingPower: 7000 - 1 - 1,
+      user1VotingPower: 1 + 6000 + 1 + 3000,
+      user2VotingPower: 0,
+    });
+
+    // user2 delegates user2
+    await voting.connect(user2).delegate(user2.address);
+    await check({
+      totalVotingPower: 7000 + 6000 + 3000,
+      boardVotingPower: 7000 - 1 - 1,
+      user1VotingPower: 1 + 6000,
+      user2VotingPower: 1 + 3000,
+    });
   });
 });

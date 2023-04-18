@@ -128,12 +128,6 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
             amount == 1 ether * (amount / 1 ether),
             "ShareholderRegistry: No fractional tokens"
         );
-        require(
-            (balanceOf(to) == 0 && amount == 1 ether) ||
-                (to == address(this)) ||
-                (to == address(0)),
-            "ShareholderRegistry: Only the DAO can have more than 1 share"
-        );
     }
 
     function _afterTokenTransfer(

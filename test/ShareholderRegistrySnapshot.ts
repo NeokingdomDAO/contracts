@@ -506,20 +506,7 @@ describe("Shareholder Registry", () => {
   });
 
   describe("transfer", async () => {
-    it("should prevent non-DAO addresses from receiving more than 1 share", async () => {
-      await expect(registry.mint(alice.address, parseEther("2"))).revertedWith(
-        "ShareholderRegistry: Only the DAO can have more than 1 share"
-      );
-    });
-
-    it("should prevent non-DAO addresses from receiving 1 share after they already got one", async () => {
-      await registry.mint(alice.address, parseEther("1"));
-      await expect(registry.mint(alice.address, parseEther("1"))).revertedWith(
-        "ShareholderRegistry: Only the DAO can have more than 1 share"
-      );
-    });
-
-    it("should allow the DAO to receive more than 1 share", async () => {
+    it("should allow anyone to receive more than 1 share", async () => {
       await registry.mint(registry.address, parseEther("10"));
 
       expect(await registry.balanceOf(registry.address)).equal(
@@ -527,7 +514,7 @@ describe("Shareholder Registry", () => {
       );
     });
 
-    it("should allow the DAO to receive 1 share after they already got one", async () => {
+    it("should allow anyone to receive 1 share after they already got one", async () => {
       await registry.mint(registry.address, parseEther("1"));
       await registry.mint(registry.address, parseEther("1"));
 

@@ -22,6 +22,7 @@ import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 import { roles } from "./utils/roles";
 
 chai.use(solidity);
+chai.use(smock.matchers);
 chai.use(chaiAsPromised);
 const { expect } = chai;
 

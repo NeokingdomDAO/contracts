@@ -5,6 +5,7 @@ pragma solidity ^0.8.16;
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../Voting/IVoting.sol";
+import "hardhat/console.sol";
 
 abstract contract ResolutionManagerBase {
     event ResolutionCreated(address indexed from, uint256 indexed resolutionId);

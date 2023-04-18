@@ -5,17 +5,7 @@ import { solidity } from "ethereum-waffle";
 import { parseEther } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import {
-  DAORoles,
-  InternalMarket,
-  NeokingdomToken,
-  NeokingdomTokenExternal,
-  RedemptionController,
-  ResolutionManager,
-  ShareholderRegistry,
-  TokenMock,
-  Voting,
-} from "../typechain";
+import { NeokingdomToken, ShareholderRegistry, Voting } from "../typechain";
 
 import { DEPLOY_SEQUENCE, generateDeployContext } from "../lib";
 import { NeokingdomDAOMemory } from "../lib/environment/memory";
@@ -127,7 +117,7 @@ describe("Integration", async () => {
       user1VotingPower: 1 + 6000,
     });
 
-    // A share is transferred from the managing board to user1
+    // A share is transferred from the managing board to user2
     await shareholderRegistry.transferFrom(board.address, user2.address, e(1));
     // user2 is promoted to contributor
     await shareholderRegistry.setStatus(contributorStatus, user2.address);

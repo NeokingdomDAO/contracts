@@ -14,7 +14,7 @@
     "blockNumber": 12681049,
     "blockHash": "0x5b2621f0c01365c8af4f706a60b5697f0c7d341615914b50a521ae7370fd26d9"
   },
-  "NeokingdomToken": {
+  "GovernanceToken": {
     "address": "0xfDF1699cc9C122C74d44e0d63d666af0016f08c5",
     "blockNumber": 12681057,
     "blockHash": "0xde765fce765a6ec3f64114a8a226b7984e81cd1acd7a15daf137218e0fbff1f7"

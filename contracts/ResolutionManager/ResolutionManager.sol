@@ -12,11 +12,11 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
     function initialize(
         DAORoles roles,
         IShareholderRegistry shareholderRegistry,
-        INeokingdomToken neokingdomToken,
+        IGovernanceToken governanceToken,
         IVoting voting
     ) public initializer {
         _setRoles(roles);
-        _initialize(shareholderRegistry, neokingdomToken, voting);
+        _initialize(shareholderRegistry, governanceToken, voting);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -44,10 +44,10 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
         _setShareholderRegistry(shareholderRegistry);
     }
 
-    function setNeokingdomToken(
-        INeokingdomToken neokingdomToken
+    function setGovernanceToken(
+        IGovernanceToken governanceToken
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        _setNeokingdomToken(neokingdomToken);
+        _setGovernanceToken(governanceToken);
     }
 
     function setVoting(

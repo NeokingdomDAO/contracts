@@ -8,9 +8,9 @@ import { ethers, network } from "hardhat";
 
 import {
   DAORoles,
+  GovernanceToken,
   InternalMarket,
   NeokingdomToken,
-  NeokingdomTokenExternal,
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
@@ -50,8 +50,8 @@ describe("Integration", async () => {
 
   let daoRoles: DAORoles;
   let voting: Voting;
+  let governanceToken: GovernanceToken;
   let neokingdomToken: NeokingdomToken;
-  let neokingdomTokenExternal: NeokingdomTokenExternal;
   let resolutionManager: ResolutionManager;
   let shareholderRegistry: ShareholderRegistry;
   let internalMarket: InternalMarket;
@@ -91,8 +91,8 @@ describe("Integration", async () => {
     ({
       daoRoles,
       voting,
+      governanceToken,
       neokingdomToken,
-      neokingdomTokenExternal,
       shareholderRegistry,
 
       resolutionManager,
@@ -135,12 +135,12 @@ describe("Integration", async () => {
       await tokenMock
         .connect(signer)
         .approve(internalMarket.address, MaxUint256);
-      await neokingdomToken
+      await governanceToken
         .connect(signer)
         .approve(internalMarket.address, MaxUint256);
-      await neokingdomTokenExternal
+      await neokingdomToken
         .connect(signer)
-        .approve(neokingdomToken.address, MaxUint256);
+        .approve(governanceToken.address, MaxUint256);
     }
   });
 
@@ -159,7 +159,7 @@ describe("Integration", async () => {
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {
-      await neokingdomToken.mint(user.address, e(tokens));
+      await governanceToken.mint(user.address, e(tokens));
     }
 
     async function _makeContributor(user: SignerWithAddress, tokens: number) {
@@ -628,7 +628,7 @@ describe("Integration", async () => {
       expect(resolution1Result).equal(false);
 
       await expect(
-        neokingdomToken.connect(user2).transfer(user3.address, 2)
+        governanceToken.connect(user2).transfer(user3.address, 2)
       ).revertedWith(
         `AccessControl: account ${user2.address.toLowerCase()} is missing role ${
           ROLES.MARKET_ROLE
@@ -667,9 +667,7 @@ describe("Integration", async () => {
       // Tries now to transfer the right amount
       await internalMarket.connect(user2).withdraw(user3.address, e(1));
       // User3 transfers the funds to user1
-      await neokingdomTokenExternal
-        .connect(user3)
-        .transfer(user1.address, e(1));
+      await neokingdomToken.connect(user3).transfer(user1.address, e(1));
       // user1 deposits them so they count for voting
       await internalMarket.connect(user1).deposit(e(1));
 
@@ -790,19 +788,19 @@ describe("Integration", async () => {
         internalMarket.connect(user2).withdraw(user3.address, e(5))
       ).revertedWith("InternalMarket: amount exceeds balance");
 
-      expect(await neokingdomToken.balanceOf(user1.address)).equal(e(80));
+      expect(await governanceToken.balanceOf(user1.address)).equal(e(80));
       expect(await internalMarket.offeredBalanceOf(user1.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user1.address)).equal(
         0
       );
 
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(40));
+      expect(await governanceToken.balanceOf(user2.address)).equal(e(40));
       expect(await internalMarket.offeredBalanceOf(user2.address)).equal(e(5));
       expect(await internalMarket.withdrawableBalanceOf(user2.address)).equal(
         0
       );
 
-      expect(await neokingdomToken.balanceOf(user3.address)).equal(e(21));
+      expect(await governanceToken.balanceOf(user3.address)).equal(e(21));
       expect(await internalMarket.offeredBalanceOf(user3.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user3.address)).equal(
         e(5)
@@ -819,20 +817,20 @@ describe("Integration", async () => {
       ).revertedWith("InternalMarket: amount exceeds balance");
       await internalMarket.connect(user2).withdraw(user3.address, e(5));
 
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(40));
+      expect(await governanceToken.balanceOf(user2.address)).equal(e(40));
       expect(await internalMarket.offeredBalanceOf(user2.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user2.address)).equal(
         0
       );
 
-      expect(await neokingdomToken.balanceOf(user3.address)).equal(e(21));
+      expect(await governanceToken.balanceOf(user3.address)).equal(e(21));
       expect(await internalMarket.offeredBalanceOf(user3.address)).equal(0);
       expect(await internalMarket.withdrawableBalanceOf(user3.address)).equal(
         e(5)
       );
 
       await internalMarket.connect(user3).deposit(e(5));
-      expect(await neokingdomToken.balanceOf(user3.address)).equal(e(26));
+      expect(await governanceToken.balanceOf(user3.address)).equal(e(26));
     });
 
     it("mints tokens to a contributor after a resolution passes", async () => {
@@ -844,7 +842,7 @@ describe("Integration", async () => {
       const data = iface.encodeFunctionData("mint", [user2.address, e(42)]);
       const resolutionId = await _prepareResolution(
         6,
-        [neokingdomToken.address],
+        [governanceToken.address],
         [data]
       );
 
@@ -856,7 +854,7 @@ describe("Integration", async () => {
 
       await resolutionManager.executeResolution(resolutionId);
 
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(92));
+      expect(await governanceToken.balanceOf(user2.address)).equal(e(92));
     });
 
     it("adds a resolution type after a resolution passes", async () => {
@@ -905,16 +903,16 @@ describe("Integration", async () => {
       await _makeContributor(user1, 50);
       await _makeContributor(user2, 100);
       await _makeContributor(user3, 1);
-      expect(
-        await neokingdomTokenExternal.balanceOf(neokingdomToken.address)
-      ).equal(e(151));
+      expect(await neokingdomToken.balanceOf(governanceToken.address)).equal(
+        e(151)
+      );
 
       await internalMarket.connect(user1).makeOffer(e(10));
 
       await expect(() =>
         internalMarket.connect(user2).matchOffer(user1.address, e(4))
       ).to.changeTokenBalances(tokenMock, [user1, user2], [e(4), e(-4)]);
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(e(104));
+      expect(await governanceToken.balanceOf(user2.address)).equal(e(104));
 
       await expect(() =>
         internalMarket.connect(user3).matchOffer(user1.address, e(2))
@@ -938,17 +936,17 @@ describe("Integration", async () => {
         .to.changeTokenBalances(usdc, [reserve, user1], [-4, 4]);
       */
 
-      expect(await neokingdomToken.balanceOf(user1.address)).equal(
+      expect(await governanceToken.balanceOf(user1.address)).equal(
         e(50 - 4 - 2 - 10)
       );
       expect(await tokenMock.balanceOf(user1.address)).equal(
         e(INITIAL_USDC + 4 + 2 + 10)
       );
-      expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(0);
+      expect(await neokingdomToken.balanceOf(reserve.address)).equal(0);
       expect(await tokenMock.balanceOf(reserve.address)).equal(
         e(INITIAL_USDC - 10)
       );
-      expect(await neokingdomToken.balanceOf(internalMarket.address)).equal(
+      expect(await governanceToken.balanceOf(internalMarket.address)).equal(
         e(10 - 4 - 2 - 4)
       );
       expect(await tokenMock.balanceOf(internalMarket.address)).equal(0);
@@ -983,9 +981,9 @@ describe("Integration", async () => {
       await _makeContributor(user2, 0);
 
       // pre-conditions
-      expect(await neokingdomToken.balanceOf(user1.address)).equal(e(10));
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(0);
-      expect(await neokingdomToken.balanceOf(reserve.address)).equal(0);
+      expect(await governanceToken.balanceOf(user1.address)).equal(e(10));
+      expect(await governanceToken.balanceOf(user2.address)).equal(0);
+      expect(await governanceToken.balanceOf(reserve.address)).equal(0);
 
       expect(await tokenMock.balanceOf(user1.address)).equal(e(INITIAL_USDC));
       expect(await tokenMock.balanceOf(user2.address)).equal(e(INITIAL_USDC));
@@ -1080,11 +1078,11 @@ describe("Integration", async () => {
       await internalMarket.connect(user1).deposit(e(13));
 
       // post-conditions
-      expect(await neokingdomToken.balanceOf(user1.address)).equal(
+      expect(await governanceToken.balanceOf(user1.address)).equal(
         e(24 - tokensRedeemed)
       );
-      expect(await neokingdomToken.balanceOf(user2.address)).equal(0);
-      expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(0); // they have all been burnt
+      expect(await governanceToken.balanceOf(user2.address)).equal(0);
+      expect(await neokingdomToken.balanceOf(reserve.address)).equal(0); // they have all been burnt
 
       expect(await tokenMock.balanceOf(user1.address)).equal(
         e(INITIAL_USDC + 10 + tokensRedeemed)
@@ -1101,7 +1099,7 @@ describe("Integration", async () => {
       async function check({
         internalSupply = 0,
         externalSupply = 0,
-        neokingdomTokenWrappedBalance = 0,
+        governanceTokenWrappedBalance = 0,
         marketInternalBalance = 0,
         user1InternalBalance = 0,
         user1ExternalBalance = 0,
@@ -1116,26 +1114,24 @@ describe("Integration", async () => {
         reserveUsdcBalance = INITIAL_USDC,
       }) {
         // Total supplies
-        expect(await neokingdomToken.totalSupply()).equal(e(internalSupply));
-        expect(await neokingdomTokenExternal.totalSupply()).equal(
-          e(externalSupply)
-        );
+        expect(await governanceToken.totalSupply()).equal(e(internalSupply));
+        expect(await neokingdomToken.totalSupply()).equal(e(externalSupply));
 
         // InternalMarket
-        expect(await neokingdomToken.balanceOf(internalMarket.address)).equal(
+        expect(await governanceToken.balanceOf(internalMarket.address)).equal(
           e(marketInternalBalance)
         );
 
-        // neokingdomToken wrapped balance
-        expect(
-          await neokingdomTokenExternal.balanceOf(neokingdomToken.address)
-        ).equal(e(neokingdomTokenWrappedBalance));
+        // governanceToken wrapped balance
+        expect(await neokingdomToken.balanceOf(governanceToken.address)).equal(
+          e(governanceTokenWrappedBalance)
+        );
 
         // User1 balances
-        expect(await neokingdomToken.balanceOf(user1.address)).equal(
+        expect(await governanceToken.balanceOf(user1.address)).equal(
           e(user1InternalBalance)
         );
-        expect(await neokingdomTokenExternal.balanceOf(user1.address)).equal(
+        expect(await neokingdomToken.balanceOf(user1.address)).equal(
           e(user1ExternalBalance)
         );
         expect(await tokenMock.balanceOf(user1.address)).equal(
@@ -1143,10 +1139,10 @@ describe("Integration", async () => {
         );
 
         // User2 balances
-        expect(await neokingdomToken.balanceOf(user2.address)).equal(
+        expect(await governanceToken.balanceOf(user2.address)).equal(
           e(user2InternalBalance)
         );
-        expect(await neokingdomTokenExternal.balanceOf(user2.address)).equal(
+        expect(await neokingdomToken.balanceOf(user2.address)).equal(
           e(user2ExternalBalance)
         );
         expect(await tokenMock.balanceOf(user2.address)).equal(
@@ -1154,10 +1150,10 @@ describe("Integration", async () => {
         );
 
         // User3 balances
-        expect(await neokingdomToken.balanceOf(user3.address)).equal(
+        expect(await governanceToken.balanceOf(user3.address)).equal(
           e(user3InternalBalance)
         );
-        expect(await neokingdomTokenExternal.balanceOf(user3.address)).equal(
+        expect(await neokingdomToken.balanceOf(user3.address)).equal(
           e(user3ExternalBalance)
         );
         expect(await tokenMock.balanceOf(user3.address)).equal(
@@ -1165,7 +1161,7 @@ describe("Integration", async () => {
         );
 
         // Reserve balances
-        expect(await neokingdomTokenExternal.balanceOf(reserve.address)).equal(
+        expect(await neokingdomToken.balanceOf(reserve.address)).equal(
           e(reserveExternalBalance)
         );
         expect(await tokenMock.balanceOf(reserve.address)).equal(
@@ -1181,7 +1177,7 @@ describe("Integration", async () => {
       await check({
         internalSupply: 130,
         externalSupply: 130,
-        neokingdomTokenWrappedBalance: 130,
+        governanceTokenWrappedBalance: 130,
         user1InternalBalance: 100,
         user2InternalBalance: 30,
       });
@@ -1191,7 +1187,7 @@ describe("Integration", async () => {
       await check({
         internalSupply: 130,
         externalSupply: 130,
-        neokingdomTokenWrappedBalance: 130,
+        governanceTokenWrappedBalance: 130,
         // +20
         marketInternalBalance: 20,
         // -20
@@ -1204,7 +1200,7 @@ describe("Integration", async () => {
       await check({
         internalSupply: 130,
         externalSupply: 130,
-        neokingdomTokenWrappedBalance: 130,
+        governanceTokenWrappedBalance: 130,
         // -5
         marketInternalBalance: 15,
         user1InternalBalance: 80,
@@ -1224,7 +1220,7 @@ describe("Integration", async () => {
         internalSupply: 115,
         externalSupply: 130,
         // -15
-        neokingdomTokenWrappedBalance: 115,
+        governanceTokenWrappedBalance: 115,
         // -15
         marketInternalBalance: 0,
         user1InternalBalance: 80,
@@ -1243,7 +1239,7 @@ describe("Integration", async () => {
         externalSupply: 110,
         marketInternalBalance: 0,
         // -20
-        neokingdomTokenWrappedBalance: 95,
+        governanceTokenWrappedBalance: 95,
         // -20
         user1InternalBalance: 60,
         // +20

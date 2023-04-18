@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
-  NeokingdomToken__factory,
+  GovernanceToken__factory,
   PriceOracle__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
@@ -49,7 +49,7 @@ function getDefaultConfigPath(
 type ContractFactory =
   | typeof ShareholderRegistry__factory
   | typeof ResolutionManager__factory
-  | typeof NeokingdomToken__factory
+  | typeof GovernanceToken__factory
   | typeof Voting__factory
   | typeof PriceOracle__factory;
 

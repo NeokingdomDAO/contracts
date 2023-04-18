@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 
 import {
-  NeokingdomToken__factory,
+  GovernanceToken__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
   Voting__factory,
@@ -33,10 +33,10 @@ task("setup", "Setup DAO")
       ResolutionManager__factory,
       "ResolutionManager"
     );
-    const neokingdomTokenContract = await loadContract(
+    const governanceTokenContract = await loadContract(
       hre,
-      NeokingdomToken__factory,
-      "NeokingdomToken"
+      GovernanceToken__factory,
+      "GovernanceToken"
     );
 
     /**
@@ -82,15 +82,15 @@ task("setup", "Setup DAO")
       deployer.address
     );
 
-    console.log("  NeokingdomToken");
+    console.log("  GovernanceToken");
     console.log("    grant RESOLUTION_ROLE to ResolutionManager");
-    await neokingdomTokenContract.grantRole(
+    await governanceTokenContract.grantRole(
       ROLES.RESOLUTION_ROLE,
       resolutionManagerContract.address
     );
 
     console.log("    grant OPERATOR_ROLE to deployer");
-    let tx = await neokingdomTokenContract.grantRole(
+    let tx = await governanceTokenContract.grantRole(
       ROLES.OPERATOR_ROLE,
       deployer.address
     );
@@ -107,14 +107,14 @@ task("setup", "Setup DAO")
     await votingContract.setShareholderRegistry(
       shareholderRegistryContract.address
     );
-    console.log("  Voting set NeokingdomToken");
-    await votingContract.setToken(neokingdomTokenContract.address);
-    console.log("  NeokingdomToken set ShareholderRegistry");
-    await neokingdomTokenContract.setShareholderRegistry(
+    console.log("  Voting set GovernanceToken");
+    await votingContract.setToken(governanceTokenContract.address);
+    console.log("  GovernanceToken set ShareholderRegistry");
+    await governanceTokenContract.setShareholderRegistry(
       shareholderRegistryContract.address
     );
-    console.log("  NeokingdomToken set Voting");
-    await neokingdomTokenContract.setVoting(votingContract.address);
+    console.log("  GovernanceToken set Voting");
+    await governanceTokenContract.setVoting(votingContract.address);
     console.log("  ShareholderRegistry set Voting");
     await shareholderRegistryContract.setVoting(votingContract.address);
 
@@ -160,18 +160,18 @@ task("setup", "Setup DAO")
       adminAddress
     );
 
-    console.log("  NeokingdomToken");
+    console.log("  GovernanceToken");
     console.log("    Grant DEFAULT_ADMIN_ROLE to admin");
-    await neokingdomTokenContract.grantRole(
+    await governanceTokenContract.grantRole(
       ROLES.DEFAULT_ADMIN_ROLE,
       adminAddress
     );
     console.log("    Grant OPERATOR_ROLE to admin");
-    await neokingdomTokenContract.grantRole(ROLES.OPERATOR_ROLE, adminAddress);
+    await governanceTokenContract.grantRole(ROLES.OPERATOR_ROLE, adminAddress);
     console.log("    Grant ESCROW_ROLE to admin");
-    await neokingdomTokenContract.grantRole(ROLES.ESCROW_ROLE, adminAddress);
+    await governanceTokenContract.grantRole(ROLES.ESCROW_ROLE, adminAddress);
     console.log("    Grant RESOLUTION_ROLE to admin");
-    await neokingdomTokenContract.grantRole(
+    await governanceTokenContract.grantRole(
       ROLES.RESOLUTION_ROLE,
       adminAddress
     );
@@ -213,14 +213,14 @@ task("setup", "Setup DAO")
         deployer.address
       );
 
-      console.log("  NeokingdomToken");
+      console.log("  GovernanceToken");
       console.log("    Remove OPERATOR_ROLE to deployer");
-      await neokingdomTokenContract.renounceRole(
+      await governanceTokenContract.renounceRole(
         ROLES.OPERATOR_ROLE,
         deployer.address
       );
       console.log("    Remove DEFAULT_ADMIN_ROLE to deployer");
-      tx = await neokingdomTokenContract.renounceRole(
+      tx = await governanceTokenContract.renounceRole(
         ROLES.DEFAULT_ADMIN_ROLE,
         deployer.address
       );

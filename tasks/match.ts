@@ -1,7 +1,7 @@
 import { parseEther } from "ethers/lib/utils";
 import { task } from "hardhat/config";
 
-import { NeokingdomToken__factory } from "../typechain";
+import { GovernanceToken__factory } from "../typechain";
 
 import { loadContract } from "../lib/config";
 
@@ -20,8 +20,8 @@ task("match-offer", "Match an offer")
     ) => {
       const contract = await loadContract(
         hre,
-        NeokingdomToken__factory,
-        "NeokingdomToken"
+        GovernanceToken__factory,
+        "GovernanceToken"
       );
 
       throw "Not implemented";

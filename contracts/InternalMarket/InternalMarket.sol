@@ -14,7 +14,7 @@ import "../extensions/HasRole.sol";
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     function initialize(
         DAORoles roles,
-        INeokingdomToken tokenInternal
+        IGovernanceToken tokenInternal
     ) public initializer {
         _initialize(tokenInternal, 7 days);
         _setRoles(roles);
@@ -44,7 +44,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     }
 
     function setInternalToken(
-        INeokingdomToken token
+        IGovernanceToken token
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
         _setInternalToken(token);
     }

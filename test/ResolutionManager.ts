@@ -9,7 +9,7 @@ import { ethers, network, upgrades } from "hardhat";
 import {
   DAORoles,
   DAORoles__factory,
-  NeokingdomToken,
+  GovernanceToken,
   ResolutionExecutorMock,
   ResolutionExecutorMock__factory,
   ResolutionManager,
@@ -37,7 +37,7 @@ describe("Resolution", async () => {
   let managingBoardStatus: string;
   let daoRoles: MockContract<DAORoles>;
   let voting: FakeContract<Voting>;
-  let token: FakeContract<NeokingdomToken>;
+  let token: FakeContract<GovernanceToken>;
   let resolution: ResolutionManager;
   let shareholderRegistry: FakeContract<ShareholderRegistry>;
   let resolutionExecutorMock: ResolutionExecutorMock;
@@ -54,7 +54,7 @@ describe("Resolution", async () => {
       await ethers.getSigners();
 
     voting = await smock.fake<Voting>("Voting");
-    token = await smock.fake<NeokingdomToken>("NeokingdomToken");
+    token = await smock.fake<GovernanceToken>("GovernanceToken");
     shareholderRegistry = await smock.fake<ShareholderRegistry>(
       "ShareholderRegistry"
     );
@@ -347,11 +347,11 @@ describe("Resolution", async () => {
         .setShareholderRegistry(managingBoard.address);
     });
 
-    it("allow the OPERATOR_ROLE to setNeokingdomToken", async () => {
+    it("allow the OPERATOR_ROLE to setGovernanceToken", async () => {
       daoRoles.hasRole
         .whenCalledWith(OPERATOR_ROLE, user1.address)
         .returns(true);
-      await resolution.connect(user1).setNeokingdomToken(managingBoard.address);
+      await resolution.connect(user1).setGovernanceToken(managingBoard.address);
     });
 
     it("doesn't allow anyone not with OPERATOR_ROLE to setVoting", async () => {
@@ -374,11 +374,11 @@ describe("Resolution", async () => {
       );
     });
 
-    it("doesn't allow anyone not with OPERATOR_ROLE to setNeokingdomToken", async () => {
+    it("doesn't allow anyone not with OPERATOR_ROLE to setGovernanceToken", async () => {
       await expect(
         resolution
           .connect(managingBoard)
-          .setNeokingdomToken(managingBoard.address)
+          .setGovernanceToken(managingBoard.address)
       ).revertedWith(
         `AccessControl: account ${managingBoard.address.toLowerCase()} ` +
           `is missing role ${OPERATOR_ROLE}`

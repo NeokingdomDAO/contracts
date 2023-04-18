@@ -45,17 +45,17 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) => c.deploy("PriceOracle"),
   (c) => c.deployProxy("Voting", [c.daoRoles.address]),
   (c) =>
-    c.deployProxy("NeokingdomToken", [
+    c.deployProxy("GovernanceToken", [
       c.daoRoles.address,
-      "NeokingdomTokenInternal",
+      "GovernanceTokenInternal",
       "NEOKI",
     ]),
-  (c) => c.deploy("NeokingdomTokenExternal", ["NeokingdomToken", "NEOK"]),
+  (c) => c.deploy("NeokingdomToken", ["GovernanceToken", "NEOK"]),
   (c) => c.deployProxy("RedemptionController", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("InternalMarket", [
       c.daoRoles.address,
-      c.neokingdomToken.address,
+      c.governanceToken.address,
     ]),
   (c) =>
     c.deployProxy("ShareholderRegistry", [
@@ -67,7 +67,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.deployProxy("ResolutionManager", [
       c.daoRoles.address,
       c.shareholderRegistry.address,
-      c.neokingdomToken.address,
+      c.governanceToken.address,
       c.voting.address,
     ]),
 
@@ -88,16 +88,13 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.shareholderRegistry.address
     ),
   (c) =>
-    c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.neokingdomToken.address),
+    c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.governanceToken.address),
   (c) =>
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
   (c) => c.daoRoles.grantRole(ROLES.MARKET_ROLE, c.internalMarket.address),
   (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.deployer.address),
   (c) =>
-    c.neokingdomTokenExternal.grantRole(
-      ROLES.MINTER_ROLE,
-      c.neokingdomToken.address
-    ),
+    c.neokingdomToken.grantRole(ROLES.MINTER_ROLE, c.governanceToken.address),
 
   // Set interdependencies
   //////////////////////////
@@ -107,21 +104,21 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
 
   // Voting
   (c) => c.voting.setShareholderRegistry(c.shareholderRegistry.address),
-  (c) => c.voting.setToken(c.neokingdomToken.address),
+  (c) => c.voting.setToken(c.governanceToken.address),
 
   // Token
-  (c) => c.neokingdomToken.setVoting(c.voting.address),
-  (c) => c.neokingdomToken.setTokenExternal(c.neokingdomTokenExternal.address),
+  (c) => c.governanceToken.setVoting(c.voting.address),
+  (c) => c.governanceToken.setTokenExternal(c.neokingdomToken.address),
   (c) =>
-    c.neokingdomToken.setRedemptionController(c.redemptionController.address),
+    c.governanceToken.setRedemptionController(c.redemptionController.address),
 
   // Token
-  (c) => c.neokingdomToken.setVoting(c.voting.address),
+  (c) => c.governanceToken.setVoting(c.voting.address),
   (c) =>
-    c.neokingdomToken.setRedemptionController(c.redemptionController.address),
+    c.governanceToken.setRedemptionController(c.redemptionController.address),
 
   // Registry
-  (c) => c.neokingdomToken.setVoting(c.voting.address),
+  (c) => c.governanceToken.setVoting(c.voting.address),
 
   (c) =>
     c.internalMarket.setRedemptionController(c.redemptionController.address),

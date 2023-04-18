@@ -10,7 +10,7 @@ import {
   DAORoles,
   DAORoles__factory,
   ERC20,
-  INeokingdomToken,
+  IGovernanceToken,
   IRedemptionController,
   IStdReference,
   InternalMarket,
@@ -34,7 +34,7 @@ describe("InternalMarket", async () => {
 
   let RESOLUTION_ROLE: string;
   let daoRoles: MockContract<DAORoles>;
-  let tokenInternal: FakeContract<INeokingdomToken>;
+  let tokenInternal: FakeContract<IGovernanceToken>;
   let registry: FakeContract<ShareholderRegistry>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
@@ -50,7 +50,7 @@ describe("InternalMarket", async () => {
   before(async () => {
     [deployer, alice, bob, carol, reserve] = await ethers.getSigners();
 
-    tokenInternal = await smock.fake("INeokingdomToken");
+    tokenInternal = await smock.fake("IGovernanceToken");
 
     usdc = await smock.fake("ERC20");
     usdc.decimals.returns(6);

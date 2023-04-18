@@ -7,8 +7,8 @@ import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../PriceOracle/IStdReference.sol";
 
-import "../NeokingdomTokenExternal/INeokingdomTokenExternal.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
+import "../GovernanceToken/IGovernanceToken.sol";
 
 import "hardhat/console.sol";
 
@@ -33,7 +33,7 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    INeokingdomToken public tokenInternal;
+    IGovernanceToken public tokenInternal;
 
     // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
@@ -50,7 +50,7 @@ contract InternalMarketBase {
     mapping(address => uint256) internal _vaultContributors;
 
     function _initialize(
-        INeokingdomToken _tokenInternal,
+        IGovernanceToken _tokenInternal,
         uint256 _offerDuration
     ) internal virtual {
         tokenInternal = _tokenInternal;
@@ -65,7 +65,7 @@ contract InternalMarketBase {
         return offers.end++;
     }
 
-    function _setInternalToken(INeokingdomToken token) internal virtual {
+    function _setInternalToken(IGovernanceToken token) internal virtual {
         tokenInternal = token;
     }
 

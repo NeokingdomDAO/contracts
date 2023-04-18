@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.16;
 
-import "../NeokingdomToken/NeokingdomToken.sol";
+import "../GovernanceToken/GovernanceToken.sol";
 import "../extensions/Roles.sol";
 
-contract NeokingdomTokenV2Mock is NeokingdomToken {
+contract GovernanceTokenV2Mock is GovernanceToken {
     function transfer(address, uint256) public virtual override returns (bool) {
-        require(false, "NeokingdomTokenV2: nopety nope");
+        require(false, "GovernanceTokenV2: nopety nope");
         return true;
     }
 }

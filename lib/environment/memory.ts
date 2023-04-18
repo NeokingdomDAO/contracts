@@ -3,9 +3,9 @@ import { ethers, upgrades } from "hardhat";
 
 import {
   DAORoles,
+  GovernanceToken,
   InternalMarket,
   NeokingdomToken,
-  NeokingdomTokenExternal,
   PriceOracle,
   RedemptionController,
   ResolutionManager,
@@ -72,12 +72,11 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
       case "InternalMarket":
         this.contracts.internalMarket = contract as InternalMarket;
         break;
+      case "GovernanceToken":
+        this.contracts.governanceToken = contract as GovernanceToken;
+        break;
       case "NeokingdomToken":
         this.contracts.neokingdomToken = contract as NeokingdomToken;
-        break;
-      case "NeokingdomTokenExternal":
-        this.contracts.neokingdomTokenExternal =
-          contract as NeokingdomTokenExternal;
         break;
       case "PriceOracle":
         this.contracts.priceOracle = contract as PriceOracle;

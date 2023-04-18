@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 import { task } from "hardhat/config";
 
 import {
-  NeokingdomToken__factory,
+  GovernanceToken__factory,
   ShareholderRegistry__factory,
 } from "../typechain";
 
@@ -89,8 +89,8 @@ task("mint", "Mint neokingdom tokens to an address")
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        NeokingdomToken__factory,
-        "NeokingdomToken"
+        GovernanceToken__factory,
+        "GovernanceToken"
       );
       const tx = await contract.mint(account, parseEther(amount));
       console.log("  Submitted tx", tx.hash);
@@ -106,8 +106,8 @@ task("mint-vesting", "Mint neokingdom tokens to an address, vesting")
     async ({ account, amount }: { account: string; amount: string }, hre) => {
       const contract = await loadContract(
         hre,
-        NeokingdomToken__factory,
-        "NeokingdomToken"
+        GovernanceToken__factory,
+        "GovernanceToken"
       );
       const tx = await contract.mintVesting(account, parseEther(amount));
       console.log("  Submitted tx", tx.hash);
@@ -121,8 +121,8 @@ task("balance", "Get tt balance")
   .setAction(async ({ account }: { account: string }, hre) => {
     const contract = await loadContract(
       hre,
-      NeokingdomToken__factory,
-      "NeokingdomToken"
+      GovernanceToken__factory,
+      "GovernanceToken"
     );
     const balance = await contract.balanceOf(account);
     console.log(`${account} has ${formatEther(balance)} tokens`);

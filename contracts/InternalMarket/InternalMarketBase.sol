@@ -206,18 +206,14 @@ contract InternalMarketBase {
     }
 
     function _burn(address from, uint256 amount) internal virtual {
-        // TODO: check if non-contributors should be able to burn this token
-        if (
+        assert(
             _shareholderRegistry.isAtLeast(
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
                 from
             )
-        ) {
-            _beforeWithdraw(from, amount);
-            tokenInternal.burn(address(this), amount);
-        } else {
-            tokenInternal.burn(from, amount);
-        }
+        );
+        _beforeWithdraw(from, amount);
+        tokenInternal.burn(address(this), amount);
     }
 
     function _deposit(address to, uint256 amount) internal virtual {

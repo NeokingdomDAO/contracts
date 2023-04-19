@@ -1,3 +1,12 @@
+---
+header-includes:
+  - \usepackage{setspace}
+  - \setstretch{1.25}
+  - \usepackage{xcolor}
+  - \usepackage{sectsty}
+  - \usepackage{titlesec}
+---
+
 # Whitepaper
 
 ## Introduction
@@ -182,7 +191,7 @@ By adopting this architectural pattern, we ensure that our smart contracts are m
 
 ### Smart Contracts
 
-![NeokingdomToken](https://user-images.githubusercontent.com/936916/233129921-463ffbbc-08a0-4187-be69-428839139543.svg)
+![NeokingdomToken](./images/contracts-simple.png)
 
 <!-- sol2uml class -hp -ht -hv -hm -hc -hn -hsc -he -hs -hf -d 1 -f svg -s -c -b NeokingdomToken,GovernanceToken,GovernanceTokenBase,ResolutionManager,ShareholderRegistry,ShareholderRegistryBase,Voting,VotingBase,InternalMarket,InternalMarketBase,RedemptionController  contracts -->
 
@@ -224,6 +233,6 @@ The `DAORoles` contract centralizes ACL management across multiple contracts in 
 
 ### Class Diagram with Functions
 
-![NeokingdomToken](https://user-images.githubusercontent.com/936916/233136280-a4619270-6b53-4010-862f-0ef6b5a0e4a7.svg)
+![NeokingdomToken](./images/contracts-full.png)
 
 <!-- sol2uml class -hp -ht -hv -hm -hc -hn -hsc -he -hs -d 1 -f svg -s -c -b NeokingdomToken,GovernanceToken,GovernanceTokenBase,ResolutionManager,ShareholderRegistry,ShareholderRegistryBase,Voting,VotingBase,InternalMarket,InternalMarketBase,RedemptionController  contracts -->

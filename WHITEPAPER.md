@@ -182,24 +182,7 @@ By adopting this architectural pattern, we ensure that our smart contracts are m
 
 ### Smart Contracts
 
-```
-+---------------------+         +-----------------------+
-| ShareholderRegistry |<------->|       Voting.sol      |
-+---------------------+         +-----------+-----------+
-           |                                |
-           |                    +-----------+-----------+
-           +------------------->| ResolutionManager.sol |
-                                +-----------+-----------+
-                                            |
-                               +------------+------------+         +----------------------+
-                               |   GovernanceToken.sol   |<------->| NeokingdomToken.sol  |
-                               +------------+------------+         +----------------------+
-                                            |
-                               +------------+------------+         +--------------------------+
-                               |  InternalMarket.sol     |<------->| RedemptionController.sol |
-                               +-------------------------+         +--------------------------+
-
-```
+![NeokingdomToken](https://user-images.githubusercontent.com/936916/233129921-463ffbbc-08a0-4187-be69-428839139543.svg)
 
 #### ShareholderRegistry.sol:
 

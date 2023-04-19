@@ -183,6 +183,9 @@ By adopting this architectural pattern, we ensure that our smart contracts are m
 ### Smart Contracts
 
 ![NeokingdomToken](https://user-images.githubusercontent.com/936916/233129921-463ffbbc-08a0-4187-be69-428839139543.svg)
+<!-- sol2uml class -hp -ht -hv -hm -hc -hn -hsc -he -hs -hf -d 1 -f svg -s -c -b NeokingdomToken,GovernanceToken,GovernanceTokenBase,ResolutionManager,ShareholderRegistry,ShareholderRegistryBase,Voting,VotingBase,InternalMarket,InternalMarketBase,RedemptionController  contracts -->
+
+Check Appendix for a more thorough diagram.
 
 #### ShareholderRegistry.sol:
 
@@ -215,3 +218,10 @@ The NeokingdomToken contract is a standard ERC-20 token with a 1:1 relationship 
 #### DAORoles.sol
 
 This contract provides a centralized access control list.
+
+## Appendix
+
+### Class Diagram with Functions
+
+![NeokingdomToken](https://user-images.githubusercontent.com/936916/233136280-a4619270-6b53-4010-862f-0ef6b5a0e4a7.svg)
+<!-- sol2uml class -hp -ht -hv -hm -hc -hn -hsc -he -hs -d 1 -f svg -s -c -b NeokingdomToken,GovernanceToken,GovernanceTokenBase,ResolutionManager,ShareholderRegistry,ShareholderRegistryBase,Voting,VotingBase,InternalMarket,InternalMarketBase,RedemptionController  contracts -->

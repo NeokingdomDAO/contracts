@@ -214,11 +214,11 @@ The `RedemptionController` contract manages the logic for determining the redeem
 
 #### NeokingdomToken.sol:
 
-The NeokingdomToken contract is a standard ERC-20 token with a 1:1 relationship with the Governance Token. It can be transferred and traded by anyone, but it does not provide special rights unless wrapped into a Governance Token by a KYC-compliant holder via the Internal Market. This maintains a clear distinction between the two tokens and their functionalities.
+The `NeokingdomToken` contract is a standard ERC-20 token with a 1:1 relationship with the Governance Token. It can be transferred and traded by anyone, but it does not provide special rights unless wrapped into a Governance Token by a KYC-compliant holder via the Internal Market. This maintains a clear distinction between the two tokens and their functionalities.
 
 #### DAORoles.sol
 
-The DAORoles.sol contract centralizes ACL management across multiple contracts in NEOKingdom DAO, streamlining access control and reducing the risk of errors or inconsistencies, providing a robust solution for all the smart contracts in our architecture.
+The `DAORoles` contract centralizes ACL management across multiple contracts in NEOKingdom DAO, streamlining access control and reducing the risk of errors or inconsistencies, providing a robust solution for all the smart contracts in our architecture.
 
 ## Appendix
 

@@ -166,9 +166,19 @@ Any contributor can create a resolution, which is then validated for legal valid
 
 ## Architecture
 
-### Introduction
-
 The Smart Contract System is designed to manage a decentralized autonomous organization (DAO) on the blockchain. It consists of several interlinked smart contracts that handle various aspects such as shareholder registry, governance tokens, voting, resolution management, internal market, redemption control, and the Neokingdom token. This overview is targeted at technical users familiar with Solidity development and blockchain concepts.
+
+### Code organization
+
+In the development of smart contracts, we follow a specific architectural design pattern to ensure modularity, upgradability, and maintainability. This structure involves the creation of a base contract and an extension contract for each smart contract in the system.
+
+The `<SmartContractName>Base.sol` serves as the foundation for the core functionality of the contract. It contains all the private or internal methods necessary for the contract to function. Public methods may be included to read the state, but no writable methods are exposed in the base contract. This design choice ensures that the core functionality is encapsulated and protected from external interactions. Additionally, base contracts are designed to be upgradeable, allowing the implementation of new features or improvements over time without affecting the system's stability.
+
+The `<SmartContractName>.sol` contract extends the functionality of its Base.sol counterpart. It exposes public writable methods while implementing the appropriate Access Control Lists (ACLs) to secure these methods. This separation of concerns allows developers to maintain control over the contract's core functionality while enabling the necessary interaction with external components and users.
+
+However, the `NeokingdomToken.sol` contract is intentionally designed to be non-upgradeable. This decision ensures that the token remains secure and stable, preventing any possibility of a rug-pull scenario. By making the `NeokingdomToken.sol` contract immutable, holders can trust that their tokens are safe and not subject to sudden changes or manipulations.
+
+By adopting this architectural pattern, we ensure that our smart contracts are modular and easily maintainable. The separation of core functionality from its public interface provides a clear distinction of responsibilities within each contract, promoting cleaner code and easier updates. Furthermore, the upgradeability feature inherent to the base contracts allows the system to evolve and adapt to new requirements and challenges without compromising its security or reliability.
 
 ### Smart Contracts
 

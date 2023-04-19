@@ -212,6 +212,6 @@ The `RedemptionController` contract manages the logic for determining the redeem
 
 The NeokingdomToken contract is a standard ERC-20 token with a 1:1 relationship with the Governance Token. It can be transferred and traded by anyone, but it does not provide special rights unless wrapped into a Governance Token by a KYC-compliant holder via the Internal Market. This maintains a clear distinction between the two tokens and their functionalities.
 
-### DAORoles.sol
+#### DAORoles.sol
 
 This contract provides a centralized access control list.

@@ -193,27 +193,27 @@ The Smart Contract System is designed to manage a decentralized autonomous organ
 
 #### ShareholderRegistry.sol:
 
-The ShareholderRegistry contract is an ERC-20 token that represents the company shares and serves as a single source of truth for KYC-compliant users. If a user owns a share, it signifies that they have been verified. The contract manages the status of each KYC-compliant user, assigning them roles such as investors, contributors, and board members. Share transfers are only permitted through DAO decisions, ensuring control and security within the organization. The ShareholderRegistry contract communicates with the Voting.sol contract to update the voting power of each contributor.
+The `ShareholderRegistry` contract is an ERC-20 token that represents the company shares and serves as a single source of truth for KYC-compliant users. If a user owns a share, it signifies that their identity has been verified. The contract manages the status of each KYC-compliant user, assigning them roles such as investors, contributors, and board members. Share transfers are only permitted through DAO decisions, ensuring control and security within the organization. The `ShareholderRegistry` contract communicates with the `Voting` contract to update the voting power of each contributor.
 
 #### GovernanceToken.sol:
 
-The GovernanceToken contract is an ERC-20 token designed exclusively for KYC-compliant users. It grants voting and dividend rights, ensuring active participation and engagement within the organization. Governance tokens can be traded internally among KYC-compliant users. The contract periodically mints new tokens based on the user's time contributions, rewarding active participation. The transferability of these tokens follows the internal tokenomics of the DAO. The GovernanceToken contract interacts with the NeokingdomToken.sol contract for token minting, wrapping, and unwrapping operations.
+The `GovernanceToken` contract is an ERC-20 token designed exclusively for KYC-compliant users. It grants voting and dividend rights, ensuring active participation and engagement within the organization. Governance tokens can be traded internally among contributors. The contract periodically mints new tokens based on the user's time contributions, rewarding active participation. The transferability of these tokens follows the internal tokenomics of the DAO. The `GovernanceToken` contract interacts with the `NeokingdomToken` contract for token minting, wrapping, and unwrapping operations. It also communicates with `RedemptionController` to update the amount of redeemable tokens.
 
 #### Voting.sol:
 
-The Voting contract is responsible for managing and tracking the voting power of each contributor. Voting power is calculated as the sum of Governance Tokens and Shareholder Registry Tokens held by a contributor. The contract also handles vote delegation, enabling a more flexible and efficient decision-making process within the organization.
+The `Voting` contract is responsible for managing and tracking the voting power of each contributor. Voting power is calculated as the sum of Governance Tokens and Shareholder Registry Tokens held by a contributor. The contract also handles vote delegation, enabling a more flexible and efficient decision-making process within the organization.
 
 #### ResolutionManager.sol:
 
-The ResolutionManager contract governs the DAO by managing the resolution process. It allows board members to validate resolutions, making them votable. Contributors can create and vote on resolutions, promoting active participation in organizational decisions. The contract accommodates different types of resolutions, with varying notice and voting periods depending on their impact on the DAO. It ensures that resolutions are votable within the established timeframes and keeps track of resolution outcomes. The ResolutionManager contract also allows for the execution of resolution payloads upon approval, such as rewarding contributors with Governance Tokens. It communicates with Voting.sol, GovernanceToken.sol, and ShareholderRegistry.sol to obtain information on voting power, token balance, share balance, and to take snapshots at each resolution approval.
+The `ResolutionManager` contract governs the DAO by managing the resolution process. It allows board members to validate resolutions, making them votable. Contributors can create and vote on resolutions, promoting active participation in organizational decisions. The contract accommodates different types of resolutions, with varying notice and voting periods depending on their impact on the DAO. It ensures that resolutions are votable within the established timeframes and keeps track of resolution outcomes. The `ResolutionManager` contract also allows for the execution of resolution payloads upon approval, such as rewarding contributors with Governance Tokens. It communicates with `Voting`, `GovernanceToken`, and `ShareholderRegistry` to obtain information on voting power, token balance, share balance, and to take snapshots at each resolution approval.
 
 #### InternalMarket.sol:
 
-The InternalMarket contract facilitates internal trading and redemption of governance tokens. It enables contributors to withdraw Governance Tokens into Neokingdom Tokens and deposit Neokingdom Tokens into Governance Tokens, providing flexibility in token management. The contract interacts with the RedemptionController.sol to regulate token redemption, ensuring a fair and controlled process. It also communicates with the GovernanceToken.sol contract to enable trades and to manage user withdrawals and deposits.
+The `InternalMarket` contract facilitates internal trading and redemption of governance tokens. It enables contributors to withdraw Governance Tokens into Neokingdom Tokens and deposit Neokingdom Tokens into Governance Tokens, providing flexibility in token management. The contract interacts with the `RedemptionController` to regulate token redemption, ensuring a fair and controlled process. It also communicates with the `GovernanceToken` contract to enable trades and to manage user withdrawals and deposits.
 
 #### RedemptionController.sol:
 
-The RedemptionController contract manages the logic for determining the redeemable amount of Governance Tokens for contributors at any given point in time. This ensures that the redemption process remains fair and in line with the organization's policies.
+The `RedemptionController` contract manages the logic for determining the redeemable amount of Governance Tokens for contributors at any given point in time. This ensures that the redemption process remains fair and in line with the organization's policies.
 
 #### NeokingdomToken.sol:
 

@@ -109,6 +109,16 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
+    customChains: [
+      {
+        network: "evmos",
+        chainId: 9001,
+        urls: {
+          apiURL: "https://escan.live/api",
+          browserURL: "https://escan.live",
+        },
+      },
+    ],
   },
   gasReporter: {
     currency: "EUR",

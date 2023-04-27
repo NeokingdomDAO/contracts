@@ -5,8 +5,10 @@ import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
+  DAORoles,
   GovernanceToken,
   InternalMarket,
+  NeokingdomToken,
   PriceOracle,
   RedemptionController,
   ResolutionManager,
@@ -194,8 +196,10 @@ export async function loadContracts(
   }
 
   return {
+    daoRoles: await _loadContract<DAORoles>("DAORoles"),
     internalMarket: await _loadContract<InternalMarket>("InternalMarket"),
     governanceToken: await _loadContract<GovernanceToken>("GovernanceToken"),
+    neokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
     priceOracle: await _loadContract<PriceOracle>("PriceOracle"),
     redemptionController: await _loadContract<RedemptionController>(
       "RedemptionController"

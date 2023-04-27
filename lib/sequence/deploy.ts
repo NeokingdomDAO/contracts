@@ -47,10 +47,10 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) =>
     c.deployProxy("GovernanceToken", [
       c.daoRoles.address,
-      "GovernanceTokenInternal",
-      "NEOKI",
+      "NEOKingdom DAO Governance",
+      "NEOKGOV",
     ]),
-  (c) => c.deploy("NeokingdomToken", ["GovernanceToken", "NEOK"]),
+  (c) => c.deploy("NeokingdomToken", ["NEOKingdom DAO", "NEOK"]),
   (c) => c.deployProxy("RedemptionController", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("InternalMarket", [
@@ -60,8 +60,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) =>
     c.deployProxy("ShareholderRegistry", [
       c.daoRoles.address,
-      "NeokingdomShare",
-      "NEOS",
+      "NeokingdomDAO Share",
+      "NEOKSHARE",
     ]),
   (c) =>
     c.deployProxy("ResolutionManager", [

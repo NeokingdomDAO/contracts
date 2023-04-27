@@ -1,5 +1,4 @@
 .openzeppelin/*31337*.json
-.openzeppelin/*666666*.json
 deployments/.nextstep
 deployments/666666*
 node_modules/
@@ -13,4 +12,6 @@ coverage*
 temp/*
 dist/*
 reports/*
+diagrams/*
+echidna/results/*
 .DS_Store

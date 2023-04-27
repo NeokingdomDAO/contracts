@@ -30,6 +30,11 @@ contract ShareholderRegistry is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    modifier zeroCheck(address address_) {
+        require(address_ != address(0), "ShareholderRegistry: 0x0 not allowed");
+        _;
+    }
+
     function snapshot()
         public
         virtual
@@ -49,7 +54,12 @@ contract ShareholderRegistry is
 
     function setVoting(
         IVoting voting
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(voting))
+    {
         _setVoting(voting);
     }
 

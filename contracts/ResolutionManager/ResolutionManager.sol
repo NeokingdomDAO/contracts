@@ -22,6 +22,11 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    modifier zeroCheck(address address_) {
+        require(address_ != address(0), "ResolutionManager: 0x0 not allowed");
+        _;
+    }
+
     function addResolutionType(
         string memory name,
         uint256 quorum,
@@ -40,19 +45,34 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
 
     function setShareholderRegistry(
         IShareholderRegistry shareholderRegistry
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(shareholderRegistry))
+    {
         _setShareholderRegistry(shareholderRegistry);
     }
 
     function setGovernanceToken(
         IGovernanceToken governanceToken
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(governanceToken))
+    {
         _setGovernanceToken(governanceToken);
     }
 
     function setVoting(
         IVoting voting
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(voting))
+    {
         _setVoting(voting);
     }
 

@@ -25,17 +25,34 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
         _;
     }
 
+    modifier zeroCheck(address address_) {
+        require(address_ != address(0), "Voting: 0x0 not allowed");
+        _;
+    }
+
     // Dependencies
 
     function setToken(
         IERC20Upgradeable token
-    ) external virtual override onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        override
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(token))
+    {
         super._setToken(token);
     }
 
     function setShareholderRegistry(
         IShareholderRegistry shareholderRegistry
-    ) external virtual override onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        override
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(shareholderRegistry))
+    {
         _setShareholderRegistry(shareholderRegistry);
     }
 

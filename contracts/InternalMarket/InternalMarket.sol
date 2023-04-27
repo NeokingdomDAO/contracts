@@ -23,6 +23,11 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    modifier zeroCheck(address address_) {
+        require(address_ != address(0), "InternalMarket: 0x0 not allowed");
+        _;
+    }
+
     function makeOffer(uint256 amount) public virtual {
         _makeOffer(_msgSender(), amount);
     }
@@ -45,32 +50,45 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
 
     function setInternalToken(
         IGovernanceToken token
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(token)) {
         _setInternalToken(token);
     }
 
     function setShareholderRegistry(
         IShareholderRegistry shareholderRegistry
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    )
+        public
+        onlyRole(Roles.RESOLUTION_ROLE)
+        zeroCheck(address(shareholderRegistry))
+    {
         _setShareholderRegistry(shareholderRegistry);
     }
 
     function setExchangePair(
         ERC20 token,
         IStdReference oracle
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    )
+        public
+        onlyRole(Roles.RESOLUTION_ROLE)
+        zeroCheck(address(token))
+        zeroCheck(address(oracle))
+    {
         _setExchangePair(token, oracle);
     }
 
     function setReserve(
         address reserve_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(reserve_)) {
         _setReserve(reserve_);
     }
 
     function setRedemptionController(
         IRedemptionController redemptionController_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    )
+        public
+        onlyRole(Roles.RESOLUTION_ROLE)
+        zeroCheck(address(redemptionController_))
+    {
         _setRedemptionController(redemptionController_);
     }
 

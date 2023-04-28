@@ -31,7 +31,7 @@ const DAY = 60 * 60 * 24;
 describe("Resolution", async () => {
   let snapshotId: string;
 
-  let resolutionId = 1;
+  let resolutionId = 25;
   let resolutionSnapshotId = 42;
 
   let managingBoardStatus: string;
@@ -1575,7 +1575,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await resolution.executeResolution(1);
+      await resolution.executeResolution(resolutionId);
     });
 
     it("should pass the given single parameter to the executor", async () => {
@@ -1588,7 +1588,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp + DAY * 2);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1))
+      await expect(resolution.executeResolution(resolutionId))
         .to.emit(resolutionExecutorMock, "MockExecutionSimple")
         .withArgs(42);
     });
@@ -1603,7 +1603,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1))
+      await expect(resolution.executeResolution(resolutionId))
         .to.emit(resolutionExecutorMock, "MockExecutionArray")
         .withArgs([42, 43]);
     });
@@ -1622,7 +1622,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp + DAY * 2);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1)).revertedWith(
+      await expect(resolution.executeResolution(resolutionId)).revertedWith(
         "Resolution: nothing to execute"
       );
     });
@@ -1648,7 +1648,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp + DAY * 2);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1))
+      await expect(resolution.executeResolution(resolutionId))
         .to.emit(resolutionExecutorMock, "MockExecutionSimple")
         .withArgs(42)
         .to.emit(resolutionExecutorMock, "MockExecutionSimple")
@@ -1668,7 +1668,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1)).revertedWith(
+      await expect(resolution.executeResolution(resolutionId)).revertedWith(
         "Resolution: not ended"
       );
     });
@@ -1684,7 +1684,7 @@ describe("Resolution", async () => {
           [dataSimpleFunction(0)]
         );
 
-      await expect(resolution.executeResolution(1)).revertedWith(
+      await expect(resolution.executeResolution(resolutionId)).revertedWith(
         "Resolution: not approved"
       );
     });
@@ -1703,7 +1703,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1)).revertedWith(
+      await expect(resolution.executeResolution(resolutionId)).revertedWith(
         "Resolution: not passed"
       );
     });
@@ -1718,9 +1718,9 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await resolution.executeResolution(1);
+      await resolution.executeResolution(resolutionId);
 
-      await expect(resolution.executeResolution(1)).revertedWith(
+      await expect(resolution.executeResolution(resolutionId)).revertedWith(
         "Resolution: already executed"
       );
     });
@@ -1737,7 +1737,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await expect(resolution.executeResolution(1)).revertedWith(
+      await expect(resolution.executeResolution(resolutionId)).revertedWith(
         "Resolution: execution failed"
       );
     });

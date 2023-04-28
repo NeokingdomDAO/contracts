@@ -41,8 +41,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Deploy Contracts
   /////////////////////
   (c) => c.deploy("DAORoles"),
-  (c) => c.deploy("TokenMock"),
-  (c) => c.deploy("PriceOracle"),
+  //(c) => c.deploy("TokenMock"),
+  //(c) => c.deploy("PriceOracle"),
   (c) => c.deployProxy("Voting", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("GovernanceToken", [
@@ -50,7 +50,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       "NEOKingdom DAO Governance",
       "NEOKGOV",
     ]),
-  //(c) => c.deploy("NeokingdomToken", ["NEOKingdom DAO", "NEOK"]),
+  (c) => c.deploy("NeokingdomToken", ["NEOKingdom DAO", "NEOK"]),
   (c) => c.deployProxy("RedemptionController", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("InternalMarket", [
@@ -71,8 +71,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.voting.address,
     ]),
 
-  (c) => c.priceOracle.relay(["EUR", "USD"], [1, 1], [1, 1]),
-  (c) => c.priceOracle.relay(["USDC", "USD"], [1, 1], [1, 1]),
+  //(c) => c.priceOracle.relay(["EUR", "USD"], [1, 1], [1, 1]),
+  //(c) => c.priceOracle.relay(["USDC", "USD"], [1, 1], [1, 1]),
 
   // Set ACLs
   /////////////
@@ -92,9 +92,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) =>
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
   (c) => c.daoRoles.grantRole(ROLES.MARKET_ROLE, c.internalMarket.address),
-  (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.deployer.address),
-  //(c) =>
-  //  c.neokingdomToken.grantRole(ROLES.MINTER_ROLE, c.governanceToken.address),
+  (c) =>
+    c.neokingdomToken.grantRole(ROLES.MINTER_ROLE, c.governanceToken.address),
 
   // Set interdependencies
   //////////////////////////
@@ -124,8 +123,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.internalMarket.setRedemptionController(c.redemptionController.address),
   (c) =>
     c.internalMarket.setExchangePair(
-      c.tokenMock.address,
-      c.priceOracle.address
+      "0x15c3eb3b621d1bff62cba1c9536b7c1ae9149b57",
+      "0x666CDb721838B1b8C0C234DAa0D9Dbc821103aA5"
     ),
   (c) => c.internalMarket.setReserve(c.reserve),
   (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),

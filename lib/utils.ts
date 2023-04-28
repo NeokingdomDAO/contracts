@@ -132,8 +132,10 @@ export async function _deployContract(
     try {
       await hre.run("verify", {
         address: contract.address,
-        constructorArgs: `deployments/${chainId}.${contractName}.arguments.json`,
-        contract: `contracts/${contractName}.sol:${contractName}`,
+        constructorArgs: proxy
+          ? undefined
+          : `deployments/${chainId}.${contractName}.arguments.json`,
+        //contract: `contracts/${contractName}.sol:${contractName}`,
       });
     } catch (e) {
       console.error(e);

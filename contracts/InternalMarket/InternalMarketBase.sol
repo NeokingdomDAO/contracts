@@ -17,7 +17,7 @@ contract InternalMarketBase {
         uint128 id,
         address from,
         uint256 amount,
-        uint256 createdAt
+        uint256 expiredAt
     );
 
     event OfferMatched(uint128 id, address from, address to, uint256 amount);

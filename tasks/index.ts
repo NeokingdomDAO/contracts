@@ -7,4 +7,3 @@ import "./role";
 import "./status";
 import "./types";
 import "./upgrade";
-import "./usdc";

@@ -76,7 +76,7 @@ describe("Upgrade", () => {
   describe("upgrades", async () => {
     var currentResolution: number;
     beforeEach(async () => {
-      currentResolution = 0;
+      currentResolution = 24;
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {

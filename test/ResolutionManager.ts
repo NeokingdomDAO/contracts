@@ -1440,10 +1440,10 @@ describe("Resolution", async () => {
       setupUser(user1, 51);
       await setupResolution(100);
 
-      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
       await mineEVMBlock();
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).true;
     });
 
@@ -1453,11 +1453,11 @@ describe("Resolution", async () => {
 
       await setupResolution(100);
 
-      await resolution.connect(user1).vote(1, true);
-      await resolution.connect(user2).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
+      await resolution.connect(user2).vote(resolutionId, true);
       await mineEVMBlock();
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).true;
     });
 
@@ -1465,10 +1465,10 @@ describe("Resolution", async () => {
       setupUser(user1, 50);
       await setupResolution(100);
 
-      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
       await mineEVMBlock();
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).false;
     });
 
@@ -1478,11 +1478,11 @@ describe("Resolution", async () => {
 
       await setupResolution(100);
 
-      await resolution.connect(user1).vote(1, true);
-      await resolution.connect(user2).vote(1, false);
+      await resolution.connect(user1).vote(resolutionId, true);
+      await resolution.connect(user2).vote(resolutionId, false);
       await mineEVMBlock();
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
 
       expect(result).false;
     });
@@ -1491,7 +1491,7 @@ describe("Resolution", async () => {
       setupUser(user1, 51);
       await setupResolution(100, true);
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).true;
     });
 
@@ -1499,9 +1499,9 @@ describe("Resolution", async () => {
       setupUser(user1, 51);
       await setupResolution(100, true);
 
-      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).false;
     });
 
@@ -1510,9 +1510,9 @@ describe("Resolution", async () => {
       setupUser(user2, 1);
       await setupResolution(100, true);
 
-      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).true;
     });
 
@@ -1521,10 +1521,10 @@ describe("Resolution", async () => {
       setupUser(user2, 1);
       await setupResolution(100, true);
 
-      await resolution.connect(user1).vote(1, true);
-      await resolution.connect(user2).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
+      await resolution.connect(user2).vote(resolutionId, true);
 
-      const result = await resolution.getResolutionResult(1);
+      const result = await resolution.getResolutionResult(resolutionId);
       expect(result).false;
     });
   });
@@ -1557,7 +1557,7 @@ describe("Resolution", async () => {
           [dataSimpleFunction(0), dataSimpleFunction(1)]
         );
 
-      const result = await resolution.getExecutionDetails(1);
+      const result = await resolution.getExecutionDetails(resolutionId);
 
       expect(result[0][0]).equal(resolutionExecutorMock.address);
       expect(result[0][1]).equal(user2.address);
@@ -1617,7 +1617,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
 
       await setEVMTimestamp(votingTimestamp + DAY * 2);
       await mineEVMBlock();
@@ -1643,7 +1643,7 @@ describe("Resolution", async () => {
       await setEVMTimestamp(votingTimestamp);
       await mineEVMBlock();
 
-      await resolution.connect(user1).vote(1, true);
+      await resolution.connect(user1).vote(resolutionId, true);
 
       await setEVMTimestamp(votingTimestamp + DAY * 2);
       await mineEVMBlock();

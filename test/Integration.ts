@@ -155,7 +155,7 @@ describe("Integration", async () => {
   describe("integration", async () => {
     var currentResolution: number;
     beforeEach(async () => {
-      currentResolution = 0;
+      currentResolution = 24;
     });
 
     async function _mintTokens(user: SignerWithAddress, tokens: number) {

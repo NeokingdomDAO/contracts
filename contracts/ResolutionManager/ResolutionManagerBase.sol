@@ -88,6 +88,7 @@ abstract contract ResolutionManagerBase {
         _shareholderRegistry = shareholderRegistry;
         _governanceToken = governanceToken;
         _voting = voting;
+        _currentResolutionId = 24;
 
         // TODO: check if there are any rounding errors
         _addResolutionType("amendment", 66, 14 days, 6 days, false);

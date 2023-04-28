@@ -1,29 +1,32 @@
+import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 
-import contributors from "../../dev-wallets.json";
-import { expandable } from "../internal/core";
+import { NeokingdomDAO, expandable } from "../internal/core";
 import {
   ContextGenerator,
   ContractContext,
+  Contributor,
   NeokingdomContracts,
   Sequence,
 } from "../internal/types";
 
 export type SetupContext = ContractContext & {
-  contributors: typeof contributors.contributors;
+  contributors: Contributor[];
 };
 
-export const generateSetupContext: ContextGenerator<SetupContext> =
-  async function (n) {
+export function generateSetupContext(contributors: Contributor[]) {
+  async function _generateSetupContext(n: NeokingdomDAO) {
     const contracts = (await n.loadContractsPartial()) as NeokingdomContracts;
     const context: SetupContext = {
       ...contracts,
-      contributors: contributors.contributors,
+      contributors: contributors,
     };
     return context;
-  };
+  }
+  return _generateSetupContext;
+}
 
-export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
+export const SETUP_SEQUENCE: Sequence<SetupContext> = [
   // Give each address one share
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(
@@ -47,6 +50,12 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
           contributor.address
         );
       }
+      if (contributor.status === "investor") {
+        return c.shareholderRegistry.setStatus(
+          await c.shareholderRegistry.INVESTOR_STATUS(),
+          contributor.address
+        );
+      }
       throw new Error("Unknown status for " + contributor);
     })
   ),
@@ -57,11 +66,14 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
       (contributor) => (c) =>
         c.governanceToken.mint(
           contributor.address,
-          parseEther(contributor.tokens.toString())
+          BigNumber.from(contributor.tokens.toString())
         )
     )
   ),
+];
 
+export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
+  ...SETUP_SEQUENCE,
   // Add testing resolution type
   (c) =>
     c.resolutionManager.addResolutionType(

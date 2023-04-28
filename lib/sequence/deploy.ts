@@ -50,7 +50,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       "NEOKingdom DAO Governance",
       "NEOKGOV",
     ]),
-  (c) => c.deploy("NeokingdomToken", ["NEOKingdom DAO", "NEOK"]),
+  //(c) => c.deploy("NeokingdomToken", ["NEOKingdom DAO", "NEOK"]),
   (c) => c.deployProxy("RedemptionController", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("InternalMarket", [
@@ -93,8 +93,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
   (c) => c.daoRoles.grantRole(ROLES.MARKET_ROLE, c.internalMarket.address),
   (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.deployer.address),
-  (c) =>
-    c.neokingdomToken.grantRole(ROLES.MINTER_ROLE, c.governanceToken.address),
+  //(c) =>
+  //  c.neokingdomToken.grantRole(ROLES.MINTER_ROLE, c.governanceToken.address),
 
   // Set interdependencies
   //////////////////////////

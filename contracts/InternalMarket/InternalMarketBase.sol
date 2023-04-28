@@ -10,8 +10,6 @@ import "../PriceOracle/IStdReference.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
 
-import "hardhat/console.sol";
-
 contract InternalMarketBase {
     event OfferCreated(
         uint128 id,

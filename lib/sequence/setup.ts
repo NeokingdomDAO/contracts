@@ -83,4 +83,10 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
       60 * 3,
       false
     ),
+  expandable((preprocessContext: SetupContext) =>
+    preprocessContext.contributors.map(
+      (contributor) => (c) =>
+        c.tokenMock.mint(contributor.address, parseEther("10000"))
+    )
+  ),
 ];

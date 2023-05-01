@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Set input and output filenames
-input_md="WHITEPAPER.md"
-output_pdf="WHITEPAPER.pdf"
+input_md="technical-overview.md"
+output_pdf="technical-overview.pdf"
 
 # Get the short version of the current Git commit hash
 gitcommit=$(git rev-parse --short HEAD)
 
 # Set the title and subtitle of the document
-title="DRAFT: NEOKingdom Whitepaper"
+title="NEOKingdom DAO Technical Overview"
 subtitle="(rev $gitcommit)"
 
 # Run Pandoc to generate the PDF with the current date and Git commit hash in the subtitle

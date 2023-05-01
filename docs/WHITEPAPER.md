@@ -7,87 +7,83 @@ header-includes:
   - \usepackage{titlesec}
 ---
 
-# Whitepaper
+# NEOKingdom DAO Technical Overview
 
 ## Introduction
 
-NEOKingdom DAO aims to revolutionize the traditional company structure by developing a new type of organization that is truly owned by its workers. By leveraging blockchain technology, we are building a company that values and rewards the efforts of those who contribute to its growth and success, fostering a sense of purpose and belonging.
+NEOKingdom DAO aims to lead by example and revolutionize the traditional company structures. We are advocating for a new type of technology empowered organizations that are truly owned by their contributors: DAOcracies. By leveraging blockchain technology, we are building entities that value and reward the efforts of those who contribute to their growth and success, fostering a sense of purpose and belonging.
 
-At NEOKingdom DAO, we are developing the legal and technical framework required to create and manage these new types of organizations, which we call "neokingdoms." A neokingdom is a limited liability company incorporated in Estonia, following our custom Articles of Association and Shareholders' Agreement.
+At NEOKingdom DAO, we are developing the legal and technical framework (hereinafter: Framework) required to create and manage these elevated organizations, which we call "neokingdoms." A neokingdom is a DAO wrapped into a limited liability company incorporated in Estonia, that uses our tested out custom Articles of Association, Shareholders' Agreement, and blockchain based technical solution for governance. All members of a DAO (hereinafter: Users) are also the shareholders of a respective underlying private limited company.
 
-Our mission is to establish neokingdoms as constitutional DAOcracies that serve a collective of individuals with a common goal. They emphasize fairness, decision-making, and rewarding value creators through technology. The ultimate aim is to improve the quality of life for everyone on Earth.
+The Framework is first developed and then deployed at NEOKingdom DAO and then offered to neokingdoms with individualized modifications. The Framework is built on the Ethereum Virtual Machine (EVM) and is legally compliant. Within the Framework, Users can vote and interact with NEOkingdom DAO or any of the neokingdoms by using the progressive web app developed by NEOKingdom DAO.
 
-Neokingdoms are built on the Ethereum Virtual Machine (EVM) and are legally compliant DAOs, supported by a legal model crafted by Oblicity, an Estonian law firm. We use Odoo, an open-source Enterprise Resource Planning System, as the digital backbone for real-world use cases. Users can vote and interact with the DAO using a progressive web app.
+To ensure the effectiveness of the proposed Framework, we have adopted a "dogfooding" approach by testing it on ourselves. On July 27th, 2022, the founders of NEOKingdom DAO transformed their existing brick-and-mortar company, teledisko GmbH, into the first neokingdom. We have been using this experience to refine the Framework to better address challenges and make the Framework available to every type of business in the future.
 
-The core principle behind neokingdoms is that contributors can invest their time or money in exchange for shares in the organization. These shares represent ownership, voting, and dividend rights.
+Currently, there are two active companies using the Framework: [teledisko DAO OÜ](https://ariregister.rik.ee/eng/company/16374990/teledisko-DAO-O%C3%9C), launched on July 27th, 2022 as a pilot project of the concept, and [NEOKingdom DAO OÜ](https://ariregister.rik.ee/eng/company/16638166/Neokingdom-DAO-O%C3%9C), launched in December 2022. There are 3-5 other companies in the pipeline to join the Framework as neokingdoms in 2023.
 
-To ensure the effectiveness of our system, we have adopted a "dogfooding" approach by testing it on ourselves. On July 27th, 2022, we transformed our company, teledisko GmbH, into the first neokingdom. We are using this experience to refine the legal and technical framework to better address challenges and make our framework available to everyone in the future.
+## User types in NEOKingdom DAO
 
-Currently, we have two active neokingdoms: [teledisko DAO OÜ](https://ariregister.rik.ee/eng/company/16374990/teledisko-DAO-O%C3%9C), launched on July 27th, 2022, and [NEOKingdom DAO OÜ](https://ariregister.rik.ee/eng/company/16638166/Neokingdom-DAO-O%C3%9C), launched in December 2022, which focuses on the legal and technical development of the project.
+The Framework has four primary types of users, each with different roles and access levels. This diverse user base allows for an inclusive and thriving ecosystem that supports the growth and success of a DAO.
 
-## Users in NEOKingdom DAO
-
-In NEOKingdom DAO, there are two primary types of users, each with different roles and access levels within the organization. These users are essential in ensuring the smooth functioning of the DAO and its continued growth.
+User types are divided between two major groups: KYC'd Users, who actively participate in the DAO’s decision-making process and access core functionalities of the Framework, and generic holders, who hold tokens for speculative purposes.
 
 ### Generic Holders
 
-Generic holders are users who hold the DAO's tokens for speculative purposes. These users may not have undergone the KYC process and may not have access to the core functionalities of the DAO. Their primary interest lies in the potential appreciation of the token's value over time.
-
-In summary, NEOKingdom DAO has two types of users: KYC'd users, who actively participate in the organization's decision-making process and access core functionalities, and generic holders, who hold tokens for speculative purposes. This diverse user base allows for an inclusive and thriving ecosystem that supports the growth and success of the DAO.
+Generic Holders are Users who hold a DAO token for speculative purposes. These users have not undergone the KYC process and do not have access to the functionalities of the Framework. Their primary interest lies in the potential appreciation of the token value over time.
 
 ### Investors
 
-This is the entry point for everyone. Each investor has to undergo a KYC procedure (Know Your Customer) to confirm their identity. These users have the right to obtain dividends at the end of the fiscal year, based on the amount of Governance Tokens owned.
+This user type is the entry point for everyone interested in actually gaining from the Framework. Each Investor has to undergo a KYC procedure (Know Your Customer) to confirm their identity. These Users have the right to obtain dividends at the end of the fiscal year, based on the amount of Governance Tokens (see definition below) owned.
 
 ### Contributors
 
-These users are Investors with additional privileges, as they have access to the core functionalities of the DAO:
+These Users are Investors with additional privileges, as they have access to the core functionalities of the Framework:
 
-- Creating Resolutions: they can propose new resolutions for consideration by the DAO.
-- Voting on Resolutions: they have the right to vote on resolutions, influencing the direction and decisions made by the DAO.
-- Internal Token Market: they can access the internal token market, where they can trade tokens representing ownership, voting, and dividend rights within the organization.
-- Wrapping/Unwrapping Tokens: they can convert their Governance Tokens into Neokingdom Tokens and viceversa, respecting the rules of the DAO (we will further discuss these two types of tokens later in this paper.)
+- Creating Resolutions: they can propose new resolutions for consideration by a DAO.
+- Voting on Resolutions: they have the right to vote on resolutions, influencing the direction and decisions made by a DAO.
+- Internal Token Market: they can access the internal token market of a DAO, where they can trade Governance Tokens with other Contributors.
+- Wrapping/Unwrapping Tokens: they can convert their Governance Tokens into Neokingdom Tokens and vice versa, respecting the rules of a DAO (we will further discuss these two types of tokens later in this paper.)
 
 ### Managing board
 
-On top of being Contributors, these users have additional rights related to the resolution administration. The role of the managing board member is solely to ensure that the resolutions are formally correct and do not gatekeep contributors from making decisions. They may approve, update, or reject the resolution based on its formal correctness.
+On top of being Contributors, these Users have additional rights related to the resolution administration. The role of the managing board is solely to ensure that the resolutions are formally correct, but they do not gatekeep Contributors from making decisions. They may approve, update, or reject the resolutions before voting based on their formal correctness only.
 
 ## Tokenomics
 
-In this chapter, we will discuss the tokenomics of the two tokens used in the NEOKingdom DAO: the Governance Token and the Neokingdom Token. We will delve into their use cases, how they are minted, their supply, and how they can be used by the different users within the system.
+In this chapter, we will discuss the tokenomics of the two tokens used in the Framework: the Governance Token and the Neokingdom Token. We will delve into their use cases, how they are minted, their supply, and how they can be used by the different Users within the ecosystem.
 
 ### Governance Token
 
-GovernanceToken represents ownership, voting, and dividend rights within the organization. It is designed exclusively for KYC-compliant users who actively participate in the DAO. The primary use cases for GovernanceTokens are:
+GovernanceToken gives access to User's ownership, voting, and dividend rights within the organization. It is designed exclusively for KYC-compliant Users. The primary use cases for GovernanceTokens are:
 
-1. Voting on resolutions and influencing the decision-making process within the DAO.
-2. Representing ownership in the organization and determining dividend distribution based on the amount of GovernanceTokens held.
+- Voting on resolutions and influencing the decision-making process within the DAO.
+- Representing the size of the ownership in the organization and determining dividend rights.
 
-GovernanceTokens are minted periodically, based on each contributor's time contribution to the organization. For every minted GovernanceToken, a corresponding NeokingdomToken is minted and vaulted in the GovernanceToken contract.
+Typically, GovernanceTokens are minted periodically, based on each Contributor's time contributed to the organization. GovernanceTokens are also minted ad-hoc based on User´s monetary or in-kind investments to the DAO. For every minted GovernanceToken, a corresponding NeokingdomToken is minted and vaulted in the GovernanceToken contract.
 
-GovernanceTokens can be traded internally among KYC-compliant users via the InternalMarket smart contract. Importantly, tokens traded internally have a fixed value of 1 Euro, creating a non-speculative trading system within the DAO.
+GovernanceTokens can be traded internally among KYC-compliant Users via the InternalMarket smart contract. Importantly, tokens traded internally have a fixed value of 1 Euro, creating a non-speculative trading system within the DAO.
 
-Contributors are required to offer their GovernanceTokens internally before being able to trade them in the secondary market. This is achieved by converting (wrapping) GovernanceTokens into NeokingdomTokens. Only after the internal offer period has passed and if no internal sale is made, can contributors unwrap and trade their tokens in the secondary market.
+Contributors are required to offer their GovernanceTokens internally before being able to trade them in the secondary market. The latter is achieved by converting (wrapping) GovernanceTokens into NeokingdomTokens. Only after the internal offer period has passed and if no internal sale is made, Contributors can wrap and trade their tokens in the secondary market.
 
-To facilitate liquidity for contributors, GovernanceTokens can be redeemed through the DAO. The DAO pays contributors in USDC and burns the redeemed tokens. This allows contributors to access liquidity for their efforts and "pay the bills" with the time they contributed to the organization.
+To facilitate liquidity for contributors, GovernanceTokens can be redeemed through the DAO. The DAO pays contributors in USDC and burns the redeemed tokens. This allows contributors to access liquidity for their efforts and "pay the bills" during times when there is no active secondary market for NeokingdomTokens. The DAO has created a special voluntary Trustworthiness Reserve for that purpose which grows in line with the number of GovernanceTokens minted over time.
 
 ### Neokingdom Token
 
-The Neokingdom Token is a standard ERC-20 token that has a 1:1 relationship with the Governance Token. The Neokingdom Token can be held and traded by anyone without any restrictions. However, it does not grant any special rights or privileges unless it is wrapped into a Governance Token by a KYC-compliant holder via the Internal Market. The primary use cases of the Neokingdom Token are:
+The Neokingdom Token is a standard ERC-20 token that has a 1:1 relationship with the Governance Token. The Neokingdom Token can be held and traded by anyone without any restrictions. However, it does not grant any special rights or privileges unless it is wrapped into a Governance Token by a KYC-compliant User. The primary use cases of the Neokingdom Token are:
 
-1. External token market: Neokingdom Tokens can be traded on external markets, providing liquidity and access for users who are not part of the DAO. This can result in speculative investments and potential appreciation in value.
-1. Wrapping/Unwrapping Tokens: KYC-compliant users can convert their Governance Tokens into Neokingdom Tokens and vice versa, according to the rules of the DAO. This allows for flexibility in managing token holdings and facilitates trading on external markets.
+- External token market: Neokingdom Tokens can be traded on external markets, providing liquidity and access for Users who are not members of the DAO (i.e. Generic Holders). This can result in speculative investments and potential appreciation in value.
+- Wrapping/Unwrapping Tokens: KYC-compliant Users can convert their Governance Tokens into Neokingdom Tokens and vice versa, according to the rules of the DAO. This allows for flexibility in managing token holdings and facilitates trading on internal and external markets.
 
-The total supply of Neokingdom Tokens is equal to the total supply of Governance Tokens, maintaining a 1:1 relationship. As new Governance Tokens are minted, an equal number of Neokingdom Tokens are also minted.
+A new Governance Token can be minted only after the DAO receives a contribution either in time, money or in-kind (with the ratio at least 1 euro worth contributed equals to 1 token minted). The total supply of Neokingdom Tokens is never more than the total supply of Governance Tokens, maintaining a 1:1 relationship. As new Governance Tokens are minted, an equal number of Neokingdom Tokens are also minted.
 
-### Token Usage by Users
+### Token Usage by User type
 
-1. Generic Holders: These users hold Neokingdom Tokens for speculative purposes, hoping for potential appreciation in value. They do not have access to the core functionalities of the DAO.
-1. Investors: These KYC-compliant users hold Governance Tokens, granting them the right to receive dividends. They do not have access to the core functionalities of the DAO.
-1. Contributors: These KYC-compliant users hold Governance Tokens, giving them access to the core functionalities of the DAO, such as creating and voting on resolutions, and using the internal token market. They can also wrap and unwrap tokens between Governance Tokens and Neokingdom Tokens.
-1. Managing board: These KYC-compliant users, in addition to being contributors, have the right to approve, reject, or update resolutions.
+1. Generic Holders: These Users hold Neokingdom Tokens for speculative purposes, hoping for potential appreciation in value. They do not have access to the functionalities of the Framework.
+1. Investors: These KYC-compliant Users hold Governance Tokens, granting them the right to receive dividends. They do not have access to the core functionalities of the Framework.
+1. Contributors: These KYC-compliant Users, in addition to being Investors, hold Governance Tokens, giving them access to the core functionalities of the Framework, such as creating and voting on resolutions, and using the internal token market. They can also wrap and unwrap tokens between Governance Tokens and Neokingdom Tokens.
+1. Managing board: These KYC-compliant Users, in addition to being contributors, have the right to approve, reject, or update resolutions before voting.
 
-In summary, the tokenomics of the NEOKingdom DAO are designed to create a diverse and thriving ecosystem that rewards users for their contributions, fosters active participation, and encourages speculative investments to support the growth and success of the organization.
+In summary, the tokenomics of the Framework is designed to create a diverse and thriving ecosystem that rewards mostly KYC compliant Users for their contributions, fosters active participation of Contributors, and encourages speculative investments from outsiders to support the growth and success of the DAO.
 
 ## Use cases
 
@@ -108,7 +104,7 @@ For the KYC process, new users provide necessary documents for verification. Onc
 Smart contracts involved:
 
 - `ShareholderRegistry.sol`:
-  - transfer a share from the founder to the new whitelisted wallet
+  - transfer a share from the DAO to the new whitelisted wallet
   - change the status of the wallet to `investor`
 
 ### Add a new contributor to the DAO
@@ -137,7 +133,7 @@ Smart contracts involved:
 - `GovernanceToken.sol`: mint new tokens and track the amount of tokens minted per contributor over time
 - `NeokingdomToken.sol`: wrap the newly minted Governance Tokens
 - `RedemptionController.sol`: track the amount of tokens minted per contributor over time
-- `Voting.sol`: update the total voting power of the DAO and the voting power of the new contributor
+- `Voting.sol`: update the voting power of each contributor, and the total voting power of all contributors within the DAO.
 
 ### Selling/exiting governance tokens
 
@@ -156,7 +152,7 @@ Smart contracts involved:
 
 ### Redeeming Governance Tokens
 
-The DAO allows contributors to redeem their tokens for 1 EUR each, enabling them to pay bills if no secondary market sale is possible. Contributors must first offer their Governance Tokens to the inner circle. After a 60-day window, the user can redeem the tokens. The Internal Market smart contract handles this action: Governance Tokens are burnt, and the appropriate amount of USDC is transferred from the DAO to the user wallet. Only tokens minted within the last 3 months and no earlier than 15 months in total can be redeemed.
+The DAO allows contributors to redeem their tokens for 1 EUR each, enabling them to pay bills if no secondary market sale is possible. Contributors must first offer their Governance Tokens to the inner circle (7 days) and then on the secondary market (53 days). After a 60-day window, the user can redeem the remaining tokens with additional limits on the number of tokens. The Internal Market smart contract handles this redeeming action: Governance Tokens are burnt, and the appropriate amount of USDC is transferred from the DAO to the user wallet. Only tokens minted within the last 3 active months within the last 15 months can be redeemed.
 
 - `InternalMarket.sol`: redeem tokens (exchange tokens for USDC with the DAO)
 - `Voting.sol`: when tokens are redeemed, update the total voting power of the DAO

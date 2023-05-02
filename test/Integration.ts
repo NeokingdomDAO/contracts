@@ -250,7 +250,7 @@ describe("Integration", async () => {
     // Create and approve resolution
     // Enough contributors vote yes to resolution
     // Resolution passes
-    it.only("successful resolution (multiple contributors)", async () => {
+    it("successful resolution (multiple contributors)", async () => {
       // board member has 1 share
       // user1 has 1 share + 65 tokens
       // user2 has 1 share + 32 tokens

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "",
+    "address": "0x02232ce750e72ff5059c5e0e2ecadfb923095601",
+    "status": "contributor",
+    "tokens": "3944270900000000000000"
+  },
+  {
+    "name": "",
+    "address": "0x0a0c93d0f0553ebf7b7bea31be6fc65e38cc9b6e",
+    "status": "board",
+    "tokens": "34221611100000000000000"
+  },
+  {
+    "name": "",
+    "address": "0x2804e85a5d84532e8610264feb75230a68ac7310",
+    "status": "contributor",
+    "tokens": "12250000000000000000000"
+  },
+  {
+    "name": "",
+    "address": "0x3685437a87d200950bf26846c154354442e3f7f7",
+    "status": "contributor",
+    "tokens": "33904554200000000000000"
+  },
+  {
+    "name": "",
+    "address": "0x4b2625de2d7236b18f728d8c56ae9d9fce910f9f",
+    "status": "contributor",
+    "tokens": "100000000000000000000"
+  },
+  {
+    "name": "",
+    "address": "0x4eb46ed918ab2a037086f9073d068ef3e9496c21",
+    "status": "contributor",
+    "tokens": "34484361500000000000000"
+  },
+  {
+    "name": "",
+    "address": "0x6fad70515affd92f668960270a90764e66ba74b7",
+    "status": "investor",
+    "tokens": "0"
+  },
+  {
+    "name": "",
+    "address": "0x8e2e09eb2a0a8e6e1d8de3e5fb09ec1e05b0cdbf",
+    "status": "contributor",
+    "tokens": "2301083300000000000000"
+  },
+  {
+    "name": "",
+    "address": "0xa64d568f331f2774d5cff492f2299505abc0186a",
+    "status": "board",
+    "tokens": "0"
+  },
+  {
+    "name": "",
+    "address": "0xace13f04231222a585573312ccf811e9e61ed958",
+    "status": "contributor",
+    "tokens": "1504999000000000000000"
+  },
+  {
+    "name": "",
+    "address": "0xb3c44fea8b4044fee00ffe23fcfbc753864b97ef",
+    "status": "contributor",
+    "tokens": "5105250000000000000000"
+  },
+  {
+    "name": "",
+    "address": "0xbded7c8a2efa4cf2ee6c953e6447a246f3ac4e12",
+    "status": "contributor",
+    "tokens": "8638750000000000000000"
+  },
+  {
+    "name": "",
+    "address": "0xff8438568a41be4d6675c40227a0600beb72530d",
+    "status": "contributor",
+    "tokens": "4137979200000000000000"
+  }
+]

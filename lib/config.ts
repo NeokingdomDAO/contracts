@@ -7,6 +7,7 @@ import {
   PriceOracle__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
+  TokenMock__factory,
   Voting__factory,
 } from "../typechain";
 
@@ -51,6 +52,7 @@ type ContractFactory =
   | typeof ResolutionManager__factory
   | typeof GovernanceToken__factory
   | typeof Voting__factory
+  | typeof TokenMock__factory
   | typeof PriceOracle__factory;
 
 export async function loadContract<T extends ContractFactory>(

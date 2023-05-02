@@ -92,7 +92,6 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   (c) =>
     c.daoRoles.grantRole(ROLES.TOKEN_MANAGER_ROLE, c.internalMarket.address),
   (c) => c.daoRoles.grantRole(ROLES.MARKET_ROLE, c.internalMarket.address),
-  (c) => c.daoRoles.grantRole(ROLES.MINTER_ROLE, c.deployer.address),
   (c) =>
     c.neokingdomToken.grantRole(ROLES.MINTER_ROLE, c.governanceToken.address),
 
@@ -126,6 +125,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.internalMarket.setExchangePair(
       c.tokenMock.address,
       c.priceOracle.address
+      //"0x15c3eb3b621d1bff62cba1c9536b7c1ae9149b57",
+      //"0x666CDb721838B1b8C0C234DAa0D9Dbc821103aA5"
     ),
   (c) => c.internalMarket.setReserve(c.reserve),
   (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),

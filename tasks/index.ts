@@ -1,10 +1,9 @@
 import "./delegate";
-import "./dev";
+import "./deploy";
 import "./match";
 import "./oracle";
 import "./resolution";
 import "./role";
-import "./setup";
 import "./status";
 import "./types";
 import "./upgrade";

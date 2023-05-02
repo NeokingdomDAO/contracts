@@ -38,6 +38,14 @@ export const FACTORIES = {
 } as const;
 
 export type ContractNames = keyof typeof FACTORIES;
+
+export type Contributor = {
+  name?: string;
+  address: string;
+  status: "contributor" | "board" | "investor";
+  tokens: string;
+};
+
 export type ContextGenerator<T extends Context> = (
   n: NeokingdomDAO
 ) => Promise<T>;

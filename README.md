@@ -8,40 +8,22 @@ Welcome to the Neokingdom DAO Contacts.
 
 Neokingdom DAO lives on EVMOS.
 
-### v0
-
-```
-Deploy DAO
-  Network: evmos
-  ChainId: 9001
-  Deployer address:
-
-
-⛏️  Mine contracts
-  Voting.sol
-    - proxy at
-    - implementation at
-
-  ShareholderRegistry.sol
-    - proxy at
-    - implementation at
-
-  GovernanceToken.sol
-    - proxy at
-    - implementation at
-
-  ResolutionManager.sol
-    - proxy at
-    - implementation at
-```
-
-- [Voting](https://escan.live/address/0x312A36442A7199623C91D219Fe981f1899817305) `0x312A36442A7199623C91D219Fe981f1899817305`
-- [ShareholderRegistry](https://escan.live/address/0xB795d74f9C395332D533cC6c1cb2A9437De1fee3) `0xB795d74f9C395332D533cC6c1cb2A9437De1fee3`
-- [GovernanceToken](https://escan.live/address/0xA31c18929590B87eC11D854d1424b059f1D94732) `0xA31c18929590B87eC11D854d1424b059f1D94732`
-- [ResolutionManager](https://escan.live/address/0x8ac36631c0C1B630FF50Bb653F5a2edc405873D0) `0x8ac36631c0C1B630FF50Bb653F5a2edc405873D0`
+- [NeokingdomToken (NEOK)](https://escan.live/address/0x655ecB57432CC1370f65e5dc2309588b71b473A9) `0x655ecB57432CC1370f65e5dc2309588b71b473A9`
+- [ShareholderRegistry (NEOS)](https://escan.live/address/0x4706eD7a10064801F260BBf94743f241FCEf815e) `0x4706eD7a10064801F260BBf94743f241FCEf815e`
+- [GovernanceToken](https://escan.live/address/0x05d1b2355721903152768F0ec1B105Be1c35BCb4) `0x05d1b2355721903152768F0ec1B105Be1c35BCb4`
+- [Voting](https://escan.live/address/0x5DC219C8CaeF7c9ECd0b97372e6Ef4fC5D827975) `0x5DC219C8CaeF7c9ECd0b97372e6Ef4fC5D827975`
+- [RedemptionController](https://escan.live/address/0x7045bfaB66B55074C56aBeE34308CDa0916e086C) `0x7045bfaB66B55074C56aBeE34308CDa0916e086C`
+- [InternalMarket](https://escan.live/address/0x7687155fB855e24d1416C288CbaC0AFC3B65353c) `0x7687155fB855e24d1416C288CbaC0AFC3B65353c`
+- [ResolutionManager](https://escan.live/address/0xE5714C29b7acE2C6a3A80BE511ED7e5b92594204) `0xE5714C29b7acE2C6a3A80BE511ED7e5b92594204`
+- [DAORoles](https://escan.live/address/0x6A176C92985430535E738A79749A4137BEC6C4Db) `0x6A176C92985430535E738A79749A4137BEC6C4Db`
 - [Operator SAFE on EVMOS](https://safe.evmos.org/evmos:0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758) `0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758`
 
 ## Commands
+
+```
+# Update readme
+python scripts/update-readme.py deployments/9001.network.json
+```
 
 ```
 # Clean the build dir, sometimes this is a good idea

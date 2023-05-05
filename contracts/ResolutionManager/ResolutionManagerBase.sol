@@ -460,7 +460,7 @@ abstract contract ResolutionManagerBase {
     {
         Resolution storage resolution = resolutions[resolutionId];
         require(
-            msg.sender != resolution.addressedContributor &&
+            voter != resolution.addressedContributor &&
                 _voting.canVoteAt(voter, resolution.snapshotId),
             "Resolution: account cannot vote"
         );

@@ -14,3 +14,5 @@ temp/*
 dist/*
 reports/*
 .DS_Store
+echidna/results
+diagrams/

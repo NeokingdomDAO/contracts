@@ -1,7 +1,4 @@
 import { TransactionResponse } from "@ethersproject/providers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Wallet } from "ethers";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   DAORoles,
@@ -107,27 +104,4 @@ export function isNeokingdomContracts(
     }
   }
   return true;
-}
-
-export type SetupContext = ContractContext & {
-  deployer: Wallet | SignerWithAddress;
-  contributors: Contributor[];
-  hre: HardhatRuntimeEnvironment;
-};
-
-export function generateSetupContext(
-  contributors: Contributor[],
-  hre: HardhatRuntimeEnvironment
-) {
-  async function _generateSetupContext(n: NeokingdomDAO) {
-    const contracts = (await n.loadContractsPartial()) as NeokingdomContracts;
-    const context: SetupContext = {
-      ...contracts,
-      contributors: contributors,
-      deployer: n.config.deployer,
-      hre: hre,
-    };
-    return context;
-  }
-  return _generateSetupContext;
 }

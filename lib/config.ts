@@ -13,7 +13,7 @@ import {
 
 import { ContractNames } from "./internal/types";
 
-export const DEFAULT_CONFIG_PATH = "./deployments/9000.network.json";
+export const DEFAULT_CONFIG_PATH = "./deployments/networks.json";
 export const DEFAULT_LOCALHOST_CONFIG_PATH =
   "./deployments/networks.localhost.json";
 

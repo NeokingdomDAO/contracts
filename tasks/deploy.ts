@@ -7,13 +7,8 @@ import {
   SETUP_SEQUENCE,
   STAGING_SETUP_SEQUENCE,
   generateDeployContext,
+  generateSetupContext,
 } from "../lib";
-import { generateSetupContext } from "../lib/internal/types";
-import {
-  OWNERSHIP_SEQUENCE_ACL,
-  PROXY_OWNERSHIP_SEQUENCE,
-  SETUP_SEQUENCE_VIGODARZERE,
-} from "../lib/sequence/temp";
 
 task("deploy", "Deploy DAO")
   .addFlag("verify", "Verify contracts")
@@ -44,30 +39,3 @@ task("setup", "Set up the DAO")
     });
     await neokingdom.run(generateSetupContext(contributors), sequence);
   });
-
-task("setup-vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
-  let sequence = SETUP_SEQUENCE_VIGODARZERE;
-
-  const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
-    verbose: true,
-  });
-  await neokingdom.run(generateSetupContext([], hre), sequence);
-});
-
-task("setup-acl", "Set up the DAO").setAction(async (_, hre) => {
-  let sequence = OWNERSHIP_SEQUENCE_ACL;
-
-  const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
-    verbose: true,
-  });
-  await neokingdom.run(generateSetupContext([], hre), sequence);
-});
-
-task("proxy-transfer", "Set up the DAO").setAction(async (_, hre) => {
-  let sequence = PROXY_OWNERSHIP_SEQUENCE;
-
-  const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
-    verbose: true,
-  });
-  await neokingdom.run(generateSetupContext([], hre), sequence);
-});

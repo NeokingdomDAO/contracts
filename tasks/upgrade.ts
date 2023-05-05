@@ -1,25 +1,29 @@
-/*import { task } from "hardhat/config";
-import { VotingV2__factory } from "../typechain";
-import { exportAddress } from "./config";
+import { task } from "hardhat/config";
 
-task("upgrade", "Upgrade Voting to VotingV2", async (_, hre) => {
-  const [deployer] = await hre.ethers.getSigners();
-  const votingV2Factory = (await hre.ethers.getContractFactory(
-    "VotingV2"
-  )) as VotingV2__factory;
+import { ResolutionManager__factory } from "../typechain";
 
-  console.log("Upgrade Voting -> VotingV2");
-  console.log("  Network:", hre.network.name);
+import { NeokingdomDAOHardhat } from "../lib";
 
-  const votingV2Contract = await hre.upgrades.upgradeProxy(
-    "0x55CBc8Fe2C6CC5F8c594709BF9dAef32Ae4Dd8d2",
-    votingV2Factory
-  );
-  await votingV2Contract.deployed();
+task(
+  "upgrade-resolution-manager",
+  "Upgrade ResolutionManager",
+  async (_, hre) => {
+    const resolutionFactory = (await hre.ethers.getContractFactory(
+      "ResolutionManager"
+    )) as ResolutionManager__factory;
 
-  console.log("    Address:", votingV2Contract.address);
-  console.log("Voting upgraded");
+    const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+    const contracts = await neokingdom.loadContracts();
+    console.log("Upgrade ResolutionManager");
+    console.log("  Network:", hre.network.name);
 
-  await exportAddress(hre, votingV2Contract, "VotingV2");
-});
-*/
+    const resolutionContract = await hre.upgrades.upgradeProxy(
+      contracts.resolutionManager.address,
+      resolutionFactory
+    );
+    await resolutionContract.deployed();
+
+    console.log("    Address:", resolutionContract.address);
+    console.log("Resolution upgraded");
+  }
+);

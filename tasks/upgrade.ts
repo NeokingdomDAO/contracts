@@ -1,6 +1,10 @@
 import { task } from "hardhat/config";
 
-import { ResolutionManager__factory } from "../typechain";
+import {
+  ProxyAdmin,
+  ProxyAdmin__factory,
+  ResolutionManager__factory,
+} from "../typechain";
 
 import { NeokingdomDAOHardhat } from "../lib";
 
@@ -27,3 +31,21 @@ task(
     console.log("Resolution upgraded");
   }
 );
+
+task("impl", "Get Proxy Impl")
+  .addParam("admin", "Proxy Admin")
+  .addParam("address", "Proxy address")
+  .setAction(
+    async ({ admin, address }: { admin: string; address: string }, hre) => {
+      const [deployer] = await hre.ethers.getSigners();
+      const ProxyAdmin = await hre.ethers.getContractFactory("ProxyAdmin");
+      const proxyAdmin = ProxyAdmin.attach(admin).connect(
+        deployer
+      ) as ProxyAdmin;
+
+      console.log(
+        "    Address:",
+        await proxyAdmin.getProxyImplementation(address)
+      );
+    }
+  );

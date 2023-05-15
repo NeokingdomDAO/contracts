@@ -68,7 +68,7 @@ task("setup:acl", "Set up ACL")
       }.`
     );
     const answer = await question(
-      "This action is irreversible. Press type 'GO' to continue.\n"
+      "This action is irreversible. Please type 'GO' to continue.\n"
     );
 
     if (answer == "GO") {

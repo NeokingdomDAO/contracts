@@ -1791,8 +1791,8 @@ describe("Resolution", async () => {
     });
 
     it("should prevent excluded contributor from voting", async () => {
-      await _prepare();
       setupUser(user2, 0);
+      await _prepare();
 
       await expect(
         resolution.connect(user2).vote(resolutionId, false)
@@ -1800,9 +1800,9 @@ describe("Resolution", async () => {
     });
 
     it("should not count excluded contributor balance for quorum", async () => {
-      await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40);
+      await _prepare();
 
       await resolution.connect(user1).vote(resolutionId, true);
 
@@ -1812,12 +1812,12 @@ describe("Resolution", async () => {
     });
 
     it("should not count excluded contributor shares for quorum", async () => {
-      await _prepare();
       setupUser(user2, 42, 0);
       setupUser(user1, 42, 40);
       shareholderRegistry.balanceOfAt
         .whenCalledWith(user2.address, resolutionSnapshotId)
         .returns(60);
+      await _prepare();
 
       await resolution.connect(user1).vote(resolutionId, true);
 
@@ -1827,9 +1827,9 @@ describe("Resolution", async () => {
     });
 
     it("should count excluded contributor delegated's balance for quorum", async () => {
-      await _prepare();
       setupUser(user2, 42, 60, user1);
       setupUser(user1, 42, 40);
+      await _prepare();
 
       await resolution.connect(user1).vote(resolutionId, true);
 
@@ -1839,12 +1839,12 @@ describe("Resolution", async () => {
     });
 
     it("should count excluded contributor delegated's shares for quorum", async () => {
-      await _prepare();
       setupUser(user2, 42, 60, user1);
       setupUser(user1, 42, 0);
       shareholderRegistry.balanceOfAt
         .whenCalledWith(user1.address, resolutionSnapshotId)
         .returns(40);
+      await _prepare();
 
       await resolution.connect(user1).vote(resolutionId, true);
 
@@ -1854,9 +1854,9 @@ describe("Resolution", async () => {
     });
 
     it("should count excluded contributor delegator's balance for quorum", async () => {
-      await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 40, user2);
+      await _prepare();
 
       await resolution.connect(user1).vote(resolutionId, true);
 
@@ -1866,18 +1866,43 @@ describe("Resolution", async () => {
     });
 
     it("should count excluded contributor delegator's shares for quorum", async () => {
-      await _prepare();
       setupUser(user2, 42, 60);
       setupUser(user1, 42, 0, user2);
       shareholderRegistry.balanceOfAt
         .whenCalledWith(user1.address, resolutionSnapshotId)
         .returns(40);
+      await _prepare();
 
       await resolution.connect(user1).vote(resolutionId, true);
 
       const result = await resolution.getResolutionResult(resolutionId);
 
       expect(result).to.be.true;
+    });
+
+    describe("getVoterVote", async () => {
+      it("should fail when asking stats for a user who is excluded", async () => {
+        setupUser(user2, 42, 60);
+        setupUser(user1, 42, 40);
+        await _prepare();
+
+        await expect(
+          resolution.getVoterVote(resolutionId, user2.address)
+        ).revertedWith("Resolution: account cannot vote");
+      });
+
+      it("should succeed when asking stats for a user who is not excluded", async () => {
+        setupUser(user2, 42, 60);
+        setupUser(user1, 42, 40);
+        await _prepare();
+
+        const result = await resolution.getVoterVote(
+          resolutionId,
+          user1.address
+        );
+
+        expect(result.hasVoted).equal(false);
+      });
     });
   });
 });

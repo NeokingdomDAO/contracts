@@ -78,10 +78,6 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       accounts: [LOCALHOST_PRIVATE_KEY],
     },
-    kovan: {
-      url: `https://kovan.infura.io/v3/${INFURA_API_KEY}`,
-      accounts: [KOVAN_PRIVATE_KEY],
-    },
     mumbai: {
       url: `https://polygon-testnet.blastapi.io/${BLAST_API_KEY}`,
       accounts: [MUMBAI_PRIVATE_KEY],
@@ -95,16 +91,8 @@ const config: HardhatUserConfig = {
       accounts: [TEVMOS_PRIVATE_KEY],
     },
     evmos: {
-      url: "https://eth.bd.evmos.org:8545",
+      url: "https://jsonrpc-evmos-ia.cosmosia.notional.ventures/",
       accounts: [EVMOS_PRIVATE_KEY],
-    },
-    "cronostestnet_338-3": {
-      url: "https://evm-t3.cronos.org/",
-      accounts: [TCRONOS_PRIVATE_KEY],
-    },
-    "cronosmainnet_25-1": {
-      url: "https://cronosrpc-1.xstaking.sg/",
-      accounts: [CRONOS_PRIVATE_KEY],
     },
   },
   etherscan: {

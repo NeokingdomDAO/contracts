@@ -7,6 +7,7 @@ import {
   InternalMarket,
   NeokingdomToken,
   PriceOracle,
+  ProxyAdmin,
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
@@ -95,6 +96,9 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
         break;
       case "Voting":
         this.contracts.voting = contract as Voting;
+        break;
+      case "ProxyAdmin":
+        this.contracts.proxyAdmin = contract as ProxyAdmin;
     }
   }
 }

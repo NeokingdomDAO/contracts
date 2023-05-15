@@ -5,6 +5,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   GovernanceToken__factory,
   PriceOracle__factory,
+  ProxyAdmin__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
   TokenMock__factory,
@@ -53,7 +54,8 @@ type ContractFactory =
   | typeof GovernanceToken__factory
   | typeof Voting__factory
   | typeof TokenMock__factory
-  | typeof PriceOracle__factory;
+  | typeof PriceOracle__factory
+  | typeof ProxyAdmin__factory;
 
 export async function loadContract<T extends ContractFactory>(
   hre: HardhatRuntimeEnvironment,

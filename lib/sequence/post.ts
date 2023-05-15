@@ -53,16 +53,14 @@ export const SETUP_SEQUENCE_VIGODARZERE: Sequence<SetupContext> = [
     ),
 ];
 
-export function multisigAccessSequence(
-  multisig: string
-): Sequence<SetupContext> {
+export function finalizeACL(multisig: string): Sequence<SetupContext> {
   return [
     (c) => c.daoRoles.grantRole(ROLES.DEFAULT_ADMIN_ROLE, multisig),
     (c) => c.daoRoles.grantRole(ROLES.OPERATOR_ROLE, multisig),
     (c) => c.daoRoles.grantRole(ROLES.RESOLUTION_ROLE, multisig),
-    (c) => {
-      console.log(c.deployer.address);
-      return c.proxyAdmin.transferOwnership(multisig);
-    },
+    (c) => c.proxyAdmin.transferOwnership(multisig),
+    (c) => c.daoRoles.revokeRole(ROLES.RESOLUTION_ROLE, c.deployer.address),
+    (c) => c.daoRoles.revokeRole(ROLES.OPERATOR_ROLE, c.deployer.address),
+    (c) => c.daoRoles.revokeRole(ROLES.DEFAULT_ADMIN_ROLE, c.deployer.address),
   ];
 }

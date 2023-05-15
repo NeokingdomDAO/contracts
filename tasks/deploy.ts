@@ -8,10 +8,7 @@ import {
   generateDeployContext,
 } from "../lib";
 import { generateSetupContext } from "../lib/internal/types";
-import {
-  SETUP_SEQUENCE_VIGODARZERE,
-  multisigAccessSequence,
-} from "../lib/sequence/post";
+import { SETUP_SEQUENCE_VIGODARZERE, finalizeACL } from "../lib/sequence/post";
 import { SETUP_SEQUENCE_TESTNET } from "../lib/sequence/setup";
 import { question } from "../lib/utils";
 
@@ -48,7 +45,7 @@ task("setup", "Set up the DAO")
     await neokingdom.run(generateSetupContext(contributors, hre), sequence);
   });
 
-task("setup-vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
+task("setup:vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
   let sequence = SETUP_SEQUENCE_VIGODARZERE;
 
   const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
@@ -57,7 +54,7 @@ task("setup-vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
   await neokingdom.run(generateSetupContext([], hre), sequence);
 });
 
-task("multisig-access", "Set up access to DAO")
+task("setup:acl", "Set up ACL")
   .addFlag("mainnet", "Go to mainnet")
   .setAction(async ({ mainnet }: { mainnet: boolean }, hre) => {
     let multisig = MULTISIG_TESTNET;
@@ -75,7 +72,7 @@ task("multisig-access", "Set up access to DAO")
     );
 
     if (answer == "GO") {
-      let sequence = multisigAccessSequence(multisig);
+      let sequence = finalizeACL(multisig);
 
       const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
         verbose: true,

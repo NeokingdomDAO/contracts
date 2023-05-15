@@ -70,7 +70,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.governanceToken.address,
       c.voting.address,
     ]),
-
+  (c) => c.deploy("ProxyAdmin"),
   (c) => c.priceOracle.relay(["EUR", "USD"], [1, 1], [1, 1]),
   (c) => c.priceOracle.relay(["USDC", "USD"], [1, 1], [1, 1]),
 

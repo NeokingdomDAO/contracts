@@ -261,16 +261,16 @@ contract InternalMarketBase {
         Offers storage offers = _offers[account];
 
         uint256 vault = _vaultContributors[account];
-        uint256 unlocked = vault;
+        uint256 offered = 0;
 
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];
 
-            if (block.timestamp <= offer.expiredAt) {
-                unlocked -= offer.amount;
+            if (block.timestamp < offer.expiredAt) {
+                offered += offer.amount;
             }
         }
-        return (vault - unlocked, unlocked);
+        return (offered, vault - offered);
     }
 
     // Tokens owned by a contributor that are offered to other contributors

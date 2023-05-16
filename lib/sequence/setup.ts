@@ -1,30 +1,8 @@
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 
-import { NeokingdomDAO, expandable } from "../internal/core";
-import {
-  ContextGenerator,
-  ContractContext,
-  Contributor,
-  NeokingdomContracts,
-  Sequence,
-} from "../internal/types";
-
-export type SetupContext = ContractContext & {
-  contributors: Contributor[];
-};
-
-export function generateSetupContext(contributors: Contributor[]) {
-  async function _generateSetupContext(n: NeokingdomDAO) {
-    const contracts = (await n.loadContractsPartial()) as NeokingdomContracts;
-    const context: SetupContext = {
-      ...contracts,
-      contributors: contributors,
-    };
-    return context;
-  }
-  return _generateSetupContext;
-}
+import { expandable } from "../internal/core";
+import { Sequence, SetupContext } from "../internal/types";
 
 export const SETUP_SEQUENCE: Sequence<SetupContext> = [
   // Give each address one share
@@ -72,7 +50,7 @@ export const SETUP_SEQUENCE: Sequence<SetupContext> = [
   ),
 ];
 
-export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
+export const SETUP_SEQUENCE_TESTNET: Sequence<SetupContext> = [
   ...SETUP_SEQUENCE,
   // Add testing resolution type
   (c) =>

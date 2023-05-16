@@ -5,10 +5,15 @@ import {
   DEPLOY_SEQUENCE,
   NeokingdomDAOHardhat,
   SETUP_SEQUENCE,
-  STAGING_SETUP_SEQUENCE,
   generateDeployContext,
-  generateSetupContext,
 } from "../lib";
+import { generateSetupContext } from "../lib/internal/types";
+import { SETUP_SEQUENCE_VIGODARZERE, finalizeACL } from "../lib/sequence/post";
+import { SETUP_SEQUENCE_TESTNET } from "../lib/sequence/setup";
+import { question } from "../lib/utils";
+
+const MULTISIG_MAINNET = "0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758";
+const MULTISIG_TESTNET = "0x7549fe2ED3c16240f97FE736146347409C6dD81D";
 
 task("deploy", "Deploy DAO")
   .addFlag("verify", "Verify contracts")
@@ -24,11 +29,11 @@ task("deploy", "Deploy DAO")
   );
 
 task("setup", "Set up the DAO")
-  .addFlag("prod", "Go to prod")
-  .setAction(async ({ prod }: { prod: boolean }, hre) => {
-    let sequence = STAGING_SETUP_SEQUENCE;
+  .addFlag("mainnet", "Go to Mainnet")
+  .setAction(async ({ mainnet }: { mainnet: boolean }, hre) => {
+    let sequence = SETUP_SEQUENCE_TESTNET;
     let contributorsFile = "./dev-wallets.json";
-    if (prod) {
+    if (mainnet) {
       sequence = SETUP_SEQUENCE;
       contributorsFile = "./prod-wallets.json";
     }
@@ -37,5 +42,41 @@ task("setup", "Set up the DAO")
     const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
       verbose: true,
     });
-    await neokingdom.run(generateSetupContext(contributors), sequence);
+    await neokingdom.run(generateSetupContext(contributors, hre), sequence);
+  });
+
+task("setup:vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
+  let sequence = SETUP_SEQUENCE_VIGODARZERE;
+
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
+    verbose: true,
+  });
+  await neokingdom.run(generateSetupContext([], hre), sequence);
+});
+
+task("setup:acl", "Set up ACL")
+  .addFlag("mainnet", "Go to mainnet")
+  .setAction(async ({ mainnet }: { mainnet: boolean }, hre) => {
+    let multisig = MULTISIG_TESTNET;
+    if (mainnet) {
+      multisig = MULTISIG_MAINNET;
+    }
+
+    console.log(
+      `Transferring rights and ProxyAdmin ownership to ${multisig} on ${
+        mainnet ? "Mainnet" : "Testnet"
+      }.`
+    );
+    const answer = await question(
+      "This action is irreversible. Please type 'GO' to continue.\n"
+    );
+
+    if (answer == "GO") {
+      let sequence = finalizeACL(multisig);
+
+      const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
+        verbose: true,
+      });
+      await neokingdom.run(generateSetupContext([], hre), sequence);
+    }
   });

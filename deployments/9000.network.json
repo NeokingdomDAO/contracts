@@ -48,5 +48,10 @@
     "address": "0x4296d7b37F7d23A8910BF849E1F6ff9a80F68242",
     "blockNumber": 14023638,
     "blockHash": "0x6903d980644bf1b65d851fd14546e1fbc1f6652bd59b6df3ebf8b8192117e35f"
+  },
+  "ProxyAdmin": {
+    "address": "0x7f1E2778dA4B6c9ce90cEb27835c29e5dF29b062",
+    "blockNumber": 14024376,
+    "blockHash": "0x63d209ead3e2b72ce4d6b7ae31fb6484a29d65111cde2420aef2c600372425e3"
   }
 }

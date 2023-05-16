@@ -4,5 +4,6 @@ import "./oracle";
 import "./resolution";
 import "./role";
 import "./status";
+import "./tokens.ts";
 import "./types";
 import "./upgrade";

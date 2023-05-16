@@ -483,63 +483,92 @@ describe("InternalMarket", async () => {
     describe("matchOffer", async () => {
       let ts: number;
 
-      beforeEach(async () => {
-        // At the end of this method we have:
-        //
-        // - An offer made on `ts`
-        // - An offer made on `ts + 2 days`
-        // - An offer made on `ts + 4 days`
-        await internalMarket.connect(alice).makeOffer(11);
+      describe("standard flow", async () => {
+        beforeEach(async () => {
+          // At the end of this method we have:
+          //
+          // - An offer made on `ts`
+          // - An offer made on `ts + 2 days`
+          // - An offer made on `ts + 4 days`
+          await internalMarket.connect(alice).makeOffer(11);
+          ts = await getEVMTimestamp();
+
+          // Move to the next day and make another offer
+          await setEVMTimestamp(ts + DAY * 2);
+          await internalMarket.connect(alice).makeOffer(25);
+
+          // Move to the next day and make another offer
+          await setEVMTimestamp(ts + DAY * 4);
+          await internalMarket.connect(alice).makeOffer(35);
+        });
+
+        it("should match the oldest active offer", async () => {
+          await expect(
+            internalMarket.connect(bob).matchOffer(alice.address, 11)
+          )
+            .emit(internalMarket, "OfferMatched")
+            .withArgs(0, alice.address, bob.address, 11);
+          expect(tokenInternal.transfer).calledWith(bob.address, 11);
+        });
+
+        it("should match the oldest active offer and ignore the expired ones", async () => {
+          // Make offer `11` expire
+          await setEVMTimestamp(ts + WEEK + DAY);
+          await expect(
+            internalMarket.connect(bob).matchOffer(alice.address, 25)
+          )
+            .emit(internalMarket, "OfferMatched")
+            .withArgs(1, alice.address, bob.address, 25);
+          expect(tokenInternal.transfer).calledWith(bob.address, 25);
+        });
+
+        it("should match multiple active offers from the old one to the new one", async () => {
+          await expect(
+            internalMarket.connect(bob).matchOffer(alice.address, 11 + 25 + 1)
+          )
+            .emit(internalMarket, "OfferMatched")
+            .withArgs(0, alice.address, bob.address, 11)
+            .emit(internalMarket, "OfferMatched")
+            .withArgs(1, alice.address, bob.address, 25)
+            .emit(internalMarket, "OfferMatched");
+          expect(tokenInternal.transfer).calledWith(bob.address, 11 + 25 + 1);
+        });
+
+        it("should not allow to match more than what's available", async () => {
+          await expect(
+            internalMarket.connect(bob).matchOffer(alice.address, 11 + 25 + 36)
+          ).revertedWith("InternalMarket: amount exceeds offer");
+        });
+
+        it("should not allow to match more than what's available when old offers expire", async () => {
+          // Make offer `11` and `15` expire
+          await setEVMTimestamp(ts + WEEK + DAY * 3);
+          await expect(
+            internalMarket.connect(bob).matchOffer(alice.address, 36)
+          ).revertedWith("InternalMarket: amount exceeds offer");
+        });
+      });
+
+      it("should not allow matching already expired offers", async () => {
+        // Offer1 10
+        await internalMarket.connect(alice).makeOffer(10);
         ts = await getEVMTimestamp();
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 2);
-        await internalMarket.connect(alice).makeOffer(25);
 
-        // Move to the next day and make another offer
-        await setEVMTimestamp(ts + DAY * 4);
-        await internalMarket.connect(alice).makeOffer(35);
-      });
+        // Offer2 1000
+        await internalMarket.connect(alice).makeOffer(10);
 
-      it("should match the oldest active offer", async () => {
-        await expect(internalMarket.connect(bob).matchOffer(alice.address, 11))
-          .emit(internalMarket, "OfferMatched")
-          .withArgs(0, alice.address, bob.address, 11);
-        expect(tokenInternal.transfer).calledWith(bob.address, 11);
-      });
+        // Offer1 expires
+        await setEVMTimestamp(ts + DAY * 7);
 
-      it("should match the oldest active offer and ignore the expired ones", async () => {
-        // Make offer `11` expire
-        await setEVMTimestamp(ts + WEEK + DAY);
-        await expect(internalMarket.connect(bob).matchOffer(alice.address, 25))
-          .emit(internalMarket, "OfferMatched")
-          .withArgs(1, alice.address, bob.address, 25);
-        expect(tokenInternal.transfer).calledWith(bob.address, 25);
-      });
+        // User tries to match 1000
+        await internalMarket.connect(bob).matchOffer(alice.address, 10);
 
-      it("should match multiple active offers from the old one to the new one", async () => {
+        // User tries to match 1000 and fails
         await expect(
-          internalMarket.connect(bob).matchOffer(alice.address, 11 + 25 + 1)
-        )
-          .emit(internalMarket, "OfferMatched")
-          .withArgs(0, alice.address, bob.address, 11)
-          .emit(internalMarket, "OfferMatched")
-          .withArgs(1, alice.address, bob.address, 25)
-          .emit(internalMarket, "OfferMatched");
-        expect(tokenInternal.transfer).calledWith(bob.address, 11 + 25 + 1);
-      });
-
-      it("should not allow to match more than what's available", async () => {
-        await expect(
-          internalMarket.connect(bob).matchOffer(alice.address, 11 + 25 + 36)
-        ).revertedWith("InternalMarket: amount exceeds offer");
-      });
-
-      it("should not allow to match more than what's available when old offers expire", async () => {
-        // Make offer `11` and `15` expire
-        await setEVMTimestamp(ts + WEEK + DAY * 3);
-        await expect(
-          internalMarket.connect(bob).matchOffer(alice.address, 36)
+          internalMarket.connect(bob).matchOffer(alice.address, 10)
         ).revertedWith("InternalMarket: amount exceeds offer");
       });
 
@@ -671,6 +700,7 @@ describe("InternalMarket", async () => {
         });
 
         it("should exchange the 1 DAO token sat for 0 USDC sats", async () => {
+          await internalMarket.connect(alice).makeOffer(1);
           await internalMarket.connect(bob).matchOffer(alice.address, 1);
           expect(tokenInternal.transfer).calledWith(bob.address, 1);
           expect(usdc.transferFrom).calledWith(bob.address, alice.address, 0);

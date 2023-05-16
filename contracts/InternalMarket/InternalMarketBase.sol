@@ -140,21 +140,6 @@ contract InternalMarketBase {
     ) internal virtual {
         Offers storage offers = _offers[from];
 
-        // offers.start = 0
-        // i = 0
-        // vaultContributors = 6000
-        // offers = [1000, 5000]
-        // expired ----|    |
-        // matched ---------|
-
-        // offers.start = 1
-        // i = 1
-        // vaultContributors = 1000
-        // offers = [, 5000]
-
-        // ...
-        // start = 1
-        // offers = [, 5000]
         for (uint128 i = offers.start; i < offers.end && amount > 0; i++) {
             Offer storage offer = offers.offer[i];
             if (block.timestamp < offer.expiredAt) {
@@ -276,11 +261,6 @@ contract InternalMarketBase {
 
         uint256 vault = _vaultContributors[account];
         uint256 unlocked = 0;
-
-        // offers.start = 1
-        // i = 1
-        // vaultContributors = 1000
-        // offers = [, 5000]
 
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];

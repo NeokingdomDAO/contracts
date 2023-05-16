@@ -850,76 +850,106 @@ describe("InternalMarket", async () => {
     });
 
     describe("balances", async () => {
-      let ts: number;
-      const DAY = 60 * 60 * 24;
-      const WEEK = DAY * 7;
+      describe("standard flow", async () => {
+        let ts: number;
+        const DAY = 60 * 60 * 24;
+        const WEEK = DAY * 7;
 
-      beforeEach(async () => {
-        // At the end of this method we have:
-        //
-        // - An offer made on `ts`
-        // - An offer made on `ts + 2 days`
-        // - An offer made on `ts + 4 days`
-        await internalMarket.connect(alice).makeOffer(11);
-        ts = await getEVMTimestamp();
+        beforeEach(async () => {
+          // At the end of this method we have:
+          //
+          // - An offer made on `ts`
+          // - An offer made on `ts + 2 days`
+          // - An offer made on `ts + 4 days`
+          await internalMarket.connect(alice).makeOffer(11);
+          ts = await getEVMTimestamp();
+
+          // Move to the next day and make another offer
+          await setEVMTimestamp(ts + DAY * 2);
+          await internalMarket.connect(alice).makeOffer(25);
+
+          // Move to the next day and make another offer
+          await setEVMTimestamp(ts + DAY * 4);
+          await internalMarket.connect(alice).makeOffer(35);
+        });
+
+        describe("offeredBalanceOf", async () => {
+          it("should be equal to the amount of tokens offered", async () => {
+            await mineEVMBlock();
+            expect(
+              await internalMarket
+                .connect(alice)
+                .offeredBalanceOf(alice.address)
+            ).equal(11 + 25 + 35);
+          });
+
+          it("should be equal to the amount of tokens offered minus the expired offers", async () => {
+            // Make offer `11` expire
+            await setEVMTimestamp(ts + WEEK + DAY);
+            await mineEVMBlock();
+            expect(
+              await internalMarket
+                .connect(alice)
+                .offeredBalanceOf(alice.address)
+            ).equal(25 + 35);
+          });
+
+          it("should be equal to 0 for bob", async () => {
+            expect(await internalMarket.offeredBalanceOf(bob.address)).equal(0);
+          });
+        });
+
+        describe("withdrawableBalanceOf", async () => {
+          it("should be equal to zero when alice just started offering their tokens", async () => {
+            await mineEVMBlock();
+            expect(
+              await internalMarket
+                .connect(alice)
+                .withdrawableBalanceOf(alice.address)
+            ).equal(0);
+          });
+
+          it("should be equal to the expired offers", async () => {
+            // Make offer `11` and `25` expire
+            await setEVMTimestamp(ts + WEEK + DAY * 3);
+            await mineEVMBlock();
+            expect(
+              await internalMarket
+                .connect(alice)
+                .withdrawableBalanceOf(alice.address)
+            ).equal(11 + 25);
+          });
+
+          it("should be equal to balance for bob", async () => {
+            expect(
+              await internalMarket.withdrawableBalanceOf(bob.address)
+            ).equal(0);
+          });
+        });
+      });
+
+      it.only("should count expired offers, even if there are active offers", async () => {
+        // Offer1 10
+        await internalMarket.connect(alice).makeOffer(10);
+        let ts = await getEVMTimestamp();
 
         // Move to the next day and make another offer
         await setEVMTimestamp(ts + DAY * 2);
-        await internalMarket.connect(alice).makeOffer(25);
 
-        // Move to the next day and make another offer
-        await setEVMTimestamp(ts + DAY * 4);
-        await internalMarket.connect(alice).makeOffer(35);
-      });
+        // Offer2 1000
+        await internalMarket.connect(alice).makeOffer(10);
 
-      describe("offeredBalanceOf", async () => {
-        it("should be equal to the amount of tokens offered", async () => {
-          await mineEVMBlock();
-          expect(
-            await internalMarket.connect(alice).offeredBalanceOf(alice.address)
-          ).equal(11 + 25 + 35);
-        });
+        // Offer1 expires
+        await setEVMTimestamp(ts + DAY * 7);
 
-        it("should be equal to the amount of tokens offered minus the expired offers", async () => {
-          // Make offer `11` expire
-          await setEVMTimestamp(ts + WEEK + DAY);
-          await mineEVMBlock();
-          expect(
-            await internalMarket.connect(alice).offeredBalanceOf(alice.address)
-          ).equal(25 + 35);
-        });
+        // User matches 1000
+        await internalMarket.connect(bob).matchOffer(alice.address, 10);
 
-        it("should be equal to 0 for bob", async () => {
-          expect(await internalMarket.offeredBalanceOf(bob.address)).equal(0);
-        });
-      });
+        const result = await internalMarket.withdrawableBalanceOf(
+          alice.address
+        );
 
-      describe("withdrawableBalanceOf", async () => {
-        it("should be equal to zero when alice just started offering their tokens", async () => {
-          await mineEVMBlock();
-          expect(
-            await internalMarket
-              .connect(alice)
-              .withdrawableBalanceOf(alice.address)
-          ).equal(0);
-        });
-
-        it("should be equal to the expired offers", async () => {
-          // Make offer `11` and `25` expire
-          await setEVMTimestamp(ts + WEEK + DAY * 3);
-          await mineEVMBlock();
-          expect(
-            await internalMarket
-              .connect(alice)
-              .withdrawableBalanceOf(alice.address)
-          ).equal(11 + 25);
-        });
-
-        it("should be equal to balance for bob", async () => {
-          expect(await internalMarket.withdrawableBalanceOf(bob.address)).equal(
-            0
-          );
-        });
+        expect(result).equal(10);
       });
     });
   });

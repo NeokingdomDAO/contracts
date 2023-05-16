@@ -260,13 +260,13 @@ contract InternalMarketBase {
         Offers storage offers = _offers[account];
 
         uint256 vault = _vaultContributors[account];
-        uint256 unlocked = 0;
+        uint256 unlocked = vault;
 
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];
 
-            if (block.timestamp > offer.expiredAt) {
-                unlocked += offer.amount;
+            if (block.timestamp <= offer.expiredAt) {
+                unlocked -= offer.amount;
             }
         }
         return (vault - unlocked, unlocked);

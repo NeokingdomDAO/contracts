@@ -122,6 +122,9 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "./typechain",
   },
+  mocha: {
+    bail: true,
+  },
 };
 
 export default config;

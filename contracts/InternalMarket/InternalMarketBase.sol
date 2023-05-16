@@ -141,7 +141,11 @@ contract InternalMarketBase {
 
         for (uint128 i = offers.start; i < offers.end && amount > 0; i++) {
             Offer storage offer = offers.offer[i];
-            if (block.timestamp < offer.expiredAt) {
+
+            if (block.timestamp >= offer.expiredAt) {
+                // clean up old offers
+                delete offers.offer[offers.start++];
+            } else {
                 // If offer is active check if the amount is bigger than the
                 // current offer.
                 if (amount >= offer.amount) {
@@ -163,8 +167,6 @@ contract InternalMarketBase {
                     // to the calling function
                     amount = 0;
                 }
-            } else {
-                delete offers.offer[offers.start++];
             }
         }
 

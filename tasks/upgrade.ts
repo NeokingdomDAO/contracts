@@ -1,25 +1,68 @@
-/*import { task } from "hardhat/config";
-import { VotingV2__factory } from "../typechain";
-import { exportAddress } from "./config";
+import { task } from "hardhat/config";
 
-task("upgrade", "Upgrade Voting to VotingV2", async (_, hre) => {
-  const [deployer] = await hre.ethers.getSigners();
-  const votingV2Factory = (await hre.ethers.getContractFactory(
-    "VotingV2"
-  )) as VotingV2__factory;
+import {
+  InternalMarket__factory,
+  ProxyAdmin,
+  ProxyAdmin__factory,
+  ResolutionManager__factory,
+} from "../typechain";
 
-  console.log("Upgrade Voting -> VotingV2");
+import { NeokingdomDAOHardhat } from "../lib";
+
+task("upgrade:resolution", "Upgrade ResolutionManager", async (_, hre) => {
+  const resolutionFactory = (await hre.ethers.getContractFactory(
+    "ResolutionManager"
+  )) as ResolutionManager__factory;
+
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+  const contracts = await neokingdom.loadContracts();
+  console.log("Upgrade ResolutionManager");
   console.log("  Network:", hre.network.name);
 
-  const votingV2Contract = await hre.upgrades.upgradeProxy(
-    "0x55CBc8Fe2C6CC5F8c594709BF9dAef32Ae4Dd8d2",
-    votingV2Factory
+  const resolutionContract = await hre.upgrades.upgradeProxy(
+    contracts.resolutionManager.address,
+    resolutionFactory
   );
-  await votingV2Contract.deployed();
+  await resolutionContract.deployed();
 
-  console.log("    Address:", votingV2Contract.address);
-  console.log("Voting upgraded");
-
-  await exportAddress(hre, votingV2Contract, "VotingV2");
+  console.log("    Address:", resolutionContract.address);
+  console.log("Resolution upgraded");
 });
-*/
+
+task("upgrade:market", "Upgrade Internal Market", async (_, hre) => {
+  const internalMarketFactory = (await hre.ethers.getContractFactory(
+    "InternalMarket"
+  )) as InternalMarket__factory;
+
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+  const contracts = await neokingdom.loadContracts();
+  console.log("Upgrade InternalMarket");
+  console.log("  Network:", hre.network.name);
+
+  const internalMarketContract = await hre.upgrades.upgradeProxy(
+    contracts.internalMarket.address,
+    internalMarketFactory
+  );
+  await internalMarketContract.deployed();
+
+  console.log("    Address:", internalMarketContract.address);
+  console.log("InternalMarket upgraded");
+});
+
+task("impl", "Get Proxy Impl")
+  .addParam("admin", "Proxy Admin")
+  .addParam("address", "Proxy address")
+  .setAction(
+    async ({ admin, address }: { admin: string; address: string }, hre) => {
+      const [deployer] = await hre.ethers.getSigners();
+      const ProxyAdmin = await hre.ethers.getContractFactory("ProxyAdmin");
+      const proxyAdmin = ProxyAdmin.attach(admin).connect(
+        deployer
+      ) as ProxyAdmin;
+
+      console.log(
+        "    Address:",
+        await proxyAdmin.getProxyImplementation(address)
+      );
+    }
+  );

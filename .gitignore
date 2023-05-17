@@ -15,3 +15,5 @@ reports/*
 diagrams/*
 echidna/results/*
 .DS_Store
+echidna/results
+diagrams/

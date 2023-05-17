@@ -3,6 +3,7 @@ import { Contract, Wallet } from "ethers";
 import { keccak256, parseEther, toUtf8Bytes } from "ethers/lib/utils";
 import { readFile, writeFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import * as readline from "readline";
 
 import {
   DAORoles,
@@ -10,6 +11,7 @@ import {
   InternalMarket,
   NeokingdomToken,
   PriceOracle,
+  ProxyAdmin,
   RedemptionController,
   ResolutionManager,
   ShareholderRegistry,
@@ -132,8 +134,10 @@ export async function _deployContract(
     try {
       await hre.run("verify", {
         address: contract.address,
-        constructorArgs: `deployments/${chainId}.${contractName}.arguments.json`,
-        contract: `contracts/${contractName}.sol:${contractName}`,
+        constructorArgs: proxy
+          ? undefined
+          : `deployments/${chainId}.${contractName}.arguments.json`,
+        //contract: `contracts/${contractName}.sol:${contractName}`,
       });
     } catch (e) {
       console.error(e);
@@ -212,6 +216,7 @@ export async function loadContracts(
     ),
     tokenMock: await _loadContract<TokenMock>("TokenMock"),
     voting: await _loadContract<Voting>("Voting"),
+    proxyAdmin: await _loadContract<ProxyAdmin>("ProxyAdmin"),
   };
 }
 
@@ -273,3 +278,13 @@ export async function getWallet(hre: HardhatRuntimeEnvironment) {
   // Create the signer for the mnemonic, connected to the provider with hardcoded fee data
   return new ethers.Wallet(privateKey).connect(provider);
 }
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+export const question = (prompt: string) =>
+  new Promise<string>((resolve) => {
+    rl.question(prompt, resolve);
+  });

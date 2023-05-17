@@ -1,29 +1,10 @@
+import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 
-import contributors from "../../dev-wallets.json";
 import { expandable } from "../internal/core";
-import {
-  ContextGenerator,
-  ContractContext,
-  NeokingdomContracts,
-  Sequence,
-} from "../internal/types";
+import { Sequence, SetupContext } from "../internal/types";
 
-export type SetupContext = ContractContext & {
-  contributors: typeof contributors.contributors;
-};
-
-export const generateSetupContext: ContextGenerator<SetupContext> =
-  async function (n) {
-    const contracts = (await n.loadContractsPartial()) as NeokingdomContracts;
-    const context: SetupContext = {
-      ...contracts,
-      contributors: contributors.contributors,
-    };
-    return context;
-  };
-
-export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
+export const SETUP_SEQUENCE: Sequence<SetupContext> = [
   // Give each address one share
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(
@@ -47,6 +28,12 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
           contributor.address
         );
       }
+      if (contributor.status === "investor") {
+        return c.shareholderRegistry.setStatus(
+          await c.shareholderRegistry.INVESTOR_STATUS(),
+          contributor.address
+        );
+      }
       throw new Error("Unknown status for " + contributor);
     })
   ),
@@ -57,11 +44,14 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
       (contributor) => (c) =>
         c.governanceToken.mint(
           contributor.address,
-          parseEther(contributor.tokens.toString())
+          BigNumber.from(contributor.tokens.toString())
         )
     )
   ),
+];
 
+export const SETUP_SEQUENCE_TESTNET: Sequence<SetupContext> = [
+  ...SETUP_SEQUENCE,
   // Add testing resolution type
   (c) =>
     c.resolutionManager.addResolutionType(
@@ -71,4 +61,10 @@ export const STAGING_SETUP_SEQUENCE: Sequence<SetupContext> = [
       60 * 3,
       false
     ),
+  expandable((preprocessContext: SetupContext) =>
+    preprocessContext.contributors.map(
+      (contributor) => (c) =>
+        c.tokenMock.mint(contributor.address, parseEther("10000"))
+    )
+  ),
 ];

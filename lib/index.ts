@@ -1,5 +1,5 @@
 export { generateDeployContext, DEPLOY_SEQUENCE } from "./sequence/deploy";
-export { generateSetupContext, STAGING_SETUP_SEQUENCE } from "./sequence/setup";
+export { SETUP_SEQUENCE, SETUP_SEQUENCE_TESTNET } from "./sequence/setup";
 
 export { NeokingdomDAOHardhat } from "./environment/hardhat";
 

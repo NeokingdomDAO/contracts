@@ -28,8 +28,7 @@ import {
 type NeokingdomNetworkFile = {
   [key in ContractNames]?: {
     address: string;
-    blockNumber: number;
-    blockHash: string;
+    startBlock: number;
   };
 };
 
@@ -113,8 +112,7 @@ export async function _deployContract(
   }
   contracts[contractName] = {
     address: contract.address,
-    blockNumber: receipt.blockNumber,
-    blockHash: receipt.blockHash,
+    startBlock: receipt.blockNumber,
   };
   await writeFile(configPath, JSON.stringify(contracts, null, 2));
   console.log(

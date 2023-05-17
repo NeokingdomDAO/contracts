@@ -1,9 +1,9 @@
+import "./admin";
 import "./delegate";
 import "./deploy";
 import "./oracle";
 import "./resolution";
-import "./role";
 import "./status";
-import "./tokens.ts";
+import "./tokens";
 import "./types";
 import "./upgrade";

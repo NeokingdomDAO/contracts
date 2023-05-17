@@ -106,6 +106,14 @@ const config: HardhatUserConfig = {
           browserURL: "https://escan.live",
         },
       },
+      {
+        network: "tevmos",
+        chainId: 9000,
+        urls: {
+          apiURL: "https://testnet.escan.live/api",
+          browserURL: "https://testnet.escan.live",
+        },
+      },
     ],
   },
   gasReporter: {
@@ -121,6 +129,9 @@ const config: HardhatUserConfig = {
   },
   typechain: {
     outDir: "./typechain",
+  },
+  mocha: {
+    bail: true,
   },
 };
 

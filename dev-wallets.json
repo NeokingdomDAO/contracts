@@ -16,5 +16,11 @@
     "address": "0xbded7c8a2efa4cf2ee6c953e6447a246f3ac4e12",
     "status": "board",
     "tokens": "22000000000000000000000"
+  },
+  {
+    "name": "nicola",
+    "address": "0x2e1aF63Cd595A6D715E5e2D92151801F0d406a6b",
+    "status": "contributor",
+    "tokens": "22000000000000000000000"
   }
 ]

@@ -1,46 +1,57 @@
 {
   "DAORoles": {
-    "address": "0x948f94446286AeB07a238AE98e7a89D02f233cd9",
-    "startBlock": 14292133
+    "address": "0x8D50cda929a40E4948Dd45668eF97a4AF8EC7D33",
+    "blockNumber": 14292733,
+    "blockHash": "0x7c4895b40cfa11592962dd5e9d7857eaf9641eefb24d51d5ede3c27e56d9f83e"
   },
   "TokenMock": {
-    "address": "0xCBbbA8a5d6860Dbc2011fBFcC71c5e94A009E5f3",
-    "startBlock": 14292136
+    "address": "0x85BF065bAd3C2159Ec01678a0E595D4f1E586250",
+    "blockNumber": 14292734,
+    "blockHash": "0x4b818a9afa34a85021aceca69a5557b936944c9a39a9895dfc28f5dcb7caa70b"
   },
   "PriceOracle": {
-    "address": "0xdA3A507A92dFBcC4322a4B166B6843d58Aa866a7",
-    "startBlock": 14292143
+    "address": "0x77e69A27D7E2D747C36E3c5E6ec0BA497A9E6bA4",
+    "blockNumber": 14292737,
+    "blockHash": "0x7a3d0e915792be657dacd60e6f34fc2550962491dbd728ec709911f7c643cab7"
   },
   "Voting": {
-    "address": "0xF5c128AF938001674eECD85C475f62cf6271A931",
-    "startBlock": 14292149
+    "address": "0xBff36aAf299e04ADF587a1B71f9109510cDfC1Dc",
+    "blockNumber": 14292738,
+    "blockHash": "0xaae7f1e6bfb06722b598ff2db15424612887e9d9f2d78cb99c0db4b43f6c9cee"
   },
   "GovernanceToken": {
-    "address": "0x4f7611676127edCbe0b3eFEe61305Fb4094F9234",
-    "startBlock": 14292167
+    "address": "0x35379a04024C6e803a44c31fb0fB02f13Da98B39",
+    "blockNumber": 14292740,
+    "blockHash": "0xb1b83bf55e0df9728f75f1799ebc77e0fc11fe3ae5fb970f4f18121b2aadd858"
   },
   "NeokingdomToken": {
-    "address": "0xC4F88584f3Aa10527b016bF33586e7113fcF9fc5",
-    "startBlock": 14292182
+    "address": "0xE29Fb8D3C70B11cAaD48bcE19Cb35CA83C3C1Fd0",
+    "blockNumber": 14292741,
+    "blockHash": "0x333f9e91c8ed124effdfa6603b1d223242017ebbe3306df981b4248cd21880ca"
   },
   "RedemptionController": {
-    "address": "0x2dbc8042706B09BeA27c52D17f3FBaF9afaBFb09",
-    "startBlock": 14292190
+    "address": "0x0F3643F205F0CdFA674E6C83CDC6eFdBc2A0C744",
+    "blockNumber": 14292745,
+    "blockHash": "0xc5e872e71e457d0ce497ad4acd68c066e2300ca25f7cf583a426228799f41de2"
   },
   "InternalMarket": {
-    "address": "0xAf233584e2CF0F7AcdcFa406cB6a44d295395b68",
-    "startBlock": 14292205
+    "address": "0x0d5Fe1eaE52C99Fa4b2330D4D1e46f7E145223e6",
+    "blockNumber": 14292747,
+    "blockHash": "0x1452c70ea60a095b9e8fa98f0636f4bef7a7f7d76800694c3a80276d08a6df00"
   },
   "ShareholderRegistry": {
-    "address": "0xe5436dD354332E76e0208982577534E36E223C88",
-    "startBlock": 14292222
+    "address": "0x3bC64a0C8049c14C71bD03fd4149E864a2E539a5",
+    "blockNumber": 14292749,
+    "blockHash": "0xe3028f3dc5f2fc16218f009a6096b206d03ee40053073f6452993cebdcab3c61"
   },
   "ResolutionManager": {
-    "address": "0xb8fB6c74144cf38EA3D717a605CA4bAA00DE8d2a",
-    "startBlock": 14292240
+    "address": "0x717c51FB4CE06b41dD1160C0d899aaC294c997e6",
+    "blockNumber": 14292750,
+    "blockHash": "0x40f9ed15c5348e6f1bd0529cac9b24eef92c6650c3a76ee8c5198733d2882557"
   },
   "ProxyAdmin": {
-    "address": "0x4C9B2F756163502eE26d253496230e1307c00013",
-    "startBlock": 14292251
+    "address": "0xB0bF2ca48Bd4A143C96E706E02C4a23bf7790Ce8",
+    "blockNumber": 14292751,
+    "blockHash": "0xee1fd488312de200bf74688c3e285211600eb866d63f5f8477936e8d5efc83fe"
   }
 }

@@ -16,7 +16,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         DAORoles roles,
         IGovernanceToken tokenInternal
     ) public initializer {
-        _initialize(tokenInternal, 7 days);
+        _initialize(tokenInternal, 10 minutes);
         _setRoles(roles);
     }
 

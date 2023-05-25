@@ -1406,7 +1406,7 @@ describe("Integration", async () => {
       });
     });
 
-    it.only("voting with exclusion stress test", async () => {
+    it("voting with exclusion stress test", async () => {
       await _makeContributor(user1, 20);
       await _makeContributor(user2, 70);
       await _makeContributor(user3, 10);

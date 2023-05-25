@@ -112,25 +112,24 @@ contract InternalMarketBase {
 
     function _beforeWithdraw(address from, uint256 amount) internal virtual {
         Offers storage offers = _offers[from];
+        uint256 offered = 0;
 
-        for (uint128 i = offers.start; i < offers.end && amount > 0; i++) {
+        for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];
 
-            if (block.timestamp > offer.expiredAt) {
-                // FIXME it was > not >=
-                if (amount >= offer.amount) {
-                    amount -= offer.amount;
-                    _vaultContributors[from] -= offer.amount;
-                    delete offers.offer[offers.start++];
-                } else {
-                    offer.amount -= amount;
-                    _vaultContributors[from] -= amount;
-                    amount = 0;
-                }
+            if (block.timestamp >= offer.expiredAt) {
+                // clean up old offers
+                delete offers.offer[offers.start++];
+            } else {
+                offered += offer.amount;
             }
         }
 
-        require(amount == 0, "InternalMarket: amount exceeds balance");
+        require(
+            _vaultContributors[from] >= offered + amount,
+            "InternalMarket: amount exceeds balance"
+        );
+        _vaultContributors[from] -= amount;
     }
 
     function _beforeMatchOffer(
@@ -142,7 +141,11 @@ contract InternalMarketBase {
 
         for (uint128 i = offers.start; i < offers.end && amount > 0; i++) {
             Offer storage offer = offers.offer[i];
-            if (block.timestamp < offer.expiredAt) {
+
+            if (block.timestamp >= offer.expiredAt) {
+                // clean up old offers
+                delete offers.offer[offers.start++];
+            } else {
                 // If offer is active check if the amount is bigger than the
                 // current offer.
                 if (amount >= offer.amount) {
@@ -151,6 +154,7 @@ contract InternalMarketBase {
 
                     // Remove the offer
                     emit OfferMatched(i, from, to, offer.amount);
+
                     delete offers.offer[offers.start++];
                     // If the amount is smaller than the offer amount, then
                 } else {
@@ -257,16 +261,16 @@ contract InternalMarketBase {
         Offers storage offers = _offers[account];
 
         uint256 vault = _vaultContributors[account];
-        uint256 unlocked = 0;
+        uint256 offered = 0;
 
         for (uint128 i = offers.start; i < offers.end; i++) {
             Offer storage offer = offers.offer[i];
 
-            if (block.timestamp > offer.expiredAt) {
-                unlocked += offer.amount;
+            if (block.timestamp < offer.expiredAt) {
+                offered += offer.amount;
             }
         }
-        return (vault - unlocked, unlocked);
+        return (offered, vault - offered);
     }
 
     // Tokens owned by a contributor that are offered to other contributors

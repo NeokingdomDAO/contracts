@@ -163,7 +163,7 @@ contract GovernanceToken is
     // of our class-tree, we could not use the new storage (coolingPeriod, coolingTokens)
     // on GovernanceTokenBase. They had to be declared on this class, hence the methods could
     // only be implemented here.
-    function _wrap(address from, uint amount) internal virtual override {
+    function _wrap(address from, uint amount) internal virtual {
         tokenExternal.transferFrom(from, address(this), amount);
         uint256 coolingEndTimestamp = block.timestamp + coolingPeriod;
         coolingTokens[from].push(CoolingTokens(amount, coolingEndTimestamp));

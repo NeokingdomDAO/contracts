@@ -15,7 +15,7 @@ import {
 } from "../typechain";
 
 import { ROLES } from "../lib/utils";
-import { timeTravel } from "./utils/evm";
+import { getEVMTimestamp, timeTravel } from "./utils/evm";
 
 chai.use(smock.matchers);
 chai.use(solidity);
@@ -243,9 +243,16 @@ describe("GovernanceToken", () => {
         41
       );
     });
+
+    it("should emit a DepositStarted event", async () => {
+      const coolingEndTimestamp = (await getEVMTimestamp()) + 3600 * 24 * 7 + 1;
+      await expect(governanceToken.wrap(contributor.address, 41))
+        .to.emit(governanceToken, "DepositStarted")
+        .withArgs(contributor.address, 41, coolingEndTimestamp);
+    });
   });
 
-  describe.only("coolingBalanceOf", async () => {
+  describe("coolingBalanceOf", async () => {
     const wrappedTokens = 41;
 
     describe("when no tokens have been wrapped", async () => {

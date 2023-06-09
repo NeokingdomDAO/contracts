@@ -8,8 +8,20 @@ import "./GovernanceTokenSnapshot.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
+import "./Cooldown.sol";
 
-contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
+contract GovernanceToken is
+    Initializable,
+    HasRole,
+    GovernanceTokenSnapshot,
+    Cooldown
+{
+    event DepositStarted(
+        address from,
+        uint256 amount,
+        uint256 coolingEndTimestamp
+    );
+
     function initialize(
         DAORoles roles,
         string memory name,
@@ -41,7 +53,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     function setCoolingPeriod(
         uint256 coolingPeriod_
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        _setCoolingPeriod(coolingPeriod_);
+        coolingPeriod = coolingPeriod_;
     }
 
     function setTokenExternal(
@@ -128,5 +140,47 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         returns (bool)
     {
         return super.transferFrom(from, to, amount);
+    }
+
+    function coolingBalanceOf(
+        address account
+    ) public view virtual returns (uint256 amount) {
+        for (uint256 i = coolingTokens[account].length; i > 0; i--) {
+            CoolingTokens memory tokens = coolingTokens[account][i - 1];
+            if (block.timestamp < tokens.coolingEndTimestamp) {
+                if (tokens.amount > 0) {
+                    amount += tokens.amount;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Internal
+
+    // These functions have been introduced on a later update. Given the memory layout
+    // of our class-tree, we could not use the new storage (coolingPeriod, coolingTokens)
+    // on GovernanceTokenBase. They had to be declared on this class, hence the methods could
+    // only be implemented here.
+    function _wrap(address from, uint amount) internal virtual override {
+        tokenExternal.transferFrom(from, address(this), amount);
+        uint256 coolingEndTimestamp = block.timestamp + coolingPeriod;
+        coolingTokens[from].push(CoolingTokens(amount, coolingEndTimestamp));
+        emit DepositStarted(from, amount, coolingEndTimestamp);
+    }
+
+    function _processCoolTokens(address from) internal virtual {
+        for (uint256 i = coolingTokens[from].length; i > 0; i--) {
+            CoolingTokens storage tokens = coolingTokens[from][i - 1];
+            if (block.timestamp >= tokens.coolingEndTimestamp) {
+                if (tokens.amount > 0) {
+                    super._mint(from, tokens.amount);
+                    tokens.amount = 0;
+                } else {
+                    break;
+                }
+            }
+        }
     }
 }

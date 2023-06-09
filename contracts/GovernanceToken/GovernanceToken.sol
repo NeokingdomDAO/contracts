@@ -38,6 +38,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         _setVoting(voting);
     }
 
+    function setCoolingPeriod(
+        uint256 coolingPeriod_
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+        _setCoolingPeriod(coolingPeriod_);
+    }
+
     function setTokenExternal(
         address tokenExternalAddress
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
@@ -77,6 +83,10 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         uint256 amount
     ) public virtual onlyRole(Roles.MARKET_ROLE) {
         _unwrap(from, to, amount);
+    }
+
+    function processCoolTokens(address from) public virtual {
+        _processCoolTokens(from);
     }
 
     function mintVesting(

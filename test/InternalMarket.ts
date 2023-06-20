@@ -35,7 +35,7 @@ describe("InternalMarket", async () => {
 
   let RESOLUTION_ROLE: string;
   let daoRoles: MockContract<DAORoles>;
-  let tokenInternal: FakeContract<IGovernanceToken>;
+  let governanceToken: FakeContract<IGovernanceToken>;
   let registry: FakeContract<ShareholderRegistry>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
@@ -51,7 +51,7 @@ describe("InternalMarket", async () => {
   before(async () => {
     [deployer, alice, bob, carol, reserve] = await ethers.getSigners();
 
-    tokenInternal = await smock.fake("IGovernanceToken");
+    governanceToken = await smock.fake("IGovernanceToken");
 
     usdc = await smock.fake("ERC20");
     usdc.decimals.returns(6);
@@ -66,7 +66,7 @@ describe("InternalMarket", async () => {
 
     internalMarket = (await upgrades.deployProxy(InternalMarketFactory, [
       daoRoles.address,
-      tokenInternal.address,
+      governanceToken.address,
     ])) as InternalMarket;
 
     redemption = await smock.fake("IRedemptionController");
@@ -88,16 +88,16 @@ describe("InternalMarket", async () => {
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
-    tokenInternal.transfer.reset();
-    tokenInternal.transferFrom.reset();
-    tokenInternal.unwrap.reset();
+    governanceToken.transfer.reset();
+    governanceToken.transferFrom.reset();
+    governanceToken.unwrap.reset();
     usdc.transfer.reset();
     usdc.transferFrom.reset();
     stdReference.getReferenceData.reset();
     registry.isAtLeast.returns(true);
 
     // make transferFrom always succeed
-    tokenInternal.transferFrom.returns(true);
+    governanceToken.transferFrom.returns(true);
 
     // Exchange rate is always 1
     stdReference.getReferenceData.returns({
@@ -137,20 +137,20 @@ describe("InternalMarket", async () => {
     });
   });
 
-  describe("setInternalToken", async () => {
+  describe("setGovernanceToken", async () => {
     it("should allow a resolution to set token and oracle addresses", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
       daoRoles.hasRole
         .whenCalledWith(RESOLUTION_ROLE, deployer.address)
         .returns(true);
-      await internalMarket.setInternalToken(alice.address);
-      expect(await internalMarket.tokenInternal()).equal(alice.address);
+      await internalMarket.setGovernanceToken(alice.address);
+      expect(await internalMarket.governanceToken()).equal(alice.address);
     });
 
     it("should revert if anyone else tries to set the token address", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
       await expect(
-        internalMarket.connect(alice).setInternalToken(alice.address)
+        internalMarket.connect(alice).setGovernanceToken(alice.address)
       ).revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${RESOLUTION_ROLE}`
       );
@@ -179,8 +179,8 @@ describe("InternalMarket", async () => {
 
   describe("makeOffer", async () => {
     beforeEach(async () => {
-      tokenInternal.transferFrom.returns(true);
-      tokenInternal.transfer.returns(true);
+      governanceToken.transferFrom.returns(true);
+      governanceToken.transfer.returns(true);
       usdc.transferFrom.returns(true);
     });
 
@@ -197,7 +197,7 @@ describe("InternalMarket", async () => {
 
     it("should transfer the given amount of token from the erc20", async () => {
       await internalMarket.makeOffer(1000);
-      expect(tokenInternal.transferFrom).calledWith(
+      expect(governanceToken.transferFrom).calledWith(
         deployer.address,
         internalMarket.address,
         1000
@@ -237,7 +237,7 @@ describe("InternalMarket", async () => {
 
           it("should burn the 10 DAO tokens for 10 USDC of the reserve", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
-            expect(tokenInternal.burn).calledWith(
+            expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("10")
             );
@@ -268,7 +268,7 @@ describe("InternalMarket", async () => {
           it("should burn 10 DAO token for 20 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
 
-            expect(tokenInternal.burn).calledWith(
+            expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("10")
             );
@@ -298,7 +298,7 @@ describe("InternalMarket", async () => {
 
           it("should burn the 10 DAO tokens for 11.222444 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("10"));
-            expect(tokenInternal.burn).calledWith(
+            expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("10")
             );
@@ -328,7 +328,7 @@ describe("InternalMarket", async () => {
 
           it("should burn the 11 DAO tokens for 5.5 USDC", async () => {
             await internalMarket.connect(alice).redeem(parseEther("11"));
-            expect(tokenInternal.burn).calledWith(
+            expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("11")
             );
@@ -341,7 +341,7 @@ describe("InternalMarket", async () => {
 
           it("should exchange the 1 DAO token sat for 0 USDC sats", async () => {
             await internalMarket.connect(alice).redeem(1);
-            expect(tokenInternal.burn).calledWith(internalMarket.address, 1);
+            expect(governanceToken.burn).calledWith(internalMarket.address, 1);
             expect(usdc.transferFrom).calledWith(
               reserve.address,
               alice.address,
@@ -365,7 +365,7 @@ describe("InternalMarket", async () => {
 
         describe("and no tokens in the user wallet", async () => {
           it("should fail when the user redeems 70 tokens", async () => {
-            tokenInternal.burn
+            governanceToken.burn
               // 50 tokens are withdrawable, so redeeming 70 should burn the
               // missing 20 from Alice, but she doesn't have tokens left.
               .whenCalledWith(alice.address, parseEther("20"))
@@ -377,7 +377,7 @@ describe("InternalMarket", async () => {
           });
 
           it("should fail when the user redeems 60 tokens", async () => {
-            tokenInternal.burn
+            governanceToken.burn
               // 50 tokens are withdrawable, so redeeming 60 should take the
               // missing 10 from Alice, but she doesn't have tokens left.
               .whenCalledWith(alice.address, parseEther("10"))
@@ -393,7 +393,7 @@ describe("InternalMarket", async () => {
             });
 
             it("should burn 50 tokens from market", async () => {
-              expect(tokenInternal.burn).calledWith(
+              expect(governanceToken.burn).calledWith(
                 internalMarket.address,
                 parseEther("50")
               );
@@ -411,8 +411,8 @@ describe("InternalMarket", async () => {
 
         describe("and 10 tokens in the user wallet", async () => {
           beforeEach(async () => {
-            tokenInternal.burn.reset();
-            tokenInternal.burn
+            governanceToken.burn.reset();
+            governanceToken.burn
               .whenCalledWith(alice.address, parseEther("20"))
               .reverts("ERC20: burn amount exceeds balance");
           });
@@ -429,14 +429,14 @@ describe("InternalMarket", async () => {
             });
 
             it("should burn 10 tokens from alice", async () => {
-              expect(tokenInternal.burn).calledWith(
+              expect(governanceToken.burn).calledWith(
                 alice.address,
                 parseEther("10")
               );
             });
 
             it("should burn 50 tokens from market", async () => {
-              expect(tokenInternal.burn).calledWith(
+              expect(governanceToken.burn).calledWith(
                 internalMarket.address,
                 parseEther("50")
               );
@@ -457,14 +457,14 @@ describe("InternalMarket", async () => {
             });
 
             it("should not burn 10 tokens from alice", async () => {
-              expect(tokenInternal.burn).not.calledWith(
+              expect(governanceToken.burn).not.calledWith(
                 alice.address,
                 parseEther("10")
               );
             });
 
             it("should burn 50 tokens from market", async () => {
-              expect(tokenInternal.burn).calledWith(
+              expect(governanceToken.burn).calledWith(
                 internalMarket.address,
                 parseEther("50")
               );
@@ -510,7 +510,7 @@ describe("InternalMarket", async () => {
           )
             .emit(internalMarket, "OfferMatched")
             .withArgs(0, alice.address, bob.address, 11);
-          expect(tokenInternal.transfer).calledWith(bob.address, 11);
+          expect(governanceToken.transfer).calledWith(bob.address, 11);
         });
 
         it("should match the oldest active offer and ignore the expired ones", async () => {
@@ -521,7 +521,7 @@ describe("InternalMarket", async () => {
           )
             .emit(internalMarket, "OfferMatched")
             .withArgs(1, alice.address, bob.address, 25);
-          expect(tokenInternal.transfer).calledWith(bob.address, 25);
+          expect(governanceToken.transfer).calledWith(bob.address, 25);
         });
 
         it("should match multiple active offers from the old one to the new one", async () => {
@@ -533,7 +533,7 @@ describe("InternalMarket", async () => {
             .emit(internalMarket, "OfferMatched")
             .withArgs(1, alice.address, bob.address, 25)
             .emit(internalMarket, "OfferMatched");
-          expect(tokenInternal.transfer).calledWith(bob.address, 11 + 25 + 1);
+          expect(governanceToken.transfer).calledWith(bob.address, 11 + 25 + 1);
         });
 
         it("should not allow to match more than what's available", async () => {
@@ -594,7 +594,7 @@ describe("InternalMarket", async () => {
           await internalMarket
             .connect(bob)
             .matchOffer(alice.address, parseEther("10"));
-          expect(tokenInternal.transfer).calledWith(
+          expect(governanceToken.transfer).calledWith(
             bob.address,
             parseEther("10")
           );
@@ -626,7 +626,7 @@ describe("InternalMarket", async () => {
           await internalMarket
             .connect(bob)
             .matchOffer(alice.address, parseEther("10"));
-          expect(tokenInternal.transfer).calledWith(
+          expect(governanceToken.transfer).calledWith(
             bob.address,
             parseEther("10")
           );
@@ -658,7 +658,7 @@ describe("InternalMarket", async () => {
           await internalMarket
             .connect(bob)
             .matchOffer(alice.address, parseEther("10"));
-          expect(tokenInternal.transfer).calledWith(
+          expect(governanceToken.transfer).calledWith(
             bob.address,
             parseEther("10")
           );
@@ -690,7 +690,7 @@ describe("InternalMarket", async () => {
           await internalMarket
             .connect(bob)
             .matchOffer(alice.address, parseEther("11"));
-          expect(tokenInternal.transfer).calledWith(
+          expect(governanceToken.transfer).calledWith(
             bob.address,
             parseEther("11")
           );
@@ -704,7 +704,7 @@ describe("InternalMarket", async () => {
         it("should exchange the 1 DAO token sat for 0 USDC sats", async () => {
           await internalMarket.connect(alice).makeOffer(1);
           await internalMarket.connect(bob).matchOffer(alice.address, 1);
-          expect(tokenInternal.transfer).calledWith(bob.address, 1);
+          expect(governanceToken.transfer).calledWith(bob.address, 1);
           expect(usdc.transferFrom).calledWith(bob.address, alice.address, 0);
         });
       });
@@ -751,7 +751,11 @@ describe("InternalMarket", async () => {
 
         await internalMarket.connect(bob).withdraw(alice.address, 10);
 
-        expect(tokenInternal.unwrap).calledWith(bob.address, alice.address, 10);
+        expect(governanceToken.unwrap).calledWith(
+          bob.address,
+          alice.address,
+          10
+        );
       });
 
       it("should not allow to withdraw if the amount is bigger than the amount of the expired offers", async () => {
@@ -764,7 +768,7 @@ describe("InternalMarket", async () => {
       it("should allow to withdraw if the amount is less than the amount of the expired offers", async () => {
         await setEVMTimestamp(ts + WEEK + DAY);
         await internalMarket.connect(alice).withdraw(bob.address, 5);
-        expect(tokenInternal.unwrap).calledWith(
+        expect(governanceToken.unwrap).calledWith(
           internalMarket.address,
           bob.address,
           5
@@ -774,7 +778,7 @@ describe("InternalMarket", async () => {
       it("should allow to withdraw if the amount is equal to the the amount of the expired offers", async () => {
         await setEVMTimestamp(ts + WEEK + DAY);
         await internalMarket.connect(alice).withdraw(bob.address, 11);
-        expect(tokenInternal.unwrap).calledWith(
+        expect(governanceToken.unwrap).calledWith(
           internalMarket.address,
           bob.address,
           11
@@ -784,7 +788,7 @@ describe("InternalMarket", async () => {
       it("should allow to withdraw if the amount is equal to the the amount of all expired offers", async () => {
         await setEVMTimestamp(ts + WEEK + DAY * 3);
         await internalMarket.connect(alice).withdraw(bob.address, 11 + 25);
-        expect(tokenInternal.unwrap).calledWith(
+        expect(governanceToken.unwrap).calledWith(
           internalMarket.address,
           bob.address,
           11 + 25
@@ -829,7 +833,7 @@ describe("InternalMarket", async () => {
           // Alice's offer expires
           await setEVMTimestamp(ts + WEEK + DAY);
           await internalMarket.connect(alice).withdraw(carol.address, 6);
-          expect(tokenInternal.unwrap).calledWith(
+          expect(governanceToken.unwrap).calledWith(
             internalMarket.address,
             carol.address,
             6
@@ -843,7 +847,7 @@ describe("InternalMarket", async () => {
           await setEVMTimestamp(ts + WEEK + DAY * 3);
           // Alice can withdraw 6 + 25 tokens
           await internalMarket.connect(alice).withdraw(carol.address, 6 + 25);
-          expect(tokenInternal.unwrap).calledWith(
+          expect(governanceToken.unwrap).calledWith(
             internalMarket.address,
             carol.address,
             6 + 25
@@ -870,7 +874,7 @@ describe("InternalMarket", async () => {
 
         await internalMarket.connect(alice).withdraw(carol.address, 10);
 
-        expect(tokenInternal.unwrap.atCall(0)).calledWith(
+        expect(governanceToken.unwrap.atCall(0)).calledWith(
           internalMarket.address,
           carol.address,
           10
@@ -896,7 +900,7 @@ describe("InternalMarket", async () => {
 
         await internalMarket.connect(bob).matchOffer(alice.address, 10);
 
-        expect(tokenInternal.transfer.atCall(0)).calledWith(bob.address, 10);
+        expect(governanceToken.transfer.atCall(0)).calledWith(bob.address, 10);
       });
     });
 

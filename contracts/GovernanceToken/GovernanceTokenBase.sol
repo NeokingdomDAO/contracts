@@ -81,10 +81,11 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
         super._mint(to, amount);
     }
 
-    function _wrap(address from, uint amount) internal virtual {
-        tokenExternal.transferFrom(from, address(this), amount);
-        super._mint(from, amount);
-    }
+    // Redefined in GovernanceToken.sol
+    //function _wrap(address from, uint amount) internal virtual {
+    //    tokenExternal.transferFrom(from, address(this), amount);
+    //   super._mint(from, amount);
+    //}
 
     function _unwrap(address from, address to, uint amount) internal virtual {
         tokenExternal.transfer(to, amount);

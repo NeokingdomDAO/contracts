@@ -245,10 +245,13 @@ describe("GovernanceToken", () => {
     });
 
     it("should emit a DepositStarted event", async () => {
-      const coolingEndTimestamp = (await getEVMTimestamp()) + 3600 * 24 * 7 + 1;
       await expect(governanceToken.wrap(contributor.address, 41))
         .to.emit(governanceToken, "DepositStarted")
-        .withArgs(contributor.address, 41, coolingEndTimestamp);
+        .withArgs(
+          contributor.address,
+          41,
+          (await getEVMTimestamp()) + 3600 * 24 * 7
+        );
     });
   });
 

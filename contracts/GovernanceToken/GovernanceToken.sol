@@ -8,19 +8,22 @@ import "./GovernanceTokenSnapshot.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
-import "./Cooldown.sol";
 
-contract GovernanceToken is
-    Initializable,
-    HasRole,
-    GovernanceTokenSnapshot,
-    Cooldown
-{
+contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     event DepositStarted(
         address from,
         uint256 amount,
         uint256 coolingEndTimestamp
     );
+
+    struct CoolingTokens {
+        uint256 amount;
+        uint256 coolingEndTimestamp;
+    }
+
+    mapping(address => CoolingTokens[]) coolingTokens;
+
+    uint256 coolingPeriod;
 
     function initialize(
         DAORoles roles,

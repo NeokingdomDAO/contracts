@@ -12,6 +12,21 @@ import "../extensions/HasRole.sol";
 contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     IShareholderRegistry internal _shareholderRegistry;
 
+    event DepositStarted(
+        address from,
+        uint256 amount,
+        uint256 settlementTimestamp
+    );
+
+    struct DepositedTokens {
+        uint256 amount;
+        uint256 settlementTimestamp;
+    }
+
+    mapping(address => DepositedTokens[]) depositedTokens;
+
+    uint256 settlementPeriod;
+
     function initialize(
         DAORoles roles,
         string memory name,
@@ -44,6 +59,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         IShareholderRegistry shareholderRegistry
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         _shareholderRegistry = shareholderRegistry;
+    }
+
+    function setSettlementPeriod(
+        uint256 settlementPeriod_
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+        settlementPeriod = settlementPeriod_;
     }
 
     function setTokenExternal(
@@ -85,6 +106,10 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         uint256 amount
     ) public virtual onlyRole(Roles.MARKET_ROLE) {
         _unwrap(from, to, amount);
+    }
+
+    function settleTokens(address from) public virtual {
+        _settleTokens(from);
     }
 
     function mintVesting(
@@ -151,5 +176,49 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
             balanceOf(from) >= _vestingBalance[from],
             "GovernanceToken: transfer amount exceeds vesting"
         );
+    }
+
+    function settlingBalanceOf(
+        address account
+    ) public view virtual returns (uint256 amount) {
+        for (uint256 i = depositedTokens[account].length; i > 0; i--) {
+            DepositedTokens memory tokens = depositedTokens[account][i - 1];
+            if (block.timestamp < tokens.settlementTimestamp) {
+                if (tokens.amount > 0) {
+                    amount += tokens.amount;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Internal
+
+    // These functions have been introduced on a later update. Given the memory layout
+    // of our class-tree, we could not use the new storage (settlementPeriod, depositedTokens)
+    // on GovernanceTokenBase. They had to be declared on this class, hence the methods could
+    // only be implemented here.
+    function _wrap(address from, uint amount) internal virtual {
+        tokenExternal.transferFrom(from, address(this), amount);
+        uint256 settlementTimestamp = block.timestamp + settlementPeriod;
+        depositedTokens[from].push(
+            DepositedTokens(amount, settlementTimestamp)
+        );
+        emit DepositStarted(from, amount, settlementTimestamp);
+    }
+
+    function _settleTokens(address from) internal virtual {
+        for (uint256 i = depositedTokens[from].length; i > 0; i--) {
+            DepositedTokens storage tokens = depositedTokens[from][i - 1];
+            if (block.timestamp >= tokens.settlementTimestamp) {
+                if (tokens.amount > 0) {
+                    super._mint(from, tokens.amount);
+                    tokens.amount = 0;
+                } else {
+                    break;
+                }
+            }
+        }
     }
 }

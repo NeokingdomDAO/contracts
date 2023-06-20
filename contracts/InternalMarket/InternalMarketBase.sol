@@ -222,6 +222,10 @@ contract InternalMarketBase {
         tokenInternal.wrap(to, amount);
     }
 
+    function _finalizeDeposit(address to) internal virtual {
+        tokenInternal.settleTokens(to);
+    }
+
     function _redeem(address from, uint256 amount) internal virtual {
         uint256 withdrawableBalance = withdrawableBalanceOf(from);
         if (withdrawableBalance < amount) {

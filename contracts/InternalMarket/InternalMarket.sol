@@ -16,7 +16,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         DAORoles roles,
         IGovernanceToken tokenInternal
     ) public initializer {
-        _initialize(tokenInternal, 7 days);
+        _initialize(tokenInternal, 5 minutes);
         _setRoles(roles);
     }
 
@@ -37,6 +37,10 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
 
     function deposit(uint amount) public {
         _deposit(_msgSender(), amount);
+    }
+
+    function finalizeDeposit() public {
+        _finalizeDeposit(_msgSender());
     }
 
     function redeem(uint amount) public {

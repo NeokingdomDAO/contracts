@@ -38,7 +38,6 @@ const e = (v: number) => parseEther(v.toString());
 
 const DAY = 60 * 60 * 24;
 const INITIAL_USDC = 1000;
-const AddressZero = ethers.constants.AddressZero;
 
 describe("Integration", async () => {
   let snapshotId: string;
@@ -182,6 +181,25 @@ describe("Integration", async () => {
         resolutionObject.approveTimestamp.toNumber() +
         resolutionType.noticePeriod.toNumber();
       await setEVMTimestamp(votingTimestamp);
+    }
+
+    async function _endResolutionWithId(resolutionId: number) {
+      const resolutionObject = await resolutionManager.resolutions(
+        resolutionId
+      );
+      const resolutionType = await resolutionManager.resolutionTypes(
+        resolutionObject.resolutionTypeId
+      );
+      const endTimestamp =
+        resolutionObject.approveTimestamp.toNumber() +
+        resolutionType.noticePeriod.toNumber() +
+        resolutionType.votingPeriod.toNumber();
+
+      const currentTimestamp = await getEVMTimestamp();
+
+      if (currentTimestamp < endTimestamp) {
+        await setEVMTimestamp(endTimestamp);
+      }
     }
 
     async function _prepareResolution(
@@ -692,6 +710,7 @@ describe("Integration", async () => {
       await shareholderRegistry.setStatus(investorStatus, user3.address);
       await internalMarket.connect(user3).withdraw(user2.address, e(50));
       await internalMarket.connect(user2).deposit(e(50));
+      await governanceToken.settleTokens(user2.address);
       await _mintTokens(user2, 50);
       // -> user 1 voting power == 60
       // -> user 2 voting power == 130
@@ -965,6 +984,7 @@ describe("Integration", async () => {
       );
 
       await internalMarket.connect(user3).deposit(e(5));
+      await governanceToken.settleTokens(user3.address);
       expect(await governanceToken.balanceOf(user3.address)).equal(e(26));
     });
 
@@ -1141,6 +1161,7 @@ describe("Integration", async () => {
       // user2 transfers 10 tokens to user1
       await internalMarket.connect(user2).withdraw(user1.address, e(10));
       await internalMarket.connect(user1).deposit(e(10));
+      await governanceToken.settleTokens(user1.address);
 
       // 53 days later (60 since beginning) user1 redeems 3 tokens
       await timeTravel(redemptionStartDays - offerDurationDays, true);
@@ -1178,6 +1199,7 @@ describe("Integration", async () => {
       // still in the vault)
       await internalMarket.connect(user1).withdraw(user1.address, e(3));
       await internalMarket.connect(user1).deposit(e(3));
+      await governanceToken.settleTokens(user1.address);
       await internalMarket.connect(user1).makeOffer(e(3));
 
       // FIXME: not sure how this test worked before
@@ -1191,6 +1213,7 @@ describe("Integration", async () => {
       // user1 re-withdraws the tokens, sobbing
       await internalMarket.connect(user1).withdraw(user1.address, e(3));
       await internalMarket.connect(user1).deposit(e(3));
+      await governanceToken.settleTokens(user1.address);
 
       // 13 tokens are minted to user1
       await _mintTokens(user1, 13);
@@ -1211,6 +1234,7 @@ describe("Integration", async () => {
       tokensRedeemed += 1;
       await internalMarket.connect(user1).withdraw(user1.address, e(13));
       await internalMarket.connect(user1).deposit(e(13));
+      await governanceToken.settleTokens(user1.address);
 
       // post-conditions
       expect(await governanceToken.balanceOf(user1.address)).equal(
@@ -1230,12 +1254,61 @@ describe("Integration", async () => {
       );
     });
 
+    it("back and forth NEOK <-> Governance", async () => {
+      await governanceToken.setSettlementPeriod(3600 * 24 * 7);
+      const share = parseEther("1");
+      await shareholderRegistry.mint(user1.address, parseEther("1"));
+      await shareholderRegistry.mint(user2.address, parseEther("1"));
+      await shareholderRegistry.setStatus(contributorStatus, user1.address);
+      await shareholderRegistry.setStatus(contributorStatus, user2.address);
+
+      // 15 Governance Tokens to user2
+      await governanceToken.mint(user2.address, 15);
+      // 5 Governance tokens minted to user1
+      await governanceToken.mint(user1.address, 5);
+
+      // user2 withdraws 10 Governance tokens to user1
+      await internalMarket.connect(user2).makeOffer(10);
+      await timeTravel(7, true);
+      await internalMarket.connect(user2).withdraw(user1.address, 10);
+
+      // user1 deposit 4 NEOK
+      await internalMarket.connect(user1).deposit(4);
+      // user1 voting power is 5
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(5));
+      // user1 offers 3 NEOK
+      await internalMarket.connect(user1).makeOffer(3);
+      // user1 voting power is 2
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(2));
+      // one week passes
+      await timeTravel(7, true);
+      // user1 deposit 10 NEOK, fails
+      await expect(internalMarket.connect(user1).deposit(10)).revertedWith(
+        "ERC20: transfer amount exceeds balance"
+      );
+      // user1 deposit 3 NEOK
+      await internalMarket.connect(user1).deposit(3);
+      // user1 voting power is 2
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(2));
+      // deposit is finalized
+      await governanceToken.settleTokens(user1.address);
+      // user1 voting power is 6
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(6));
+      // one week passes
+      await timeTravel(7, true);
+      // deposit is finalized
+      await governanceToken.settleTokens(user1.address);
+      // user1 voting power is 9
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(9));
+    });
+
     it("internal and external token amounts", async () => {
       async function check({
         internalSupply = 0,
         externalSupply = 0,
         governanceTokenWrappedBalance = 0,
         marketInternalBalance = 0,
+
         user1InternalBalance = 0,
         user1ExternalBalance = 0,
         user1UsdcBalance = INITIAL_USDC,
@@ -1385,6 +1458,114 @@ describe("Integration", async () => {
         reserveExternalBalance: 0, // tokens were burnt
         reserveUsdcBalance: INITIAL_USDC - 20,
       });
+    });
+
+    it("voting with exclusion stress test", async () => {
+      await _makeContributor(user1, 20);
+      await _makeContributor(user2, 70);
+      await _makeContributor(user3, 10);
+
+      // resolution 1 excludes user 2
+      const abi = ["function setStatus(bytes32 status, address account)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("setStatus", [
+        investorStatus,
+        user2.address,
+      ]);
+
+      // Contributors propose a distrust vote against user3
+      const distrust1 = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user2.address
+        );
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(distrust1);
+
+      // user 2 delegates user 3
+      await voting.connect(user2).delegate(user3.address);
+
+      // while resolution 1 is running, a resolution 2 that exludes user 2 is created
+      const distrust2 = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust2",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user2.address
+        );
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(distrust2);
+
+      // while both resolutions are running, a resolution 3 is created
+      await timeTravel(1);
+      const standardResolution = await _prepareResolution();
+
+      await _makeVotable(distrust1);
+      await _makeVotable(distrust2);
+      await _makeVotable(standardResolution);
+
+      // resolution 1 fails
+      await _vote(user1, false, distrust1); // 20
+      await _vote(user3, true, distrust1); // 10
+      await expect(_vote(user2, false, distrust1)).revertedWith(
+        "Resolution: account cannot vote"
+      );
+      await _endResolutionWithId(distrust1);
+      await expect(resolutionManager.executeResolution(distrust1)).revertedWith(
+        "Resolution: not passed"
+      );
+
+      // resolution 2 succeeds, user is demoted to investor
+      // should the delegated voting power be transferred back to the excluded user in a resolution with exclusion?
+      await _vote(user1, true, distrust2); // 20
+      await _vote(user3, true, distrust2); // 10
+      await expect(
+        resolutionManager.connect(user2).vote(distrust1, false)
+      ).revertedWith("Resolution: account cannot vote");
+      await _endResolutionWithId(distrust2);
+      await resolutionManager.executeResolution(distrust2);
+
+      // user 3 should have delegated voting power from user 2 for resolution 3.
+      await _vote(user1, true, standardResolution); // 20
+      await _vote(user3, false, standardResolution); // 80
+      //await _vote(user2, false, standardResolution);
+      await _endResolutionWithId(standardResolution);
+      const resultStandardResolution =
+        await resolutionManager.getResolutionResult(standardResolution);
+      expect(resultStandardResolution).equal(false);
+
+      // Now that the user 2 is out, the user3 resolution power should be back to
+      // 10, hence not enough to drive the final decision
+      const standardResolution2 = await _prepareResolution(4);
+      await _makeVotable(standardResolution2);
+
+      await _vote(user1, true, standardResolution2); // 20
+      await _vote(user3, false, standardResolution2); // 10
+      await _endResolutionWithId(standardResolution2);
+      const resultStandardResolutio2 =
+        await resolutionManager.getResolutionResult(standardResolution2);
+      expect(resultStandardResolutio2).equal(true);
+
+      // back to square 1
+      await shareholderRegistry.setStatus(contributorStatus, user2.address);
+      const standardResolution3 = await _prepareResolution(4);
+      await _makeVotable(standardResolution3);
+
+      await _vote(user2, true, standardResolution3);
+      await _endResolutionWithId(standardResolution3);
+      const resultStandardResolutio3 =
+        await resolutionManager.getResolutionResult(standardResolution3);
+      expect(resultStandardResolutio3).equal(true);
     });
   });
 });

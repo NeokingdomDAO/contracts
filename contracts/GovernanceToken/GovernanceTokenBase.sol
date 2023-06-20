@@ -50,25 +50,6 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
         super._beforeTokenTransfer(from, to, amount);
     }
 
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override {
-        super._afterTokenTransfer(from, to, amount);
-        _voting.afterTokenTransfer(from, to, amount);
-
-        if (from == address(0)) {
-            _redemptionController.afterMint(to, amount);
-        }
-
-        // Invariants
-        require(
-            balanceOf(from) >= _vestingBalance[from],
-            "GovernanceToken: transfer amount exceeds vesting"
-        );
-    }
-
     // TODO: ask Marko whether vesting tokens can be given only to contributors
     function _mintVesting(address to, uint256 amount) internal virtual {
         _vestingBalance[to] += amount;
@@ -81,10 +62,11 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
         super._mint(to, amount);
     }
 
-    function _wrap(address from, uint amount) internal virtual {
-        tokenExternal.transferFrom(from, address(this), amount);
-        super._mint(from, amount);
-    }
+    // Redefined in GovernanceToken.sol
+    //function _wrap(address from, uint amount) internal virtual {
+    //    tokenExternal.transferFrom(from, address(this), amount);
+    //   super._mint(from, amount);
+    //}
 
     function _unwrap(address from, address to, uint amount) internal virtual {
         tokenExternal.transfer(to, amount);

@@ -1,4 +1,4 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -11,10 +11,13 @@ import {
   GovernanceToken__factory,
   INeokingdomToken,
   IRedemptionController,
+  IShareholderRegistry,
   IVoting,
+  ShareholderRegistry__factory,
 } from "../typechain";
 
 import { ROLES } from "../lib/utils";
+import { getEVMTimestamp, timeTravel } from "./utils/evm";
 
 chai.use(smock.matchers);
 chai.use(solidity);
@@ -30,7 +33,9 @@ describe("GovernanceToken", () => {
   let governanceToken: GovernanceToken;
   let neokingdomToken: FakeContract<INeokingdomToken>;
   let voting: FakeContract<IVoting>;
+  let shareholderRegistry: MockContract<IShareholderRegistry>;
   let redemption: FakeContract<IRedemptionController>;
+  let contributorStatus: string;
   let deployer: SignerWithAddress;
   let internalMarket: SignerWithAddress;
   let contributor: SignerWithAddress;
@@ -59,9 +64,16 @@ describe("GovernanceToken", () => {
     await governanceToken.deployed();
 
     voting = await smock.fake("IVoting");
+    const shareholderRegistryFactory =
+      await smock.mock<ShareholderRegistry__factory>("ShareholderRegistry");
+    shareholderRegistry = await shareholderRegistryFactory.deploy();
+
+    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
 
     daoRoles.hasRole.returns(true);
     await governanceToken.setVoting(voting.address);
+    await governanceToken.setShareholderRegistry(shareholderRegistry.address);
+    await governanceToken.setSettlementPeriod(3600 * 24 * 7);
     await governanceToken.setRedemptionController(redemption.address);
     await governanceToken.setTokenExternal(neokingdomToken.address);
   });
@@ -76,12 +88,19 @@ describe("GovernanceToken", () => {
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
     daoRoles.hasRole.returns(true);
+    shareholderRegistry.isAtLeast
+      .whenCalledWith(contributorStatus, contributor.address)
+      .returns(true);
+    shareholderRegistry.isAtLeast
+      .whenCalledWith(contributorStatus, contributor2.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
     redemption.afterMint.reset();
     daoRoles.hasRole.reset();
+    shareholderRegistry.isAtLeast.reset();
   });
 
   describe("transfer hooks", async () => {
@@ -107,8 +126,8 @@ describe("GovernanceToken", () => {
     });
 
     it("should call the RedemptionController hook when mint", async () => {
-      await governanceToken.mint(account.address, 10);
-      expect(redemption.afterMint).calledWith(account.address, 10);
+      await governanceToken.mint(contributor.address, 10);
+      expect(redemption.afterMint).calledWith(contributor.address, 10);
     });
 
     it("should not call the RedemptionController hook when transfer", async () => {
@@ -126,6 +145,7 @@ describe("GovernanceToken", () => {
       await mintAndApprove(contributor, 10);
       await mintAndApprove(account, 10);
     });
+
     it("should revert when called by a contributor", async () => {
       daoRoles.hasRole.reset();
       await expect(
@@ -241,9 +261,163 @@ describe("GovernanceToken", () => {
       );
     });
 
-    it("should mint internal tokens to 'from' address", async () => {
-      await governanceToken.wrap(contributor.address, 41);
-      expect(await governanceToken.balanceOf(contributor.address)).equal(41);
+    it("should emit a DepositStarted event", async () => {
+      await expect(governanceToken.wrap(contributor.address, 41))
+        .to.emit(governanceToken, "DepositStarted")
+        .withArgs(
+          contributor.address,
+          41,
+          (await getEVMTimestamp()) + 3600 * 24 * 7
+        );
+    });
+  });
+
+  describe("settlingBalanceOf", async () => {
+    const wrappedTokens = 41;
+
+    describe("when no tokens have been wrapped", async () => {
+      it("should return 0", async () => {
+        const result = await governanceToken.settlingBalanceOf(
+          contributor.address
+        );
+
+        expect(result).equal(0);
+      });
+    });
+
+    describe("when tokens have been wrapped less than 7 days ago", async () => {
+      beforeEach(async () => {
+        await governanceToken.wrap(contributor.address, wrappedTokens);
+      });
+
+      it("should return the amount of wrapped tokens", async () => {
+        const result = await governanceToken.settlingBalanceOf(
+          contributor.address
+        );
+
+        expect(result).equal(wrappedTokens);
+      });
+
+      it("should return the sum of all cooling tokens from a subsequent wrap", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+
+        const result = await governanceToken.settlingBalanceOf(
+          contributor.address
+        );
+
+        expect(result).equal(wrappedTokens + 42);
+      });
+    });
+
+    describe("when tokens have been wrapped more than 7 days ago", async () => {
+      beforeEach(async () => {
+        await governanceToken.wrap(contributor.address, wrappedTokens);
+        await timeTravel(7, true);
+      });
+
+      it("should return 0", async () => {
+        const result = await governanceToken.settlingBalanceOf(
+          contributor.address
+        );
+
+        expect(result).equal(0);
+      });
+
+      it("should returns a new amount of wrapped tokens", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+
+        const result = await governanceToken.settlingBalanceOf(
+          contributor.address
+        );
+
+        expect(result).equal(42);
+      });
+    });
+  });
+
+  describe("processDepositedTokens", async () => {
+    describe("when no tokens have been wrapped", async () => {
+      it("should mint nothing", async () => {
+        await governanceToken.settleTokens(contributor.address);
+
+        const result = await governanceToken.balanceOf(contributor.address);
+
+        expect(result).equal(0);
+      });
+    });
+
+    describe("when tokens have been wrapped less than 7 days ago", async () => {
+      beforeEach(async () => {
+        await governanceToken.wrap(contributor.address, 41);
+      });
+
+      it("should mint nothing", async () => {
+        await governanceToken.settleTokens(contributor.address);
+
+        const result = await governanceToken.balanceOf(contributor.address);
+
+        expect(result).equal(0);
+      });
+    });
+
+    describe("when tokens have been wrapped more than 7 days ago", async () => {
+      beforeEach(async () => {
+        await governanceToken.wrap(contributor.address, 41);
+        await timeTravel(7);
+      });
+
+      it("should mint internal tokens to 'from' address", async () => {
+        await governanceToken.settleTokens(contributor.address);
+
+        const result = await governanceToken.balanceOf(contributor.address);
+
+        expect(result).equal(41);
+      });
+
+      it("should not mint internal tokens twice", async () => {
+        await governanceToken.settleTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
+
+        const result = await governanceToken.balanceOf(contributor.address);
+
+        expect(result).equal(41);
+      });
+
+      it("should only not mint non cooled tokens", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await governanceToken.settleTokens(contributor.address);
+
+        const result = await governanceToken.balanceOf(contributor.address);
+
+        expect(result).equal(41);
+      });
+
+      it("should mint cooled tokens from different wraps together", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+
+        const result = await governanceToken.balanceOf(contributor.address);
+
+        expect(result).equal(83);
+      });
+
+      it("should mint cooled tokens from a subsequent wrap", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await governanceToken.settleTokens(contributor.address);
+
+        const balanceBefore = await governanceToken.balanceOf(
+          contributor.address
+        );
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+
+        const balanceAfter = await governanceToken.balanceOf(
+          contributor.address
+        );
+
+        expect(balanceAfter).equal(balanceBefore.add(42));
+      });
     });
   });
 

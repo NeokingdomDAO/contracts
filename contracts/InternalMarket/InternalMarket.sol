@@ -44,6 +44,10 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         _deposit(_msgSender(), amount);
     }
 
+    function finalizeDeposit() public {
+        _finalizeDeposit(_msgSender());
+    }
+
     function redeem(uint amount) public {
         _redeem(_msgSender(), amount);
     }

@@ -1,4 +1,4 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -11,7 +11,9 @@ import {
   GovernanceToken__factory,
   INeokingdomToken,
   IRedemptionController,
+  IShareholderRegistry,
   IVoting,
+  ShareholderRegistry__factory,
 } from "../typechain";
 
 import { ROLES } from "../lib/utils";
@@ -31,7 +33,9 @@ describe("GovernanceToken", () => {
   let governanceToken: GovernanceToken;
   let neokingdomToken: FakeContract<INeokingdomToken>;
   let voting: FakeContract<IVoting>;
+  let shareholderRegistry: MockContract<IShareholderRegistry>;
   let redemption: FakeContract<IRedemptionController>;
+  let contributorStatus: string;
   let deployer: SignerWithAddress;
   let internalMarket: SignerWithAddress;
   let contributor: SignerWithAddress;
@@ -60,9 +64,15 @@ describe("GovernanceToken", () => {
     await governanceToken.deployed();
 
     voting = await smock.fake("IVoting");
+    const shareholderRegistryFactory =
+      await smock.mock<ShareholderRegistry__factory>("ShareholderRegistry");
+    shareholderRegistry = await shareholderRegistryFactory.deploy();
+
+    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
 
     daoRoles.hasRole.returns(true);
     await governanceToken.setVoting(voting.address);
+    await governanceToken.setShareholderRegistry(shareholderRegistry.address);
     await governanceToken.setSettlementPeriod(3600 * 24 * 7);
     await governanceToken.setRedemptionController(redemption.address);
     await governanceToken.setTokenExternal(neokingdomToken.address);
@@ -78,12 +88,19 @@ describe("GovernanceToken", () => {
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
     daoRoles.hasRole.returns(true);
+    shareholderRegistry.isAtLeast
+      .whenCalledWith(contributorStatus, contributor.address)
+      .returns(true);
+    shareholderRegistry.isAtLeast
+      .whenCalledWith(contributorStatus, contributor2.address)
+      .returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
     redemption.afterMint.reset();
     daoRoles.hasRole.reset();
+    shareholderRegistry.isAtLeast.reset();
   });
 
   describe("transfer hooks", async () => {
@@ -109,8 +126,8 @@ describe("GovernanceToken", () => {
     });
 
     it("should call the RedemptionController hook when mint", async () => {
-      await governanceToken.mint(account.address, 10);
-      expect(redemption.afterMint).calledWith(account.address, 10);
+      await governanceToken.mint(contributor.address, 10);
+      expect(redemption.afterMint).calledWith(contributor.address, 10);
     });
 
     it("should not call the RedemptionController hook when transfer", async () => {

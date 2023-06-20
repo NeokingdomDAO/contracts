@@ -1,4 +1,4 @@
-import { FakeContract, smock } from "@defi-wonderland/smock";
+import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -11,8 +11,10 @@ import {
   GovernanceToken__factory,
   INeokingdomToken,
   IRedemptionController,
+  IShareholderRegistry,
   ShareholderRegistryMock,
   ShareholderRegistryMock__factory,
+  ShareholderRegistry__factory,
   VotingMock,
   VotingMock__factory,
 } from "../typechain";
@@ -33,7 +35,7 @@ describe("GovernanceTokenSnapshot", () => {
   let neokingdomToken: FakeContract<INeokingdomToken>;
   let redemption: FakeContract<IRedemptionController>;
   let voting: VotingMock;
-  let shareholderRegistry: ShareholderRegistryMock;
+  let shareholderRegistry: MockContract<IShareholderRegistry>;
   let deployer: SignerWithAddress,
     account: SignerWithAddress,
     contributor: SignerWithAddress,
@@ -75,14 +77,9 @@ describe("GovernanceTokenSnapshot", () => {
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
     OPERATOR_ROLE = await roles.OPERATOR_ROLE();
-
-    shareholderRegistry = (await upgrades.deployProxy(
-      ShareholderRegistryMockFactory,
-      {
-        initializer: "initialize",
-      }
-    )) as ShareholderRegistryMock;
-    await shareholderRegistry.deployed();
+    const shareholderRegistryFactory =
+      await smock.mock<ShareholderRegistry__factory>("ShareholderRegistry");
+    shareholderRegistry = await shareholderRegistryFactory.deploy();
 
     daoRoles.hasRole.returns(true);
     // To test transfers easily, we assign the role of InternalMarket to the deployer.
@@ -90,6 +87,7 @@ describe("GovernanceTokenSnapshot", () => {
     // there is enough allowance).
     await governanceToken.setTokenExternal(neokingdomToken.address);
     await governanceToken.setVoting(voting.address);
+    await governanceToken.setShareholderRegistry(shareholderRegistry.address);
     await governanceToken.setRedemptionController(redemption.address);
 
     const contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
@@ -100,21 +98,17 @@ describe("GovernanceTokenSnapshot", () => {
     await setContributor(contributor2, true);
 
     async function setContributor(user: SignerWithAddress, flag: boolean) {
-      await shareholderRegistry.mock_isAtLeast(
-        contributorStatus,
-        user.address,
-        flag
-      );
-      await shareholderRegistry.mock_isAtLeast(
-        shareholderStatus,
-        user.address,
-        flag
-      );
-      await shareholderRegistry.mock_isAtLeast(
-        investorStatus,
-        user.address,
-        flag
-      );
+      shareholderRegistry.isAtLeast
+        .whenCalledWith(contributorStatus, user.address)
+        .returns(flag);
+
+      shareholderRegistry.isAtLeast
+        .whenCalledWith(shareholderStatus, user.address)
+        .returns(flag);
+
+      shareholderRegistry.isAtLeast
+        .whenCalledWith(investorStatus, user.address)
+        .returns(flag);
     }
   });
 

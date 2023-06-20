@@ -107,6 +107,8 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
 
   // Token
   (c) => c.governanceToken.setVoting(c.voting.address),
+  (c) =>
+    c.governanceToken.setShareholderRegistry(c.shareholderRegistry.address),
   (c) => c.governanceToken.setTokenExternal(c.neokingdomToken.address),
   (c) =>
     c.governanceToken.setRedemptionController(c.redemptionController.address),

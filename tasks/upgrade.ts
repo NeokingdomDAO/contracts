@@ -1,6 +1,7 @@
 import { task } from "hardhat/config";
 
 import {
+  GovernanceTokenV2Mock__factory,
   InternalMarket__factory,
   ProxyAdmin,
   ProxyAdmin__factory,
@@ -47,6 +48,26 @@ task("upgrade:market", "Upgrade Internal Market", async (_, hre) => {
 
   console.log("    Address:", internalMarketContract.address);
   console.log("InternalMarket upgraded");
+});
+
+task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
+  const governanceTokenFactory = (await hre.ethers.getContractFactory(
+    "GovernanceToken"
+  )) as GovernanceTokenV2Mock__factory;
+
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+  const contracts = await neokingdom.loadContracts();
+  console.log("Upgrade GovernanceToken");
+  console.log("  Network:", hre.network.name);
+
+  const governanceTokenContract = await hre.upgrades.upgradeProxy(
+    contracts.governanceToken.address,
+    governanceTokenFactory
+  );
+  await governanceTokenContract.deployed();
+
+  console.log("    Address:", governanceTokenContract.address);
+  console.log("GovernanceToken upgraded");
 });
 
 task("impl", "Get Proxy Impl")

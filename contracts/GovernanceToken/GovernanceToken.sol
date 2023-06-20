@@ -10,6 +10,8 @@ import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
 
 contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
+    IShareholderRegistry internal _shareholderRegistry;
+
     function initialize(
         DAORoles roles,
         string memory name,
@@ -36,6 +38,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         IVoting voting
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
         _setVoting(voting);
+    }
+
+    function setShareholderRegistry(
+        IShareholderRegistry shareholderRegistry
+    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+        _shareholderRegistry = shareholderRegistry;
     }
 
     function setTokenExternal(
@@ -118,5 +126,30 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         returns (bool)
     {
         return super.transferFrom(from, to, amount);
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        super._afterTokenTransfer(from, to, amount);
+        _voting.afterTokenTransfer(from, to, amount);
+
+        if (
+            from == address(0) &&
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                to
+            )
+        ) {
+            _redemptionController.afterMint(to, amount);
+        }
+
+        // Invariants
+        require(
+            balanceOf(from) >= _vestingBalance[from],
+            "GovernanceToken: transfer amount exceeds vesting"
+        );
     }
 }

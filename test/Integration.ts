@@ -184,6 +184,25 @@ describe("Integration", async () => {
       await setEVMTimestamp(votingTimestamp);
     }
 
+    async function _endResolutionWithId(resolutionId: number) {
+      const resolutionObject = await resolutionManager.resolutions(
+        resolutionId
+      );
+      const resolutionType = await resolutionManager.resolutionTypes(
+        resolutionObject.resolutionTypeId
+      );
+      const endTimestamp =
+        resolutionObject.approveTimestamp.toNumber() +
+        resolutionType.noticePeriod.toNumber() +
+        resolutionType.votingPeriod.toNumber();
+
+      const currentTimestamp = await getEVMTimestamp();
+
+      if (currentTimestamp < endTimestamp) {
+        await setEVMTimestamp(endTimestamp);
+      }
+    }
+
     async function _prepareResolution(
       type: number = 0,
       executionTo: string[] = [],
@@ -1385,6 +1404,114 @@ describe("Integration", async () => {
         reserveExternalBalance: 0, // tokens were burnt
         reserveUsdcBalance: INITIAL_USDC - 20,
       });
+    });
+
+    it("voting with exclusion stress test", async () => {
+      await _makeContributor(user1, 20);
+      await _makeContributor(user2, 70);
+      await _makeContributor(user3, 10);
+
+      // resolution 1 excludes user 2
+      const abi = ["function setStatus(bytes32 status, address account)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("setStatus", [
+        investorStatus,
+        user2.address,
+      ]);
+
+      // Contributors propose a distrust vote against user3
+      const distrust1 = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user2.address
+        );
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(distrust1);
+
+      // user 2 delegates user 3
+      await voting.connect(user2).delegate(user3.address);
+
+      // while resolution 1 is running, a resolution 2 that exludes user 2 is created
+      const distrust2 = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust2",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user2.address
+        );
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(distrust2);
+
+      // while both resolutions are running, a resolution 3 is created
+      await timeTravel(1);
+      const standardResolution = await _prepareResolution();
+
+      await _makeVotable(distrust1);
+      await _makeVotable(distrust2);
+      await _makeVotable(standardResolution);
+
+      // resolution 1 fails
+      await _vote(user1, false, distrust1); // 20
+      await _vote(user3, true, distrust1); // 10
+      await expect(_vote(user2, false, distrust1)).revertedWith(
+        "Resolution: account cannot vote"
+      );
+      await _endResolutionWithId(distrust1);
+      await expect(resolutionManager.executeResolution(distrust1)).revertedWith(
+        "Resolution: not passed"
+      );
+
+      // resolution 2 succeeds, user is demoted to investor
+      // should the delegated voting power be transferred back to the excluded user in a resolution with exclusion?
+      await _vote(user1, true, distrust2); // 20
+      await _vote(user3, true, distrust2); // 10
+      await expect(
+        resolutionManager.connect(user2).vote(distrust1, false)
+      ).revertedWith("Resolution: account cannot vote");
+      await _endResolutionWithId(distrust2);
+      await resolutionManager.executeResolution(distrust2);
+
+      // user 3 should have delegated voting power from user 2 for resolution 3.
+      await _vote(user1, true, standardResolution); // 20
+      await _vote(user3, false, standardResolution); // 80
+      //await _vote(user2, false, standardResolution);
+      await _endResolutionWithId(standardResolution);
+      const resultStandardResolution =
+        await resolutionManager.getResolutionResult(standardResolution);
+      expect(resultStandardResolution).equal(false);
+
+      // Now that the user 2 is out, the user3 resolution power should be back to
+      // 10, hence not enough to drive the final decision
+      const standardResolution2 = await _prepareResolution(4);
+      await _makeVotable(standardResolution2);
+
+      await _vote(user1, true, standardResolution2); // 20
+      await _vote(user3, false, standardResolution2); // 10
+      await _endResolutionWithId(standardResolution2);
+      const resultStandardResolutio2 =
+        await resolutionManager.getResolutionResult(standardResolution2);
+      expect(resultStandardResolutio2).equal(true);
+
+      // back to square 1
+      await shareholderRegistry.setStatus(contributorStatus, user2.address);
+      const standardResolution3 = await _prepareResolution(4);
+      await _makeVotable(standardResolution3);
+
+      await _vote(user2, true, standardResolution3);
+      await _endResolutionWithId(standardResolution3);
+      const resultStandardResolutio3 =
+        await resolutionManager.getResolutionResult(standardResolution3);
+      expect(resultStandardResolutio3).equal(true);
     });
   });
 });

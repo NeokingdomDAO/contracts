@@ -710,7 +710,7 @@ describe("Integration", async () => {
       await shareholderRegistry.setStatus(investorStatus, user3.address);
       await internalMarket.connect(user3).withdraw(user2.address, e(50));
       await internalMarket.connect(user2).deposit(e(50));
-      await governanceToken.processCoolTokens(user2.address);
+      await governanceToken.settleTokens(user2.address);
       await _mintTokens(user2, 50);
       // -> user 1 voting power == 60
       // -> user 2 voting power == 130
@@ -984,7 +984,7 @@ describe("Integration", async () => {
       );
 
       await internalMarket.connect(user3).deposit(e(5));
-      await governanceToken.processCoolTokens(user3.address);
+      await governanceToken.settleTokens(user3.address);
       expect(await governanceToken.balanceOf(user3.address)).equal(e(26));
     });
 
@@ -1161,7 +1161,7 @@ describe("Integration", async () => {
       // user2 transfers 10 tokens to user1
       await internalMarket.connect(user2).withdraw(user1.address, e(10));
       await internalMarket.connect(user1).deposit(e(10));
-      await governanceToken.processCoolTokens(user1.address);
+      await governanceToken.settleTokens(user1.address);
 
       // 53 days later (60 since beginning) user1 redeems 3 tokens
       await timeTravel(redemptionStartDays - offerDurationDays, true);
@@ -1199,7 +1199,7 @@ describe("Integration", async () => {
       // still in the vault)
       await internalMarket.connect(user1).withdraw(user1.address, e(3));
       await internalMarket.connect(user1).deposit(e(3));
-      await governanceToken.processCoolTokens(user1.address);
+      await governanceToken.settleTokens(user1.address);
       await internalMarket.connect(user1).makeOffer(e(3));
 
       // FIXME: not sure how this test worked before
@@ -1213,7 +1213,7 @@ describe("Integration", async () => {
       // user1 re-withdraws the tokens, sobbing
       await internalMarket.connect(user1).withdraw(user1.address, e(3));
       await internalMarket.connect(user1).deposit(e(3));
-      await governanceToken.processCoolTokens(user1.address);
+      await governanceToken.settleTokens(user1.address);
 
       // 13 tokens are minted to user1
       await _mintTokens(user1, 13);
@@ -1234,7 +1234,7 @@ describe("Integration", async () => {
       tokensRedeemed += 1;
       await internalMarket.connect(user1).withdraw(user1.address, e(13));
       await internalMarket.connect(user1).deposit(e(13));
-      await governanceToken.processCoolTokens(user1.address);
+      await governanceToken.settleTokens(user1.address);
 
       // post-conditions
       expect(await governanceToken.balanceOf(user1.address)).equal(
@@ -1255,7 +1255,7 @@ describe("Integration", async () => {
     });
 
     it("back and forth NEOK <-> Governance", async () => {
-      await governanceToken.setCoolingPeriod(3600 * 24 * 7);
+      await governanceToken.setSettlementPeriod(3600 * 24 * 7);
       const share = parseEther("1");
       await shareholderRegistry.mint(user1.address, parseEther("1"));
       await shareholderRegistry.mint(user2.address, parseEther("1"));
@@ -1291,13 +1291,13 @@ describe("Integration", async () => {
       // user1 voting power is 2
       expect(await voting.getVotingPower(user1.address)).equal(share.add(2));
       // deposit is finalized
-      await governanceToken.processCoolTokens(user1.address);
+      await governanceToken.settleTokens(user1.address);
       // user1 voting power is 6
       expect(await voting.getVotingPower(user1.address)).equal(share.add(6));
       // one week passes
       await timeTravel(7, true);
       // deposit is finalized
-      await governanceToken.processCoolTokens(user1.address);
+      await governanceToken.settleTokens(user1.address);
       // user1 voting power is 9
       expect(await voting.getVotingPower(user1.address)).equal(share.add(9));
     });

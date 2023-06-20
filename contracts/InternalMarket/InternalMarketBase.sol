@@ -223,7 +223,7 @@ contract InternalMarketBase {
     }
 
     function _finalizeDeposit(address to) internal virtual {
-        tokenInternal.processCoolTokens(to);
+        tokenInternal.settleTokens(to);
     }
 
     function _redeem(address from, uint256 amount) internal virtual {

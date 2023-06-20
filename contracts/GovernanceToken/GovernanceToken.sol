@@ -13,17 +13,17 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     event DepositStarted(
         address from,
         uint256 amount,
-        uint256 coolingEndTimestamp
+        uint256 settlementTimestamp
     );
 
-    struct CoolingTokens {
+    struct DepositedTokens {
         uint256 amount;
-        uint256 coolingEndTimestamp;
+        uint256 settlementTimestamp;
     }
 
-    mapping(address => CoolingTokens[]) coolingTokens;
+    mapping(address => DepositedTokens[]) depositedTokens;
 
-    uint256 coolingPeriod;
+    uint256 settlementPeriod;
 
     function initialize(
         DAORoles roles,
@@ -53,10 +53,10 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         _setVoting(voting);
     }
 
-    function setCoolingPeriod(
-        uint256 coolingPeriod_
+    function setSettlementPeriod(
+        uint256 settlementPeriod_
     ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        coolingPeriod = coolingPeriod_;
+        settlementPeriod = settlementPeriod_;
     }
 
     function setTokenExternal(
@@ -100,8 +100,8 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         _unwrap(from, to, amount);
     }
 
-    function processCoolTokens(address from) public virtual {
-        _processCoolTokens(from);
+    function settleTokens(address from) public virtual {
+        _settleTokens(from);
     }
 
     function mintVesting(
@@ -145,12 +145,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         return super.transferFrom(from, to, amount);
     }
 
-    function coolingBalanceOf(
+    function settlingBalanceOf(
         address account
     ) public view virtual returns (uint256 amount) {
-        for (uint256 i = coolingTokens[account].length; i > 0; i--) {
-            CoolingTokens memory tokens = coolingTokens[account][i - 1];
-            if (block.timestamp < tokens.coolingEndTimestamp) {
+        for (uint256 i = depositedTokens[account].length; i > 0; i--) {
+            DepositedTokens memory tokens = depositedTokens[account][i - 1];
+            if (block.timestamp < tokens.settlementTimestamp) {
                 if (tokens.amount > 0) {
                     amount += tokens.amount;
                 } else {
@@ -163,20 +163,22 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     // Internal
 
     // These functions have been introduced on a later update. Given the memory layout
-    // of our class-tree, we could not use the new storage (coolingPeriod, coolingTokens)
+    // of our class-tree, we could not use the new storage (settlementPeriod, depositedTokens)
     // on GovernanceTokenBase. They had to be declared on this class, hence the methods could
     // only be implemented here.
     function _wrap(address from, uint amount) internal virtual {
         tokenExternal.transferFrom(from, address(this), amount);
-        uint256 coolingEndTimestamp = block.timestamp + coolingPeriod;
-        coolingTokens[from].push(CoolingTokens(amount, coolingEndTimestamp));
-        emit DepositStarted(from, amount, coolingEndTimestamp);
+        uint256 settlementTimestamp = block.timestamp + settlementPeriod;
+        depositedTokens[from].push(
+            DepositedTokens(amount, settlementTimestamp)
+        );
+        emit DepositStarted(from, amount, settlementTimestamp);
     }
 
-    function _processCoolTokens(address from) internal virtual {
-        for (uint256 i = coolingTokens[from].length; i > 0; i--) {
-            CoolingTokens storage tokens = coolingTokens[from][i - 1];
-            if (block.timestamp >= tokens.coolingEndTimestamp) {
+    function _settleTokens(address from) internal virtual {
+        for (uint256 i = depositedTokens[from].length; i > 0; i--) {
+            DepositedTokens storage tokens = depositedTokens[from][i - 1];
+            if (block.timestamp >= tokens.settlementTimestamp) {
                 if (tokens.amount > 0) {
                     super._mint(from, tokens.amount);
                     tokens.amount = 0;

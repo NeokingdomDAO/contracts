@@ -21,5 +21,5 @@ interface IGovernanceToken is IERC20Upgradeable, ISnapshot {
 
     function unwrap(address from, address to, uint256 amount) external;
 
-    function processCoolTokens(address from) external;
+    function settleTokens(address from) external;
 }

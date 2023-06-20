@@ -63,7 +63,7 @@ describe("GovernanceToken", () => {
 
     daoRoles.hasRole.returns(true);
     await governanceToken.setVoting(voting.address);
-    await governanceToken.setCoolingPeriod(3600 * 24 * 7);
+    await governanceToken.setSettlementPeriod(3600 * 24 * 7);
     await governanceToken.setRedemptionController(redemption.address);
     await governanceToken.setTokenExternal(neokingdomToken.address);
   });
@@ -255,12 +255,12 @@ describe("GovernanceToken", () => {
     });
   });
 
-  describe("coolingBalanceOf", async () => {
+  describe("settlingBalanceOf", async () => {
     const wrappedTokens = 41;
 
     describe("when no tokens have been wrapped", async () => {
       it("should return 0", async () => {
-        const result = await governanceToken.coolingBalanceOf(
+        const result = await governanceToken.settlingBalanceOf(
           contributor.address
         );
 
@@ -274,7 +274,7 @@ describe("GovernanceToken", () => {
       });
 
       it("should return the amount of wrapped tokens", async () => {
-        const result = await governanceToken.coolingBalanceOf(
+        const result = await governanceToken.settlingBalanceOf(
           contributor.address
         );
 
@@ -284,7 +284,7 @@ describe("GovernanceToken", () => {
       it("should return the sum of all cooling tokens from a subsequent wrap", async () => {
         await governanceToken.wrap(contributor.address, 42);
 
-        const result = await governanceToken.coolingBalanceOf(
+        const result = await governanceToken.settlingBalanceOf(
           contributor.address
         );
 
@@ -299,7 +299,7 @@ describe("GovernanceToken", () => {
       });
 
       it("should return 0", async () => {
-        const result = await governanceToken.coolingBalanceOf(
+        const result = await governanceToken.settlingBalanceOf(
           contributor.address
         );
 
@@ -309,7 +309,7 @@ describe("GovernanceToken", () => {
       it("should returns a new amount of wrapped tokens", async () => {
         await governanceToken.wrap(contributor.address, 42);
 
-        const result = await governanceToken.coolingBalanceOf(
+        const result = await governanceToken.settlingBalanceOf(
           contributor.address
         );
 
@@ -318,10 +318,10 @@ describe("GovernanceToken", () => {
     });
   });
 
-  describe("processCoolingTokens", async () => {
+  describe("processDepositedTokens", async () => {
     describe("when no tokens have been wrapped", async () => {
       it("should mint nothing", async () => {
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const result = await governanceToken.balanceOf(contributor.address);
 
@@ -335,7 +335,7 @@ describe("GovernanceToken", () => {
       });
 
       it("should mint nothing", async () => {
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const result = await governanceToken.balanceOf(contributor.address);
 
@@ -350,7 +350,7 @@ describe("GovernanceToken", () => {
       });
 
       it("should mint internal tokens to 'from' address", async () => {
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const result = await governanceToken.balanceOf(contributor.address);
 
@@ -358,8 +358,8 @@ describe("GovernanceToken", () => {
       });
 
       it("should not mint internal tokens twice", async () => {
-        await governanceToken.processCoolTokens(contributor.address);
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const result = await governanceToken.balanceOf(contributor.address);
 
@@ -368,7 +368,7 @@ describe("GovernanceToken", () => {
 
       it("should only not mint non cooled tokens", async () => {
         await governanceToken.wrap(contributor.address, 42);
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const result = await governanceToken.balanceOf(contributor.address);
 
@@ -378,7 +378,7 @@ describe("GovernanceToken", () => {
       it("should mint cooled tokens from different wraps together", async () => {
         await governanceToken.wrap(contributor.address, 42);
         await timeTravel(7);
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const result = await governanceToken.balanceOf(contributor.address);
 
@@ -387,13 +387,13 @@ describe("GovernanceToken", () => {
 
       it("should mint cooled tokens from a subsequent wrap", async () => {
         await governanceToken.wrap(contributor.address, 42);
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const balanceBefore = await governanceToken.balanceOf(
           contributor.address
         );
         await timeTravel(7);
-        await governanceToken.processCoolTokens(contributor.address);
+        await governanceToken.settleTokens(contributor.address);
 
         const balanceAfter = await governanceToken.balanceOf(
           contributor.address

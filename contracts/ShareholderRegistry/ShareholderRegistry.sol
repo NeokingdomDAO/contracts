@@ -8,16 +8,22 @@ import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
 
+/**
+ * @title ShareholderRegistry
+ * @notice ShareholderRegistry provides an implementation of a registry system for
+ * a) holding and distributing shares; and b) set the status of the holders.
+ */
 contract ShareholderRegistry is
     Initializable,
     ShareholderRegistrySnapshot,
     HasRole
 {
-    // Benjamin takes all the decisions in first months, assuming the role of
-    // the "Resolution", to then delegate to the resolution contract what comes
-    // next.
-    // This is what zodiac calls "incremental decentralization".
-
+    /**
+     * @notice Initializes the ShareholderRegistry contract with the given token name, symbol, and DAO roles.
+     * @param roles DAORoles struct containing DAO-specific roles.
+     * @param name string value representing the name of the token.
+     * @param symbol string value representing the symbol of the token.
+     */
     function initialize(
         DAORoles roles,
         string memory name,
@@ -35,6 +41,11 @@ contract ShareholderRegistry is
         _;
     }
 
+    /**
+     * @notice Takes a snapshot of the current balances for all shareholders.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @return A uint256 containing the snapshot ID.
+     */
     function snapshot()
         public
         virtual
@@ -45,6 +56,12 @@ contract ShareholderRegistry is
         return _snapshot();
     }
 
+    /**
+     * @notice Sets the status for a given shareholder address.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @param status bytes32 value representing the status to be set.
+     * @param account address to set the status for.
+     */
     function setStatus(
         bytes32 status,
         address account
@@ -52,6 +69,11 @@ contract ShareholderRegistry is
         _setStatus(status, account);
     }
 
+    /**
+     * @notice Sets the voting implementation for the registry.
+     * @dev Requires the sender to have the OPERATOR_ROLE.
+     * @param voting contract instance to set as the current voting contract.
+     */
     function setVoting(
         IVoting voting
     )
@@ -63,6 +85,12 @@ contract ShareholderRegistry is
         _setVoting(voting);
     }
 
+    /**
+     * @notice Mints new shares and assigns them to the specified shareholder address.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @param account address of the shareholder to receive the minted shares.
+     * @param amount uint256 value representing the number of shares to mint.
+     */
     function mint(
         address account,
         uint256 amount
@@ -70,6 +98,12 @@ contract ShareholderRegistry is
         _mint(account, amount);
     }
 
+    /**
+     * @notice Burn shares from the specified shareholder address.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @param account address of the shareholder whose shares are to be burned.
+     * @param amount uint256 value representing the number of shares to burn.
+     */
     function burn(
         address account,
         uint256 amount
@@ -77,12 +111,25 @@ contract ShareholderRegistry is
         _burn(account, amount);
     }
 
+    /**
+     * @notice Batch transfers shares from the DAO to the specified recipients.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @param recipients address[] array containing the address recipients.
+     */
     function batchTransferFromDAO(
         address[] memory recipients
     ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
         super._batchTransferFromDAO(recipients);
     }
 
+    /**
+     * @notice Transfers shares from one shareholder to another.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @param from address of the shareholder to transfer shares from.
+     * @param to address of the shareholder to transfer shares to.
+     * @param amount uint256 value representing the number of shares to transfer.
+     * @return true if successful, false otherwise.
+     */
     function transferFrom(
         address from,
         address to,
@@ -92,6 +139,13 @@ contract ShareholderRegistry is
         return true;
     }
 
+    /**
+     * @notice Transfers shares to the specified recipient.
+     * @dev Requires the sender to have the RESOLUTION_ROLE.
+     * @param to address of the recipient to transfer shares to.
+     * @param amount uint256 value representing the number of shares to transfer.
+     * @return true if successful, false otherwise.
+     */
     function transfer(
         address to,
         uint256 amount

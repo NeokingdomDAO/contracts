@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -8,7 +7,15 @@ import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
 
+/**
+ * @title Voting
+ * @notice The smart contract handles voting power delegation and manages voting snapshots.
+ */
 contract Voting is VotingSnapshot, Initializable, HasRole {
+    /**
+     * @notice Initializes the contract with given DAO roles.
+     * @param roles Instance of a DAORoles contract.
+     */
     function initialize(DAORoles roles) public initializer {
         _setRoles(roles);
     }
@@ -16,6 +23,9 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    /**
+     * @dev Modifier that restricts access to only the token contract.
+     */
     modifier onlyToken() virtual {
         require(
             msg.sender == address(_token) ||
@@ -27,12 +37,20 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     // Dependencies
 
+    /**
+     * @notice Sets the token contract address.
+     * @param token Address of the token contract.
+     */
     function setToken(
         IERC20Upgradeable token
     ) external virtual override onlyRole(Roles.OPERATOR_ROLE) {
         super._setToken(token);
     }
 
+    /**
+     * @notice Sets the shareholder registry contract address.
+     * @param shareholderRegistry Address of the shareholder registry contract.
+     */
     function setShareholderRegistry(
         IShareholderRegistry shareholderRegistry
     ) external virtual override onlyRole(Roles.OPERATOR_ROLE) {
@@ -41,6 +59,10 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     // Snapshottable
 
+    /**
+     * @notice Creates a snapshot of the voting state.
+     * @return The id of the created snapshot.
+     */
     function snapshot()
         public
         virtual
@@ -53,12 +75,13 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     // Hooks
 
-    /// @dev Hook to be called by the companion token upon token transfer
-    /// @notice Only the companion token can call this method
-    /// @notice The voting power transfer logic relies on the correct usage of this hook from the companion token
-    /// @param from The sender's address
-    /// @param to The receiver's address
-    /// @param amount The amount sent
+    /**
+     * @notice Hook called on every governance token transfer.
+     * @dev Only the governance token can call this method.
+     * @param from The sender's address.
+     * @param to The receiver's address.
+     * @param amount The amount transferred.
+     */
     function afterTokenTransfer(
         address from,
         address to,
@@ -67,12 +90,20 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
         _afterTokenTransfer(from, to, amount);
     }
 
+    /**
+     * @notice Hook called before removing a contributor.
+     * @param account The address of the contributor to be removed.
+     */
     function beforeRemoveContributor(
         address account
     ) external virtual override onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE) {
         _beforeRemoveContributor(account);
     }
 
+    /**
+     * @notice Hook called after adding a contributor.
+     * @param account The address of the newly added contributor.
+     */
     function afterAddContributor(
         address account
     ) external virtual override onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE) {
@@ -81,18 +112,21 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     // Public
 
-    /// @dev Allows sender to delegate another address for voting
-    /// @notice The first address to be delegated must be the sender itself
-    /// @notice Sub-delegation is not allowed
-    /// @param newDelegate Destination address of module transaction.
+    /**
+     *  @notice Allows the caller to delegate their voting power to another address.
+     *  @dev The first address to be delegated must be the sender itself.
+     *  @param newDelegate The address to delegate voting power to.
+     */
     function delegate(address newDelegate) public virtual override {
         _delegate(msg.sender, newDelegate);
     }
 
-    /// @dev Allows sender to delegate another address for voting
-    /// @notice Sub-delegation is not allowed
-    /// @param delegator Delegating address.
-    /// @param newDelegate Destination address of module transaction.
+    /**
+     * @notice Allows a sender to delegate another address for voting on behalf of a delegator.
+     * @dev Sub-delegation is not allowed.
+     * @param delegator The address delegating their voting power.
+     * @param newDelegate The address to delegate voting power to.
+     */
     function delegateFrom(
         address delegator,
         address newDelegate

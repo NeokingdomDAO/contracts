@@ -33,6 +33,11 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    modifier zeroCheck(address address_) {
+        require(address_ != address(0), "InternalMarket: 0x0 not allowed");
+        _;
+    }
+
     /**
      * @dev Make an offer to sell the governance tokens.
      * @param amount The amount of tokens to offer for sale.
@@ -88,7 +93,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setGovernanceToken(
         IGovernanceToken token
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(token)) {
         _setGovernanceToken(token);
     }
 
@@ -98,7 +103,11 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setShareholderRegistry(
         IShareholderRegistry shareholderRegistry
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    )
+        public
+        onlyRole(Roles.RESOLUTION_ROLE)
+        zeroCheck(address(shareholderRegistry))
+    {
         _setShareholderRegistry(shareholderRegistry);
     }
 
@@ -110,7 +119,12 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     function setExchangePair(
         ERC20 token,
         IStdReference oracle
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    )
+        public
+        onlyRole(Roles.RESOLUTION_ROLE)
+        zeroCheck(address(token))
+        zeroCheck(address(oracle))
+    {
         _setExchangePair(token, oracle);
     }
 
@@ -120,7 +134,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setReserve(
         address reserve_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(reserve_)) {
         _setReserve(reserve_);
     }
 
@@ -130,7 +144,11 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setRedemptionController(
         IRedemptionController redemptionController_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    )
+        public
+        onlyRole(Roles.RESOLUTION_ROLE)
+        zeroCheck(address(redemptionController_))
+    {
         _setRedemptionController(redemptionController_);
     }
 

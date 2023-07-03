@@ -53,6 +53,11 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    modifier zeroCheck(address address_) {
+        require(address_ != address(0), "GovernanceToken: 0x0 not allowed");
+        _;
+    }
+
     /**
      * @notice Creates a snapshot of the current GovernanceToken state.
      * @dev Snapshots can only be created by the role having resolution privileges.
@@ -75,7 +80,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
      */
     function setVoting(
         IVoting voting
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(voting))
+    {
         _setVoting(voting);
     }
 
@@ -108,7 +118,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
      */
     function setTokenExternal(
         address tokenExternalAddress
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(tokenExternalAddress)
+    {
         _setTokenExternal(tokenExternalAddress);
     }
 
@@ -119,7 +134,12 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
      */
     function setRedemptionController(
         IRedemptionController redemption
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    )
+        external
+        virtual
+        onlyRole(Roles.OPERATOR_ROLE)
+        zeroCheck(address(redemption))
+    {
         _setRedemptionController(redemption);
     }
 

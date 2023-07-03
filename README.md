@@ -12,7 +12,7 @@ Welcome to the Neokingdom DAO Contacts.
   - *proposal* gives an overview of the governance process of the DAO.
   - *tokenomics* explains how tokens are moved from the contributor's wallet to another wallet.
   - *voting* shows how contributors vote to resolutions.
-- [Complex flows)(./docs/complex_flows):
+- [Complex flows](./docs/complex_flows):
   - *voting* elaborates the logic behind the voting power distribution and delegation implemented in the Neokingdom DAO contracts
   - *redemption* elaborates the logic behind the redemption process of Neokingdom DAO
 - Integration tests:

@@ -7,7 +7,7 @@ header-includes:
   - \usepackage{titlesec}
 ---
 
-# NEOKingdom DAO Technical Overview
+# NEOKingdom DAO Yellow Paper
 
 ## Introduction
 

@@ -1,4 +1,4 @@
-# Voting and Delegation
+# Redemption
 
 ## 1 Abstract
 

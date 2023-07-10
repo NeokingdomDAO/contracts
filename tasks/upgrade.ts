@@ -39,7 +39,7 @@ task("upgrade:market", "Upgrade Internal Market", async (_, hre) => {
 
   const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
   const contracts = await neokingdom.loadContracts();
-  console.log("Upgrade InternalMarket");
+  console.log(`Upgrade InternalMarket ${contracts.internalMarket.address}`);
   console.log("  Network:", hre.network.name);
 
   const answer = await question(

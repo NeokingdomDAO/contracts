@@ -2716,6 +2716,224 @@
           }
         }
       }
+    },
+    "c73d13ac4ac873d8b92b5d3dffcf795df2ca1358685de9b3bf6f16f6c5a4034e": {
+      "address": "0xEDDF3b7810ca9DfB32E6a3E275e635987904450e",
+      "txHash": "0x9b51312c78ab51249241f0ace0ed820bee04a5a96dbd60b63bb0ea27a21bd2de",
+      "layout": {
+        "solcVersion": "0.8.19",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_roles",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_contract(DAORoles)13255",
+            "contract": "HasRole",
+            "src": "contracts/extensions/HasRole.sol:11"
+          },
+          {
+            "label": "tokenInternal",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_contract(IGovernanceToken)7303",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:34"
+          },
+          {
+            "label": "exchangeToken",
+            "offset": 0,
+            "slot": "53",
+            "type": "t_contract(ERC20)4378",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:37"
+          },
+          {
+            "label": "redemptionController",
+            "offset": 0,
+            "slot": "54",
+            "type": "t_contract(IRedemptionController)8761",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:39"
+          },
+          {
+            "label": "priceOracle",
+            "offset": 0,
+            "slot": "55",
+            "type": "t_contract(IStdReference)8489",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:40"
+          },
+          {
+            "label": "_shareholderRegistry",
+            "offset": 0,
+            "slot": "56",
+            "type": "t_contract(IShareholderRegistry)11142",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:41"
+          },
+          {
+            "label": "reserve",
+            "offset": 0,
+            "slot": "57",
+            "type": "t_address",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:43"
+          },
+          {
+            "label": "offerDuration",
+            "offset": 0,
+            "slot": "58",
+            "type": "t_uint256",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:44"
+          },
+          {
+            "label": "_offers",
+            "offset": 0,
+            "slot": "59",
+            "type": "t_mapping(t_address,t_struct(Offers)7625_storage)",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:46"
+          },
+          {
+            "label": "_vaultContributors",
+            "offset": 0,
+            "slot": "60",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "InternalMarketBase",
+            "src": "contracts/InternalMarket/InternalMarketBase.sol:48"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(DAORoles)13255": {
+            "label": "contract DAORoles",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ERC20)4378": {
+            "label": "contract ERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IGovernanceToken)7303": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IRedemptionController)8761": {
+            "label": "contract IRedemptionController",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IShareholderRegistry)11142": {
+            "label": "contract IShareholderRegistry",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IStdReference)8489": {
+            "label": "contract IStdReference",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_struct(Offers)7625_storage)": {
+            "label": "mapping(address => struct InternalMarketBase.Offers)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint128,t_struct(Offer)7615_storage)": {
+            "label": "mapping(uint128 => struct InternalMarketBase.Offer)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Offer)7615_storage": {
+            "label": "struct InternalMarketBase.Offer",
+            "members": [
+              {
+                "label": "expiredAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Offers)7625_storage": {
+            "label": "struct InternalMarketBase.Offers",
+            "members": [
+              {
+                "label": "start",
+                "type": "t_uint128",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "end",
+                "type": "t_uint128",
+                "offset": 16,
+                "slot": "0"
+              },
+              {
+                "label": "offer",
+                "type": "t_mapping(t_uint128,t_struct(Offer)7615_storage)",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint128": {
+            "label": "uint128",
+            "numberOfBytes": "16"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 
-import { DIAOracleV2__factory, PriceOracle__factory } from "../typechain";
+import { PriceOracle__factory } from "../typechain";
 
 import { NeokingdomDAOHardhat, generateDeployContext } from "../lib";
 import { loadContract } from "../lib/config";
@@ -20,6 +20,25 @@ task("ref:dia", "Get reference data")
     const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
     const contracts = await neokingdom.loadContracts();
     const result = await contracts.diaOracleV2.getValue(ref);
+    console.log(result);
+  });
+
+task("set:oracle", "Set oracle").setAction(async (_, hre) => {
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+  const contracts = await neokingdom.loadContracts();
+  const result = await contracts.internalMarket.setExchangePair(
+    contracts.tokenMock.address,
+    contracts.diaOracleV2.address
+  );
+  console.log(result);
+});
+
+task("conversion", "Convert euros to usdc")
+  .addPositionalParam("amount", "EUR amount")
+  .setAction(async ({ amount }: { amount: number }, hre) => {
+    const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+    const contracts = await neokingdom.loadContracts();
+    const result = await contracts.internalMarket.convertToUSDC(amount);
     console.log(result);
   });
 

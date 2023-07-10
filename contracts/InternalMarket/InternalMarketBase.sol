@@ -82,6 +82,14 @@ contract InternalMarketBase {
         redemptionController = redemptionController_;
     }
 
+    function _setExchangePair(
+        ERC20 token,
+        IDIAOracleV2 oracle
+    ) internal virtual {
+        exchangeToken = token;
+        priceOracle = oracle;
+    }
+
     function _setOfferDuration(uint duration) internal virtual {
         offerDuration = duration;
     }
@@ -243,7 +251,14 @@ contract InternalMarketBase {
     function _convertToUSDC(
         uint256 eurAmount
     ) internal view virtual returns (uint256) {
-        return 0;
+        (uint256 eurUsd, ) = priceOracle.getValue("EUR/USD");
+        (uint256 usdUsdc, ) = priceOracle.getValue("USDC/USD");
+
+        // 18 is the default amount of decimals for ERC20 tokens, including neokingdom ones
+        return
+            (eurAmount * eurUsd) /
+            usdUsdc /
+            (10 ** (18 - exchangeToken.decimals()));
     }
 
     function _calculateOffersOf(

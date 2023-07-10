@@ -128,8 +128,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         zeroCheck(address(token))
         zeroCheck(address(oracle))
     {
-        exchangeToken = token;
-        _diaPriceOracle = oracle;
+        _setExchangePair(token, oracle);
     }
 
     /**

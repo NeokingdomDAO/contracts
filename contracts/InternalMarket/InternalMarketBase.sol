@@ -5,8 +5,7 @@ pragma solidity ^0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
-import "../PriceOracle/IStdReference.sol";
-
+import "./IDIAOracleV2.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
 
@@ -37,7 +36,7 @@ contract InternalMarketBase {
     ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
-    IStdReference public priceOracle;
+    IDIAOracleV2 public priceOracle;
     IShareholderRegistry internal _shareholderRegistry;
 
     address public reserve;
@@ -71,14 +70,6 @@ contract InternalMarketBase {
         IShareholderRegistry shareholderRegistry
     ) internal virtual {
         _shareholderRegistry = shareholderRegistry;
-    }
-
-    function _setExchangePair(
-        ERC20 token,
-        IStdReference oracle
-    ) internal virtual {
-        exchangeToken = token;
-        priceOracle = oracle;
     }
 
     function _setReserve(address reserve_) internal virtual {
@@ -248,15 +239,11 @@ contract InternalMarketBase {
         redemptionController.afterRedeem(from, amount);
     }
 
-    function _convertToUSDC(uint256 eurAmount) internal view returns (uint256) {
-        uint256 eurUsd = priceOracle.getReferenceData("EUR", "USD").rate;
-        uint256 usdUsdc = priceOracle.getReferenceData("USDC", "USD").rate;
-
-        // 18 is the default amount of decimals for ERC20 tokens, including neokingdom ones
-        return
-            (eurAmount * eurUsd) /
-            usdUsdc /
-            (10 ** (18 - exchangeToken.decimals()));
+    // Deprecated. See implementation on InternalMarket.sol
+    function _convertToUSDC(
+        uint256 eurAmount
+    ) internal view virtual returns (uint256) {
+        return 0;
     }
 
     function _calculateOffersOf(

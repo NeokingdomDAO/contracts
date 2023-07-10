@@ -10,6 +10,7 @@ import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
+import "./IDIAOracleV2.sol";
 
 /**
  * @title InternalMarket
@@ -17,6 +18,8 @@ import "../extensions/HasRole.sol";
  * allowing them to make an offer, match existing offers, deposit, withdraw, and redeem locked tokens.
  */
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+    IDIAOracleV2 internal _diaPriceOracle;
+
     /**
      * @dev Initializes the contract with the given roles and internal token.
      * @param roles DAORoles instance containing custom access control roles.
@@ -118,14 +121,15 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setExchangePair(
         ERC20 token,
-        IStdReference oracle
+        IDIAOracleV2 oracle
     )
         public
         onlyRole(Roles.RESOLUTION_ROLE)
         zeroCheck(address(token))
         zeroCheck(address(oracle))
     {
-        _setExchangePair(token, oracle);
+        exchangeToken = token;
+        _diaPriceOracle = oracle;
     }
 
     /**
@@ -160,5 +164,19 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         uint duration
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
         _setOfferDuration(duration);
+    }
+
+    // Overrides
+    function _convertToUSDC(
+        uint256 eurAmount
+    ) internal view virtual override returns (uint256) {
+        (uint256 eurUsd, ) = _diaPriceOracle.getValue("EUR/USD");
+        (uint256 usdUsdc, ) = _diaPriceOracle.getValue("USDC/USD");
+
+        // 18 is the default amount of decimals for ERC20 tokens, including neokingdom ones
+        return
+            (eurAmount * eurUsd) /
+            usdUsdc /
+            (10 ** (18 - exchangeToken.decimals()));
     }
 }

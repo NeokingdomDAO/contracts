@@ -23,16 +23,6 @@ task("ref:dia", "Get reference data")
     console.log(result);
   });
 
-task("set:oracle", "Set oracle").setAction(async (_, hre) => {
-  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
-  const contracts = await neokingdom.loadContracts();
-  const result = await contracts.internalMarket.setExchangePair(
-    contracts.tokenMock.address,
-    contracts.diaOracleV2.address
-  );
-  console.log(result);
-});
-
 task("conversion", "Convert euros to usdc")
   .addPositionalParam("amount", "EUR amount")
   .setAction(async ({ amount }: { amount: number }, hre) => {

@@ -72,6 +72,14 @@ contract InternalMarketBase {
         _shareholderRegistry = shareholderRegistry;
     }
 
+    function _setExchangePair(
+        ERC20 token,
+        IDIAOracleV2 oracle
+    ) internal virtual {
+        exchangeToken = token;
+        priceOracle = oracle;
+    }
+
     function _setReserve(address reserve_) internal virtual {
         reserve = reserve_;
     }
@@ -80,14 +88,6 @@ contract InternalMarketBase {
         IRedemptionController redemptionController_
     ) internal virtual {
         redemptionController = redemptionController_;
-    }
-
-    function _setExchangePair(
-        ERC20 token,
-        IDIAOracleV2 oracle
-    ) internal virtual {
-        exchangeToken = token;
-        priceOracle = oracle;
     }
 
     function _setOfferDuration(uint duration) internal virtual {

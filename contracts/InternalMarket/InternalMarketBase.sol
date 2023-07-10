@@ -31,7 +31,7 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    IGovernanceToken public governanceToken;
+    IGovernanceToken public tokenInternal;
 
     // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
@@ -51,7 +51,7 @@ contract InternalMarketBase {
         IGovernanceToken _governanceToken,
         uint256 _offerDuration
     ) internal virtual {
-        governanceToken = _governanceToken;
+        tokenInternal = _governanceToken;
         offerDuration = _offerDuration;
     }
 
@@ -63,8 +63,8 @@ contract InternalMarketBase {
         return offers.end++;
     }
 
-    function _setGovernanceToken(IGovernanceToken token) internal virtual {
-        governanceToken = token;
+    function _setTokenInternal(IGovernanceToken token) internal virtual {
+        tokenInternal = token;
     }
 
     function _setShareholderRegistry(
@@ -104,7 +104,7 @@ contract InternalMarketBase {
         emit OfferCreated(id, from, amount, expiredAt);
 
         require(
-            governanceToken.transferFrom(from, address(this), amount),
+            tokenInternal.transferFrom(from, address(this), amount),
             "InternalMarketBase: transfer failed"
         );
         redemptionController.afterOffer(from, amount);
@@ -180,7 +180,7 @@ contract InternalMarketBase {
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
         require(
-            governanceToken.transfer(to, amount),
+            tokenInternal.transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
         require(
@@ -201,9 +201,9 @@ contract InternalMarketBase {
             )
         ) {
             _beforeWithdraw(from, amount);
-            governanceToken.unwrap(address(this), to, amount);
+            tokenInternal.unwrap(address(this), to, amount);
         } else {
-            governanceToken.unwrap(from, to, amount);
+            tokenInternal.unwrap(from, to, amount);
         }
     }
 
@@ -215,15 +215,15 @@ contract InternalMarketBase {
             )
         );
         _beforeWithdraw(from, amount);
-        governanceToken.burn(address(this), amount);
+        tokenInternal.burn(address(this), amount);
     }
 
     function _deposit(address to, uint256 amount) internal virtual {
-        governanceToken.wrap(to, amount);
+        tokenInternal.wrap(to, amount);
     }
 
     function _finalizeDeposit(address to) internal virtual {
-        governanceToken.settleTokens(to);
+        tokenInternal.settleTokens(to);
     }
 
     function _redeem(address from, uint256 amount) internal virtual {
@@ -232,7 +232,7 @@ contract InternalMarketBase {
             uint256 difference = amount - withdrawableBalance;
             // governanceToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
-            governanceToken.burn(from, difference);
+            tokenInternal.burn(from, difference);
             _burn(from, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {

@@ -1,7 +1,6 @@
 import "./admin";
 import "./delegate";
 import "./deploy";
-import "./oracle";
 import "./resolution";
 import "./status";
 import "./tokens";

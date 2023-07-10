@@ -3,9 +3,8 @@ import { readFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
-  DIAOracleV2__factory,
+  DIAOracleV2Mock__factory,
   GovernanceToken__factory,
-  PriceOracle__factory,
   ProxyAdmin__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
@@ -55,9 +54,8 @@ type ContractFactory =
   | typeof GovernanceToken__factory
   | typeof Voting__factory
   | typeof TokenMock__factory
-  | typeof PriceOracle__factory
   | typeof ProxyAdmin__factory
-  | typeof DIAOracleV2__factory;
+  | typeof DIAOracleV2Mock__factory;
 
 export async function loadContract<T extends ContractFactory>(
   hre: HardhatRuntimeEnvironment,

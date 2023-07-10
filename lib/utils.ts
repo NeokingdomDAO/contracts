@@ -7,11 +7,10 @@ import * as readline from "readline";
 
 import {
   DAORoles,
-  DIAOracleV2,
+  DIAOracleV2Mock,
   GovernanceToken,
   InternalMarket,
   NeokingdomToken,
-  PriceOracle,
   ProxyAdmin,
   RedemptionController,
   ResolutionManager,
@@ -205,7 +204,6 @@ export async function loadContracts(
     internalMarket: await _loadContract<InternalMarket>("InternalMarket"),
     governanceToken: await _loadContract<GovernanceToken>("GovernanceToken"),
     neokingdomToken: await _loadContract<NeokingdomToken>("NeokingdomToken"),
-    priceOracle: await _loadContract<PriceOracle>("PriceOracle"),
     redemptionController: await _loadContract<RedemptionController>(
       "RedemptionController"
     ),
@@ -218,7 +216,7 @@ export async function loadContracts(
     tokenMock: await _loadContract<TokenMock>("TokenMock"),
     voting: await _loadContract<Voting>("Voting"),
     proxyAdmin: await _loadContract<ProxyAdmin>("ProxyAdmin"),
-    diaOracleV2: await _loadContract<DIAOracleV2>("DIAOracleV2"),
+    diaOracleV2Mock: await _loadContract<DIAOracleV2Mock>("DIAOracleV2Mock"),
   };
 }
 

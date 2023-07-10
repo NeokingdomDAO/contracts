@@ -6,16 +6,14 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   DAORoles,
   DAORoles__factory,
-  DIAOracleV2,
-  DIAOracleV2__factory,
+  DIAOracleV2Mock,
+  DIAOracleV2Mock__factory,
   GovernanceToken,
   GovernanceToken__factory,
   InternalMarket,
   InternalMarket__factory,
   NeokingdomToken,
   NeokingdomToken__factory,
-  PriceOracle,
-  PriceOracle__factory,
   ProxyAdmin,
   ProxyAdmin__factory,
   RedemptionController,
@@ -36,14 +34,13 @@ export const FACTORIES = {
   InternalMarket: InternalMarket__factory,
   GovernanceToken: GovernanceToken__factory,
   NeokingdomToken: NeokingdomToken__factory,
-  PriceOracle: PriceOracle__factory,
   RedemptionController: RedemptionController__factory,
   ResolutionManager: ResolutionManager__factory,
   ShareholderRegistry: ShareholderRegistry__factory,
   TokenMock: TokenMock__factory,
   Voting: Voting__factory,
   ProxyAdmin: ProxyAdmin__factory,
-  DIAOracleV2: DIAOracleV2__factory,
+  DIAOracleV2Mock: DIAOracleV2Mock__factory,
 } as const;
 
 export type ContractNames = keyof typeof FACTORIES;
@@ -64,14 +61,13 @@ export type NeokingdomContracts = {
   internalMarket: InternalMarket;
   governanceToken: GovernanceToken;
   neokingdomToken: NeokingdomToken;
-  priceOracle: PriceOracle;
   redemptionController: RedemptionController;
   resolutionManager: ResolutionManager;
   shareholderRegistry: ShareholderRegistry;
   tokenMock: TokenMock;
   voting: Voting;
   proxyAdmin: ProxyAdmin;
-  diaOracleV2: DIAOracleV2;
+  diaOracleV2Mock: DIAOracleV2Mock;
 };
 
 export type Context = {};
@@ -98,7 +94,6 @@ export const CONTRACT_NAMES = [
   "internalMarket",
   "governanceToken",
   "neokingdomToken",
-  "priceOracle",
   "redemptionController",
   "resolutionManager",
   "shareholderRegistry",

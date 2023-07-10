@@ -78,16 +78,8 @@ task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
       governanceTokenFactory
     )) as GovernanceToken;
     await governanceTokenContract.deployed();
-    const tx = await governanceTokenContract.setShareholderRegistry(
-      contracts.shareholderRegistry.address
-    );
-    await tx.wait(1);
 
     console.log("    Address:", governanceTokenContract.address);
-    console.log(
-      "    Set ShareholderRegistry to:",
-      contracts.shareholderRegistry.address
-    );
     console.log("GovernanceToken upgraded");
   }
 });
@@ -102,6 +94,8 @@ task("impl", "Get Proxy Impl")
       const proxyAdmin = ProxyAdmin.attach(admin).connect(
         deployer
       ) as ProxyAdmin;
+
+      console.log("   Proxy Owner:", await proxyAdmin.owner());
 
       console.log(
         "    Address:",

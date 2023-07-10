@@ -37,6 +37,10 @@ export const generateDeployContext: ContextGenerator<DeployContext> =
     return context;
   };
 
+export const DEPLOY_DIA_ORACLE: Sequence<DeployContext> = [
+  (c) => c.deploy("DIAOracleV2"),
+];
+
 export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Deploy Contracts
   /////////////////////

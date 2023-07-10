@@ -6,6 +6,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   DAORoles,
   DAORoles__factory,
+  DIAOracleV2,
+  DIAOracleV2__factory,
   GovernanceToken,
   GovernanceToken__factory,
   InternalMarket,
@@ -41,6 +43,7 @@ export const FACTORIES = {
   TokenMock: TokenMock__factory,
   Voting: Voting__factory,
   ProxyAdmin: ProxyAdmin__factory,
+  DIAOracleV2: DIAOracleV2__factory,
 } as const;
 
 export type ContractNames = keyof typeof FACTORIES;
@@ -68,6 +71,7 @@ export type NeokingdomContracts = {
   tokenMock: TokenMock;
   voting: Voting;
   proxyAdmin: ProxyAdmin;
+  diaOracleV2: DIAOracleV2;
 };
 
 export type Context = {};
@@ -101,6 +105,7 @@ export const CONTRACT_NAMES = [
   "tokenMock",
   "voting",
   "proxyAdmin",
+  "diaOracleV2",
 ];
 
 export function isNeokingdomContracts(

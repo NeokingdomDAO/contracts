@@ -1,8 +1,27 @@
 import { task } from "hardhat/config";
 
-import { PriceOracle__factory } from "../typechain";
+import { DIAOracleV2__factory, PriceOracle__factory } from "../typechain";
 
+import { NeokingdomDAOHardhat, generateDeployContext } from "../lib";
 import { loadContract } from "../lib/config";
+import { DEPLOY_DIA_ORACLE } from "../lib/sequence/deploy";
+
+task("deploy:dia", "Deploy DIA Oracle").setAction(async (_, hre) => {
+  const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
+    verifyContracts: false,
+    verbose: true,
+  });
+  await neokingdom.run(generateDeployContext, DEPLOY_DIA_ORACLE);
+});
+
+task("ref:dia", "Get reference data")
+  .addPositionalParam("ref", "SYMBOL1/SYMBOL2")
+  .setAction(async ({ ref }: { ref: string }, hre) => {
+    const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
+    const contracts = await neokingdom.loadContracts();
+    const result = await contracts.diaOracleV2.getValue(ref);
+    console.log(result);
+  });
 
 task("ref", "Get reference data")
   .addPositionalParam("base", "Base symbol")

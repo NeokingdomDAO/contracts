@@ -7,6 +7,7 @@ import * as readline from "readline";
 
 import {
   DAORoles,
+  DIAOracleV2,
   GovernanceToken,
   InternalMarket,
   NeokingdomToken,
@@ -217,6 +218,7 @@ export async function loadContracts(
     tokenMock: await _loadContract<TokenMock>("TokenMock"),
     voting: await _loadContract<Voting>("Voting"),
     proxyAdmin: await _loadContract<ProxyAdmin>("ProxyAdmin"),
+    diaOracleV2: await _loadContract<DIAOracleV2>("DIAOracleV2"),
   };
 }
 

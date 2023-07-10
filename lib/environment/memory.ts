@@ -3,6 +3,7 @@ import { ethers, upgrades } from "hardhat";
 
 import {
   DAORoles,
+  DIAOracleV2,
   GovernanceToken,
   InternalMarket,
   NeokingdomToken,
@@ -99,6 +100,9 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
         break;
       case "ProxyAdmin":
         this.contracts.proxyAdmin = contract as ProxyAdmin;
+        break;
+      case "DIAOracleV2":
+        this.contracts.diaOracleV2 = contract as DIAOracleV2;
     }
   }
 }

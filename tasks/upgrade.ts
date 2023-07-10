@@ -1,6 +1,7 @@
 import { task } from "hardhat/config";
 
 import {
+  GovernanceToken,
   GovernanceToken__factory,
   InternalMarket__factory,
   ProxyAdmin,
@@ -41,14 +42,20 @@ task("upgrade:market", "Upgrade Internal Market", async (_, hre) => {
   console.log("Upgrade InternalMarket");
   console.log("  Network:", hre.network.name);
 
-  const internalMarketContract = await hre.upgrades.upgradeProxy(
-    contracts.internalMarket.address,
-    internalMarketFactory
+  const answer = await question(
+    "This action is irreversible. Please type 'GO' to continue.\n"
   );
-  await internalMarketContract.deployed();
 
-  console.log("    Address:", internalMarketContract.address);
-  console.log("InternalMarket upgraded");
+  if (answer == "GO") {
+    const internalMarketContract = await hre.upgrades.upgradeProxy(
+      contracts.internalMarket.address,
+      internalMarketFactory
+    );
+    await internalMarketContract.deployed();
+
+    console.log("    Address:", internalMarketContract.address);
+    console.log("InternalMarket upgraded");
+  }
 });
 
 task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
@@ -58,7 +65,7 @@ task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
 
   const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
   const contracts = await neokingdom.loadContracts();
-  console.log("Upgrade GovernanceToken");
+  console.log(`Upgrade GovernanceToken ${contracts.governanceToken.address}`);
   console.log("  Network:", hre.network.name);
 
   const answer = await question(
@@ -66,13 +73,21 @@ task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
   );
 
   if (answer == "GO") {
-    const governanceTokenContract = await hre.upgrades.upgradeProxy(
+    const governanceTokenContract = (await hre.upgrades.upgradeProxy(
       contracts.governanceToken.address,
       governanceTokenFactory
-    );
+    )) as GovernanceToken;
     await governanceTokenContract.deployed();
+    const tx = await governanceTokenContract.setShareholderRegistry(
+      contracts.shareholderRegistry.address
+    );
+    await tx.wait(1);
 
     console.log("    Address:", governanceTokenContract.address);
+    console.log(
+      "    Set ShareholderRegistry to:",
+      contracts.shareholderRegistry.address
+    );
     console.log("GovernanceToken upgraded");
   }
 });

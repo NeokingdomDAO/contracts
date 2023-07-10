@@ -17,7 +17,6 @@ import {
   InternalMarket__factory,
   ShareholderRegistry,
 } from "../typechain";
-import { governanceToken } from "../typechain/contracts";
 
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 import { roles } from "./utils/roles";
@@ -137,20 +136,20 @@ describe("InternalMarket", async () => {
     });
   });
 
-  describe("setGovernanceToken", async () => {
+  describe("setTokenInternal", async () => {
     it("should allow a resolution to set token and oracle addresses", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
       daoRoles.hasRole
         .whenCalledWith(RESOLUTION_ROLE, deployer.address)
         .returns(true);
-      await internalMarket.setGovernanceToken(alice.address);
-      expect(await internalMarket.governanceToken()).equal(alice.address);
+      await internalMarket.setTokenInternal(alice.address);
+      expect(await internalMarket.tokenInternal()).equal(alice.address);
     });
 
     it("should revert if anyone else tries to set the token address", async () => {
       // Alice is not a token, but it's a valid address, so we use it to test this function
       await expect(
-        internalMarket.connect(alice).setGovernanceToken(alice.address)
+        internalMarket.connect(alice).setTokenInternal(alice.address)
       ).revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${RESOLUTION_ROLE}`
       );

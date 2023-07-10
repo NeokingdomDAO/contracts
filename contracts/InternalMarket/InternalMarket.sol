@@ -164,8 +164,4 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     ) public onlyRole(Roles.RESOLUTION_ROLE) {
         _setOfferDuration(duration);
     }
-
-    function convertToUSDC(uint256 eurAmount) public view returns (uint256) {
-        return _convertToUSDC(eurAmount);
-    }
 }

@@ -17,3 +17,4 @@ echidna/results/*
 .DS_Store
 echidna/results
 diagrams/
+.openzeppelin/unknown-666666.json

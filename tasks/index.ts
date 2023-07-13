@@ -4,6 +4,7 @@ import "./deploy";
 import "./oracle";
 import "./resolution";
 import "./status";
+import "./temp";
 import "./tokens";
 import "./types";
 import "./upgrade";

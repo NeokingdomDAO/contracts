@@ -100,7 +100,7 @@ export const CONTRACT_NAMES = [
   "tokenMock",
   "voting",
   "proxyAdmin",
-  "diaOracleV2",
+  "diaOracleV2Mock",
 ];
 
 export function isNeokingdomContracts(

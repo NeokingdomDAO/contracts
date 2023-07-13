@@ -247,7 +247,6 @@ contract InternalMarketBase {
         redemptionController.afterRedeem(from, amount);
     }
 
-    // Deprecated. See implementation on InternalMarket.sol
     function _convertToUSDC(
         uint256 eurAmount
     ) internal view virtual returns (uint256) {

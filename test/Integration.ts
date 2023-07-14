@@ -1478,11 +1478,11 @@ describe("Integration", async () => {
 
       // user1 deposit 4 NEOK
       await internalMarket.connect(user1).deposit(10);
-      await internalMarket.connect(user1).deposit(1);
+      await internalMarket.connect(user1).deposit(0);
       await timeTravel(7, true);
       await governanceToken.settleTokens(user1.address);
       // user1 voting power is 6
-      expect(await voting.getVotingPower(user1.address)).equal(share.add(11));
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(10));
     });
 
     it("voting with exclusion stress test", async () => {

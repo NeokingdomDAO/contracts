@@ -1,87 +1,64 @@
+import { Contract, ContractFactory } from "ethers";
 import { task } from "hardhat/config";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import {
-  GovernanceToken,
-  GovernanceToken__factory,
-  InternalMarket__factory,
-  ProxyAdmin,
-  ProxyAdmin__factory,
-  ResolutionManager__factory,
-} from "../typechain";
+import { ProxyAdmin } from "../typechain";
 
 import { NeokingdomDAOHardhat } from "../lib";
+import { NeokingdomContracts } from "../lib/internal/types";
 import { question } from "../lib/utils";
 
-task("upgrade:resolution", "Upgrade ResolutionManager", async (_, hre) => {
-  const resolutionFactory = (await hre.ethers.getContractFactory(
-    "ResolutionManager"
-  )) as ResolutionManager__factory;
+function toPascalCase(str: string): string {
+  let words = str.split(/(?=[A-Z])/);
 
+  // Capitalize the first letter of each word, leave the rest as it is
+  let pascalCase = words
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join("");
+
+  return pascalCase;
+}
+
+async function upgrade(
+  hre: HardhatRuntimeEnvironment,
+  contractType: keyof NeokingdomContracts
+) {
+  await hre.run("compile", { force: true });
   const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
   const contracts = await neokingdom.loadContracts();
-  console.log("Upgrade ResolutionManager");
+
+  const contractTypeStr = toPascalCase(contractType);
+  const contractFactory = await hre.ethers.getContractFactory(contractTypeStr);
+  const proxyAddress = contracts[contractType].address;
+  console.log(`Upgrade ${contractTypeStr} ${proxyAddress}`);
   console.log("  Network:", hre.network.name);
 
-  const resolutionContract = await hre.upgrades.upgradeProxy(
-    contracts.resolutionManager.address,
-    resolutionFactory
+  const answer = await question(
+    "This action is irreversible. Please type 'GO' to continue.\n"
   );
-  await resolutionContract.deployed();
 
-  console.log("    Address:", resolutionContract.address);
-  console.log("Resolution upgraded");
+  if (answer == "GO") {
+    const contractInstance = await hre.upgrades.upgradeProxy(
+      proxyAddress,
+      contractFactory
+    );
+    await contractInstance.deployed();
+
+    console.log("    Address:", contractInstance.address);
+    console.log(`${contractTypeStr} upgraded`);
+  }
+}
+
+task("upgrade:resolution", "Upgrade ResolutionManager", async (_, hre) => {
+  await upgrade(hre, "resolutionManager");
 });
 
 task("upgrade:market", "Upgrade Internal Market", async (_, hre) => {
-  const internalMarketFactory = (await hre.ethers.getContractFactory(
-    "InternalMarket"
-  )) as InternalMarket__factory;
-
-  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
-  const contracts = await neokingdom.loadContracts();
-  console.log(`Upgrade InternalMarket ${contracts.internalMarket.address}`);
-  console.log("  Network:", hre.network.name);
-
-  const answer = await question(
-    "This action is irreversible. Please type 'GO' to continue.\n"
-  );
-
-  if (answer == "GO") {
-    const internalMarketContract = await hre.upgrades.upgradeProxy(
-      contracts.internalMarket.address,
-      internalMarketFactory
-    );
-    await internalMarketContract.deployed();
-
-    console.log("    Address:", internalMarketContract.address);
-    console.log("InternalMarket upgraded");
-  }
+  await upgrade(hre, "internalMarket");
 });
 
 task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
-  const governanceTokenFactory = (await hre.ethers.getContractFactory(
-    "GovernanceToken"
-  )) as GovernanceToken__factory;
-
-  const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
-  const contracts = await neokingdom.loadContracts();
-  console.log(`Upgrade GovernanceToken ${contracts.governanceToken.address}`);
-  console.log("  Network:", hre.network.name);
-
-  const answer = await question(
-    "This action is irreversible. Please type 'GO' to continue.\n"
-  );
-
-  if (answer == "GO") {
-    const governanceTokenContract = (await hre.upgrades.upgradeProxy(
-      contracts.governanceToken.address,
-      governanceTokenFactory
-    )) as GovernanceToken;
-    await governanceTokenContract.deployed();
-
-    console.log("    Address:", governanceTokenContract.address);
-    console.log("GovernanceToken upgraded");
-  }
+  await upgrade(hre, "governanceToken");
 });
 
 task("impl", "Get Proxy Impl")

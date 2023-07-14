@@ -37,17 +37,12 @@ export const generateDeployContext: ContextGenerator<DeployContext> =
     return context;
   };
 
-export const DEPLOY_DIA_ORACLE: Sequence<DeployContext> = [
-  (c) => c.deploy("DIAOracleV2Mock"),
-  (c) => c.diaOracleV2Mock.setValue("EUR/USD", 109479913, 1688997107),
-  (c) => c.diaOracleV2Mock.setValue("USDC/USD", 100056862, 1688997107),
-];
-
 export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   // Deploy Contracts
   /////////////////////
   (c) => c.deploy("DAORoles"),
   (c) => c.deploy("TokenMock"),
+  (c) => c.deploy("DIAOracleV2Mock"),
   (c) => c.deployProxy("Voting", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("GovernanceToken", [
@@ -128,4 +123,11 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
     c.internalMarket.setRedemptionController(c.redemptionController.address),
   (c) => c.internalMarket.setReserve(c.reserve),
   (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),
+  (c) => c.diaOracleV2Mock.setValue("EUR/USD", 100000000, 1688997107),
+  (c) => c.diaOracleV2Mock.setValue("USDC/USD", 100000000, 1688997107),
+  (c) =>
+    c.internalMarket.setExchangePair(
+      c.tokenMock.address,
+      c.diaOracleV2Mock.address
+    ),
 ];

@@ -18,6 +18,8 @@ import "./IDIAOracleV2.sol";
  * allowing them to make an offer, match existing offers, deposit, withdraw, and redeem locked tokens.
  */
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+    IDIAOracleV2 internal _diaPriceOracle;
+
     /**
      * @dev Initializes the contract with the given roles and internal token.
      * @param roles DAORoles instance containing custom access control roles.

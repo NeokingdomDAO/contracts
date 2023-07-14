@@ -8,23 +8,12 @@ import {
   generateDeployContext,
 } from "../lib";
 import { generateSetupContext } from "../lib/internal/types";
-import { DEPLOY_DIA_ORACLE } from "../lib/sequence/deploy";
 import { SETUP_SEQUENCE_VIGODARZERE, finalizeACL } from "../lib/sequence/post";
 import { SETUP_SEQUENCE_TESTNET } from "../lib/sequence/setup";
 import { question } from "../lib/utils";
 
 const MULTISIG_MAINNET = "0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758";
 const MULTISIG_TESTNET = "0x7549fe2ED3c16240f97FE736146347409C6dD81D";
-
-task("deploy:dia:mock", "Deploy Dia Oracle Mock")
-  .addFlag("verify", "Verify contracts")
-  .setAction(async ({ verify }: { verify: boolean }, hre) => {
-    const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
-      verifyContracts: verify,
-      verbose: true,
-    });
-    await neokingdom.run(generateDeployContext, DEPLOY_DIA_ORACLE);
-  });
 
 task("deploy", "Deploy DAO")
   .addFlag("verify", "Verify contracts")

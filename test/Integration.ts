@@ -1460,6 +1460,31 @@ describe("Integration", async () => {
       });
     });
 
+    it.only("settle 0 tokens", async () => {
+      await governanceToken.setSettlementPeriod(3600 * 24 * 7);
+      const share = parseEther("1");
+      await shareholderRegistry.mint(user1.address, parseEther("1"));
+      await shareholderRegistry.mint(user2.address, parseEther("1"));
+      await shareholderRegistry.setStatus(contributorStatus, user1.address);
+      await shareholderRegistry.setStatus(contributorStatus, user2.address);
+
+      // 15 Governance Tokens to user2
+      await governanceToken.mint(user2.address, 15);
+
+      // user2 withdraws 10 Governance tokens to user1
+      await internalMarket.connect(user2).makeOffer(11);
+      await timeTravel(7, true);
+      await internalMarket.connect(user2).withdraw(user1.address, 11);
+
+      // user1 deposit 4 NEOK
+      await internalMarket.connect(user1).deposit(10);
+      await internalMarket.connect(user1).deposit(1);
+      await timeTravel(7, true);
+      await governanceToken.settleTokens(user1.address);
+      // user1 voting power is 6
+      expect(await voting.getVotingPower(user1.address)).equal(share.add(11));
+    });
+
     it("voting with exclusion stress test", async () => {
       await _makeContributor(user1, 20);
       await _makeContributor(user2, 70);

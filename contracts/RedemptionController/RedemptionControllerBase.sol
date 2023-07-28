@@ -203,9 +203,11 @@ abstract contract RedemptionControllerBase is IRedemptionController {
             ) {
                 if (amount < redeemable.amount) {
                     redeemable.amount -= amount;
+                    // emit RedemptionUpdated(from account, uint256 position, uint256 amountRequested, uint256 amountRedeemed)
                     amount = 0;
                 } else {
                     amount -= redeemable.amount;
+                    // emit RedemptionUpdated(from account, uint256 position, uint256 amountRequested, uint256 amountRedeemed)
                     redeemable.amount = 0;
                     // FIXME: delete object from array?
                 }
@@ -233,5 +235,6 @@ abstract contract RedemptionControllerBase is IRedemptionController {
             redemptionStarts + redemptionWindow
         );
         _redeemables[account].push(offerRedeemable);
+        // emit RedemptionCreated(from account, uint256 index, uint256 amount, uint256 starts, uint256 ends)
     }
 }

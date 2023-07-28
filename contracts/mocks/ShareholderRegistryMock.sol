@@ -41,6 +41,9 @@ contract ShareholderRegistryMock is Initializable, IShareholderRegistry {
     }
 
     // Unneeded for testing
+    function setStatus(bytes32 status, address account) public {}
+
+    // Unneeded for testing
     function getStatus(
         address account
     ) public view override returns (bytes32) {}

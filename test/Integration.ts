@@ -1132,7 +1132,7 @@ describe("Integration", async () => {
       );
     });
 
-    describe.only("least authority audit proof of fix (july 2023)", async () => {
+    describe("least authority audit proof of fix (july 2023)", async () => {
       it("issue B", async () => {
         await _makeContributor(user1, 10);
         await _makeContributor(user2, 0);

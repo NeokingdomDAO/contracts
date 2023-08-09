@@ -1131,6 +1131,17 @@ describe("Integration", async () => {
       );
     });
 
+    describe("least authority audit proof of fix (july 2023)", async () => {
+      it("issue C", async () => {
+        const nonExistingResolutionId = 999;
+        await expect(
+          resolutionManager
+            .connect(managingBoard)
+            .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
+        ).revertedWith("Resolution: does not exist");
+      });
+    });
+
     it("redemption edge cases", async () => {
       await _makeContributor(user1, 10);
       await _makeContributor(user2, 0);

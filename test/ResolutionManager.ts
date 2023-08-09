@@ -302,6 +302,14 @@ describe("Resolution", async () => {
       ).revertedWith("Resolution: already rejected");
     });
 
+    it("doesn't allow the managing board to update a non-existing resolution", async () => {
+      await expect(
+        resolution
+          .connect(managingBoard)
+          .updateResolution(42, "updated test", 6, true, [], [])
+      ).revertedWith("Resolution: does not exist");
+    });
+
     it("doesn't allow anyone else to update a resolution", async () => {
       shareholderRegistry.isAtLeast
         .whenCalledWith(managingBoardStatus, user1.address)

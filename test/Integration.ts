@@ -42,6 +42,7 @@ const INITIAL_USDC = 1000;
 describe("Integration", async () => {
   let snapshotId: string;
   let offerDurationDays: number;
+  let settlementPeriod = 7;
   let redemptionStartDays: number;
   let redemptionWindowDays: number;
   let redemptionMaxDaysInThePast: number;
@@ -1129,6 +1130,32 @@ describe("Integration", async () => {
       await expect(internalMarket.connect(user2).redeem(e(4))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
+    });
+
+    describe.only("least authority audit proof of fix (july 2023)", async () => {
+      it("issue B", async () => {
+        await _makeContributor(user1, 10);
+        await _makeContributor(user2, 0);
+
+        // user1 offers token, no one buys
+        await internalMarket.connect(user1).makeOffer(e(10));
+        await timeTravel(offerDurationDays, true);
+
+        // tokens are transferred to user 2
+        await internalMarket.connect(user1).withdraw(user2.address, e(10));
+
+        // user 2 makes 2 deposits, one of which with 0 tokens, which
+        // could lock the previous deposit forever
+        await internalMarket.connect(user2).deposit(e(9));
+        await expect(internalMarket.connect(user2).deposit(e(0))).revertedWith(
+          "GovernanceToken: attempt to wrap 0 tokens"
+        );
+
+        await timeTravel(settlementPeriod, true);
+        await governanceToken.settleTokens(user2.address);
+
+        expect(await governanceToken.balanceOf(user2.address)).equal(e(9));
+      });
     });
 
     it("redemption edge cases", async () => {

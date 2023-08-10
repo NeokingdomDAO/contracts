@@ -1131,6 +1131,19 @@ describe("Integration", async () => {
       );
     });
 
+    describe("least authority audit proof of fix (july 2023)", async () => {
+      it("issue D: The Status of InternalMarket or ShareholderRegistry Can Be Set to Contributor Status", async () => {
+        await expect(
+          shareholderRegistry.setStatus(
+            contributorStatus,
+            internalMarket.address
+          )
+        ).revertedWith(
+          "ShareholderRegistry: cannot set status for smart contract"
+        );
+      });
+    });
+
     it("redemption edge cases", async () => {
       await _makeContributor(user1, 10);
       await _makeContributor(user2, 0);

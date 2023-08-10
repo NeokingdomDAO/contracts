@@ -42,6 +42,7 @@ const INITIAL_USDC = 1000;
 describe("Integration", async () => {
   let snapshotId: string;
   let offerDurationDays: number;
+  let settlementPeriod = 7;
   let redemptionStartDays: number;
   let redemptionWindowDays: number;
   let redemptionMaxDaysInThePast: number;
@@ -1129,6 +1130,38 @@ describe("Integration", async () => {
       await expect(internalMarket.connect(user2).redeem(e(4))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
+    });
+
+    describe("least authority audit proof of fix (july 2023)", async () => {
+      it.only("issue A: Deposited Tokens Can Be Redeemed", async () => {
+        await _makeContributor(user1, 10);
+        await _makeContributor(user2, 10);
+
+        // user2 offers 10 tokens
+        await internalMarket.connect(user2).makeOffer(e(10));
+        await timeTravel(offerDurationDays, true);
+
+        // user2 transfers 10 tokens to user1
+        await internalMarket.connect(user2).withdraw(user1.address, e(10));
+
+        // user1 deposit their tokens
+        await internalMarket.connect(user1).deposit(e(10));
+        await timeTravel(settlementPeriod);
+        await governanceToken.settleTokens(user1.address);
+
+        // user2 offer all tokens, hoping to redeem all of them...
+        await internalMarket.connect(user1).makeOffer(e(20));
+        await timeTravel(redemptionStartDays, true);
+        await expect(internalMarket.connect(user1).redeem(e(20))).revertedWith(
+          "Redemption controller: amount exceeds redeemable balance"
+        );
+
+        // ...but they can only redeem those that were minted directly to them
+        await internalMarket.connect(user1).redeem(e(10));
+        expect(await tokenMock.balanceOf(user1.address)).equal(
+          e(INITIAL_USDC + 10)
+        );
+      });
     });
 
     it("redemption edge cases", async () => {

@@ -1132,7 +1132,7 @@ describe("Integration", async () => {
     });
 
     describe("least authority audit proof of fix (july 2023)", async () => {
-      it("issue C", async () => {
+      it("Issue C: Missing Modifier Preventing the Update of Non-Existent Resolutions", async () => {
         const nonExistingResolutionId = 999;
         await expect(
           resolutionManager

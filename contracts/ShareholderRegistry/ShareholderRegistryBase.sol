@@ -6,6 +6,7 @@
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../Voting/IVoting.sol";
 
 contract ShareholderRegistryBase is ERC20Upgradeable {
@@ -43,6 +44,10 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         require(
             status == 0 || isAtLeast(SHAREHOLDER_STATUS, account),
             "ShareholderRegistry: address has no tokens"
+        );
+        require(
+            !Address.isContract(account),
+            "ShareholderRegistry: cannot set status for smart contract"
         );
         bytes32 previous = _statuses[account];
         emit StatusChanged(account, previous, status);

@@ -341,7 +341,7 @@ describe("GovernanceToken", () => {
     });
   });
 
-  describe("processDepositedTokens", async () => {
+  describe("settleTokens", async () => {
     describe("when no tokens have been wrapped", async () => {
       it("should mint nothing", async () => {
         await governanceToken.settleTokens(contributor.address);
@@ -423,6 +423,13 @@ describe("GovernanceToken", () => {
         );
 
         expect(balanceAfter).equal(balanceBefore.add(42));
+      });
+
+      it("should not call RedemptionController.afterMint", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+        expect(redemption.afterMint).not.called;
       });
     });
   });

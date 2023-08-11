@@ -1156,6 +1156,15 @@ describe("Integration", async () => {
 
         expect(await governanceToken.balanceOf(user2.address)).equal(e(9));
       });
+      
+      it("Issue C: Missing Modifier Preventing the Update of Non-Existent Resolutions", async () => {
+        const nonExistingResolutionId = 999;
+        await expect(
+          resolutionManager
+            .connect(managingBoard)
+            .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
+        ).revertedWith("Resolution: does not exist");
+      });
     });
 
     it("redemption edge cases", async () => {

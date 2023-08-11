@@ -154,6 +154,15 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         uint256 amount
     ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
         _mint(to, amount);
+
+        if (
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                to
+            )
+        ) {
+            _redemptionController.afterMint(to, amount);
+        }
     }
 
     /**
@@ -292,16 +301,6 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         super._afterTokenTransfer(from, to, amount);
         _voting.afterTokenTransfer(from, to, amount);
 
-        if (
-            from == address(0) &&
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.CONTRIBUTOR_STATUS(),
-                to
-            )
-        ) {
-            _redemptionController.afterMint(to, amount);
-        }
-
         // Invariants
         require(
             balanceOf(from) >= _vestingBalance[from],
@@ -346,6 +345,8 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
             tokenExternal.transferFrom(from, address(this), amount),
             "GovernanceToken: transfer failed"
         );
+        require(amount > 0, "GovernanceToken: attempt to wrap 0 tokens");
+        tokenExternal.transferFrom(from, address(this), amount);
         uint256 settlementTimestamp = block.timestamp + settlementPeriod;
         depositedTokens[from].push(
             DepositedTokens(amount, settlementTimestamp)
@@ -363,7 +364,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
             DepositedTokens storage tokens = depositedTokens[from][i - 1];
             if (block.timestamp >= tokens.settlementTimestamp) {
                 if (tokens.amount > 0) {
-                    super._mint(from, tokens.amount);
+                    _mint(from, tokens.amount);
                     tokens.amount = 0;
                 } else {
                     break;

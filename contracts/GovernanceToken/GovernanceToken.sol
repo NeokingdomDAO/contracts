@@ -346,7 +346,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
             "GovernanceToken: transfer failed"
         );
         require(amount > 0, "GovernanceToken: attempt to wrap 0 tokens");
-        tokenExternal.transferFrom(from, address(this), amount);
+
         uint256 settlementTimestamp = block.timestamp + settlementPeriod;
         depositedTokens[from].push(
             DepositedTokens(amount, settlementTimestamp)

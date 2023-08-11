@@ -1162,7 +1162,7 @@ describe("Integration", async () => {
           e(INITIAL_USDC + 10)
         );
       });
-        
+
       it("Issue B: Unsettled Deposits Can Be Locked", async () => {
         await _makeContributor(user1, 10);
         await _makeContributor(user2, 0);
@@ -1186,7 +1186,7 @@ describe("Integration", async () => {
 
         expect(await governanceToken.balanceOf(user2.address)).equal(e(9));
       });
-      
+
       it("Issue C: Missing Modifier Preventing the Update of Non-Existent Resolutions", async () => {
         const nonExistingResolutionId = 999;
         await expect(
@@ -1195,7 +1195,7 @@ describe("Integration", async () => {
             .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
         ).revertedWith("Resolution: does not exist");
       });
-      
+
       it("issue D: the status of internalMarket or shareholderRegistry can be set to contributor status", async () => {
         await expect(
           shareholderRegistry.setStatus(

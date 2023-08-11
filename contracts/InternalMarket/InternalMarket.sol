@@ -10,6 +10,7 @@ import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
+import "./IDIAOracleV2.sol";
 
 /**
  * @title InternalMarket
@@ -17,6 +18,8 @@ import "../extensions/HasRole.sol";
  * allowing them to make an offer, match existing offers, deposit, withdraw, and redeem locked tokens.
  */
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+    IDIAOracleV2 internal _diaPriceOracle;
+
     /**
      * @dev Initializes the contract with the given roles and internal token.
      * @param roles DAORoles instance containing custom access control roles.
@@ -118,7 +121,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setExchangePair(
         ERC20 token,
-        IStdReference oracle
+        IDIAOracleV2 oracle
     )
         public
         onlyRole(Roles.RESOLUTION_ROLE)

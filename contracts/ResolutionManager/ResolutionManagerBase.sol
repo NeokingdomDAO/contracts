@@ -213,25 +213,31 @@ abstract contract ResolutionManagerBase {
         // power. Hence we are forcing the the contributor to have no delegation for this
         // resolution so to have the voting power "clean". Delegation is restored
         // after the snapshot.
-        address delegated;
-        if (resolution.addressedContributor != address(0)) {
-            delegated = _voting.getDelegate(resolution.addressedContributor);
-            if (delegated != resolution.addressedContributor) {
-                _voting.delegateFrom(
-                    resolution.addressedContributor,
-                    resolution.addressedContributor
-                );
-            }
+        address addressedContributor = resolution.addressedContributor;
+        address originalDelegate;
+        bytes32 originalStatus;
+
+        if (addressedContributor != address(0)) {
+            originalDelegate = _voting.getDelegate(addressedContributor);
+            originalStatus = _shareholderRegistry.getStatus(
+                addressedContributor
+            );
+            // Downgrading to investor removes delegation
+            _shareholderRegistry.setStatus(
+                _shareholderRegistry.INVESTOR_STATUS(),
+                addressedContributor
+            );
         }
 
         resolution.snapshotId = _snapshotAll();
 
-        if (resolution.addressedContributor != address(0)) {
-            if (delegated != resolution.addressedContributor) {
-                _voting.delegateFrom(
-                    resolution.addressedContributor,
-                    delegated
-                );
+        if (addressedContributor != address(0)) {
+            _shareholderRegistry.setStatus(
+                originalStatus,
+                addressedContributor
+            );
+            if (addressedContributor != originalDelegate) {
+                _voting.delegateFrom(addressedContributor, originalDelegate);
             }
         }
     }
@@ -363,7 +369,7 @@ abstract contract ResolutionManagerBase {
             resolution.snapshotId
         );
 
-        // If sender has a delegate load voting power from GovernanceToken
+        // If sender has a delegate, load voting power from GovernanceToken
         if (delegate != msg.sender) {
             votingPower =
                 _governanceToken.balanceOfAt(
@@ -492,18 +498,6 @@ abstract contract ResolutionManagerBase {
         uint256 totalVotingPower = _voting.getTotalVotingPowerAt(
             resolution.snapshotId
         );
-
-        if (resolution.addressedContributor != address(0)) {
-            totalVotingPower -=
-                _governanceToken.balanceOfAt(
-                    resolution.addressedContributor,
-                    resolution.snapshotId
-                ) +
-                _shareholderRegistry.balanceOfAt(
-                    resolution.addressedContributor,
-                    resolution.snapshotId
-                );
-        }
 
         bool hasQuorum = resolution.yesVotesTotal * 100 >=
             resolutionType.quorum * totalVotingPower;

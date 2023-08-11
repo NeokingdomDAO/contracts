@@ -252,6 +252,12 @@ describe("GovernanceToken", () => {
       );
     });
 
+    it("should fail wrapping 0 tokens", async () => {
+      await expect(
+        governanceToken.connect(contributor).wrap(contributor.address, 0)
+      ).revertedWith("GovernanceToken: attempt to wrap 0 tokens");
+    });
+
     it("should transfer external token to itself", async () => {
       await governanceToken.wrap(contributor.address, 41);
       expect(neokingdomToken.transferFrom).calledWith(

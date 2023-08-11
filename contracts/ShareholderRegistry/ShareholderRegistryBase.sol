@@ -1,8 +1,4 @@
 // SPDX-License-Identifier: MIT
-
-// TODO: update _statuses when account has no shares
-// TODO: check who can move shares
-
 pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";

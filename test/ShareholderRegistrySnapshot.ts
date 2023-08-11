@@ -104,6 +104,14 @@ describe("Shareholder Registry", () => {
       ).revertedWith("ShareholderRegistry: address has no tokens");
     });
 
+    it("should fail if address is a contract", async () => {
+      await expect(
+        registry.setStatus(CONTRIBUTOR_STATUS, registry.address)
+      ).revertedWith(
+        "ShareholderRegistry: cannot set status for smart contract"
+      );
+    });
+
     it("should be callable only by a resolution", async () => {
       await expect(
         registry.connect(alice).setStatus(CONTRIBUTOR_STATUS, alice.address)

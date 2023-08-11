@@ -1165,6 +1165,17 @@ describe("Integration", async () => {
             .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
         ).revertedWith("Resolution: does not exist");
       });
+      
+      it("issue D: the status of internalMarket or shareholderRegistry can be set to contributor status", async () => {
+        await expect(
+          shareholderRegistry.setStatus(
+            contributorStatus,
+            internalMarket.address
+          )
+        ).revertedWith(
+          "ShareholderRegistry: cannot set status for smart contract"
+        );
+      });
     });
 
     it("redemption edge cases", async () => {

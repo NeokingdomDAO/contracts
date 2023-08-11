@@ -1133,7 +1133,7 @@ describe("Integration", async () => {
     });
 
     describe("least authority audit proof of fix (july 2023)", async () => {
-      it("Issue B: Unsettled Deposits Can Be Locked ", async () => {
+      it("Issue B: Unsettled Deposits Can Be Locked", async () => {
         await _makeContributor(user1, 10);
         await _makeContributor(user2, 0);
 

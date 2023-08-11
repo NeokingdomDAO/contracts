@@ -1164,6 +1164,7 @@ describe("Integration", async () => {
             .connect(managingBoard)
             .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
         ).revertedWith("Resolution: does not exist");
+      });
     });
 
     it("redemption edge cases", async () => {

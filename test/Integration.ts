@@ -93,7 +93,6 @@ describe("Integration", async () => {
       governanceToken,
       neokingdomToken,
       shareholderRegistry,
-
       resolutionManager,
       internalMarket,
       redemptionController,

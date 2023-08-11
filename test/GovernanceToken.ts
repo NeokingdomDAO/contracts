@@ -94,6 +94,8 @@ describe("GovernanceToken", () => {
     shareholderRegistry.isAtLeast
       .whenCalledWith(contributorStatus, contributor2.address)
       .returns(true);
+    neokingdomToken.transfer.returns(true);
+    neokingdomToken.transferFrom.returns(true);
   });
 
   afterEach(async () => {
@@ -101,6 +103,8 @@ describe("GovernanceToken", () => {
     redemption.afterMint.reset();
     daoRoles.hasRole.reset();
     shareholderRegistry.isAtLeast.reset();
+    neokingdomToken.transfer.reset();
+    neokingdomToken.transferFrom.reset();
   });
 
   describe("transfer hooks", async () => {
@@ -249,6 +253,13 @@ describe("GovernanceToken", () => {
         `AccessControl: account ${contributor.address.toLowerCase()} is missing role ${
           ROLES.MARKET_ROLE
         }`
+      );
+    });
+
+    it("should fail when the transfer fails", async () => {
+      neokingdomToken.transferFrom.returns(false);
+      await expect(governanceToken.wrap(contributor.address, 1)).revertedWith(
+        "GovernanceToken: transfer failed"
       );
     });
 
@@ -439,6 +450,13 @@ describe("GovernanceToken", () => {
       await expect(
         governanceToken.unwrap(contributor.address, contributor.address, 1)
       ).revertedWith("ERC20: burn amount exceeds balance");
+    });
+
+    it("should fail when the transfer fails", async () => {
+      neokingdomToken.transfer.returns(false);
+      await expect(
+        governanceToken.unwrap(contributor.address, contributor.address, 1)
+      ).revertedWith("GovernanceToken: transfer failed");
     });
 
     it("should transfer external token to 'to' address", async () => {

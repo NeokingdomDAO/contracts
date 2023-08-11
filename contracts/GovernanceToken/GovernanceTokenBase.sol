@@ -69,7 +69,10 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
     //}
 
     function _unwrap(address from, address to, uint amount) internal virtual {
-        tokenExternal.transfer(to, amount);
+        require(
+            tokenExternal.transfer(to, amount),
+            "GovernanceToken: transfer failed"
+        );
         super._burn(from, amount);
     }
 

@@ -341,6 +341,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
      * @param amount Amount of external tokens to wrap.
      */
     function _wrap(address from, uint amount) internal virtual {
+        require(amount > 0, "GovernanceToken: attempt to wrap 0 tokens");
         tokenExternal.transferFrom(from, address(this), amount);
         uint256 settlementTimestamp = block.timestamp + settlementPeriod;
         depositedTokens[from].push(

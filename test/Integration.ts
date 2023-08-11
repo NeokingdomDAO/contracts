@@ -1133,7 +1133,7 @@ describe("Integration", async () => {
     });
 
     describe("least authority audit proof of fix (july 2023)", async () => {
-      it.only("issue A: Deposited Tokens Can Be Redeemed", async () => {
+      it("issue A: Deposited Tokens Can Be Redeemed", async () => {
         await _makeContributor(user1, 10);
         await _makeContributor(user2, 10);
 
@@ -1160,6 +1160,49 @@ describe("Integration", async () => {
         await internalMarket.connect(user1).redeem(e(10));
         expect(await tokenMock.balanceOf(user1.address)).equal(
           e(INITIAL_USDC + 10)
+      });
+        
+      it("Issue B: Unsettled Deposits Can Be Locked", async () => {
+        await _makeContributor(user1, 10);
+        await _makeContributor(user2, 0);
+
+        // user1 offers token, no one buys
+        await internalMarket.connect(user1).makeOffer(e(10));
+        await timeTravel(offerDurationDays, true);
+
+        // tokens are transferred to user 2
+        await internalMarket.connect(user1).withdraw(user2.address, e(10));
+
+        // user 2 makes 2 deposits, one of which with 0 tokens, which
+        // could lock the previous deposit forever
+        await internalMarket.connect(user2).deposit(e(9));
+        await expect(internalMarket.connect(user2).deposit(e(0))).revertedWith(
+          "GovernanceToken: attempt to wrap 0 tokens"
+        );
+
+        await timeTravel(settlementPeriod, true);
+        await governanceToken.settleTokens(user2.address);
+
+        expect(await governanceToken.balanceOf(user2.address)).equal(e(9));
+      });
+      
+      it("Issue C: Missing Modifier Preventing the Update of Non-Existent Resolutions", async () => {
+        const nonExistingResolutionId = 999;
+        await expect(
+          resolutionManager
+            .connect(managingBoard)
+            .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
+        ).revertedWith("Resolution: does not exist");
+      });
+      
+      it("issue D: the status of internalMarket or shareholderRegistry can be set to contributor status", async () => {
+        await expect(
+          shareholderRegistry.setStatus(
+            contributorStatus,
+            internalMarket.address
+          )
+        ).revertedWith(
+          "ShareholderRegistry: cannot set status for smart contract"
         );
       });
     });

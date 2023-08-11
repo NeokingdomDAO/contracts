@@ -3,8 +3,8 @@ import { readFile } from "fs/promises";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
+  DIAOracleV2Mock__factory,
   GovernanceToken__factory,
-  PriceOracle__factory,
   ProxyAdmin__factory,
   ResolutionManager__factory,
   ShareholderRegistry__factory,
@@ -54,8 +54,8 @@ type ContractFactory =
   | typeof GovernanceToken__factory
   | typeof Voting__factory
   | typeof TokenMock__factory
-  | typeof PriceOracle__factory
-  | typeof ProxyAdmin__factory;
+  | typeof ProxyAdmin__factory
+  | typeof DIAOracleV2Mock__factory;
 
 export async function loadContract<T extends ContractFactory>(
   hre: HardhatRuntimeEnvironment,
@@ -70,6 +70,7 @@ export async function loadContract<T extends ContractFactory>(
   const [deployer] = await hre.ethers.getSigners();
   const { chainId, name: networkName } = await hre.ethers.provider.getNetwork();
   const addresses = networks[chainId];
+  console.log(networks);
 
   if (!addresses || !addresses[name]) {
     console.error(`Cannot find address for ${name} in network ${networkName}.`);

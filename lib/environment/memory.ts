@@ -3,10 +3,10 @@ import { ethers, upgrades } from "hardhat";
 
 import {
   DAORoles,
+  DIAOracleV2Mock,
   GovernanceToken,
   InternalMarket,
   NeokingdomToken,
-  PriceOracle,
   ProxyAdmin,
   RedemptionController,
   ResolutionManager,
@@ -79,9 +79,6 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
       case "NeokingdomToken":
         this.contracts.neokingdomToken = contract as NeokingdomToken;
         break;
-      case "PriceOracle":
-        this.contracts.priceOracle = contract as PriceOracle;
-        break;
       case "RedemptionController":
         this.contracts.redemptionController = contract as RedemptionController;
         break;
@@ -99,6 +96,9 @@ export class NeokingdomDAOMemory extends NeokingdomDAO {
         break;
       case "ProxyAdmin":
         this.contracts.proxyAdmin = contract as ProxyAdmin;
+        break;
+      case "DIAOracleV2Mock":
+        this.contracts.diaOracleV2Mock = contract as DIAOracleV2Mock;
     }
   }
 }

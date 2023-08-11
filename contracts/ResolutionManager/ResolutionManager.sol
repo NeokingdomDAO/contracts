@@ -167,13 +167,6 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
      * @param resolutionId The id of the resolution to approve.
      */
     function approveResolution(uint256 resolutionId) external virtual {
-        require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.MANAGING_BOARD_STATUS(),
-                _msgSender()
-            ),
-            "Resolution: only managing board can approve"
-        );
         _approveResolution(resolutionId);
     }
 
@@ -182,13 +175,6 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
      * @param resolutionId The id of the resolution to reject.
      */
     function rejectResolution(uint256 resolutionId) external virtual {
-        require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.MANAGING_BOARD_STATUS(),
-                _msgSender()
-            ),
-            "Resolution: only managing board can reject"
-        );
         _rejectResolution(resolutionId);
     }
 
@@ -209,13 +195,6 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
         address[] memory executionTo,
         bytes[] memory executionData
     ) external virtual {
-        require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.MANAGING_BOARD_STATUS(),
-                _msgSender()
-            ),
-            "Resolution: only managing board can update"
-        );
         _updateResolution(
             resolutionId,
             dataURI,

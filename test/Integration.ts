@@ -1459,6 +1459,47 @@ describe("Integration", async () => {
       });
     });
 
+    it("total voting power for a resolution with exclusion doesn't include the voting power of the excluded contributor", async () => {
+      await _makeContributor(user1, 20);
+      await _makeContributor(user2, 70);
+      await _makeContributor(user3, 10);
+
+      // We have an extra of 4 shares:
+      // 3 are the shares of user1, user2, and user3
+      // 1 is the share of the board
+      expect(await voting.getTotalVotingPower()).equal(e(20 + 70 + 10 + 4));
+
+      // resolution 1 excludes user 2
+      const abi = ["function setStatus(bytes32 status, address account)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("setStatus", [
+        investorStatus,
+        user2.address,
+      ]);
+
+      // Contributors propose a distrust vote against user3
+      const distrust = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user2.address
+        );
+
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(distrust);
+      const { snapshotId } = await resolutionManager.resolutions(distrust);
+
+      // Now we have 3 extra shares as user2 is not a contributor anymore
+      expect(await voting.getTotalVotingPowerAt(snapshotId)).equal(
+        e(20 + 10 + 3)
+      );
+    });
+
     it("voting with exclusion stress test", async () => {
       await _makeContributor(user1, 20);
       await _makeContributor(user2, 70);

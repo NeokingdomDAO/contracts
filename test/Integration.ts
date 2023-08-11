@@ -1160,6 +1160,7 @@ describe("Integration", async () => {
         await internalMarket.connect(user1).redeem(e(10));
         expect(await tokenMock.balanceOf(user1.address)).equal(
           e(INITIAL_USDC + 10)
+        );
       });
         
       it("Issue B: Unsettled Deposits Can Be Locked", async () => {

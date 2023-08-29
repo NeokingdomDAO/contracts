@@ -25,6 +25,11 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         DAORoles roles,
         IGovernanceToken governanceToken
     ) public initializer {
+        require(
+            address(roles) != address(0) &&
+                address(governanceToken) != address(0),
+            "InternalMarket: 0x0 not allowed"
+        );
         _initialize(governanceToken, 7 days);
         _setRoles(roles);
     }

@@ -18,6 +18,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
      * @param roles Instance of a DAORoles contract.
      */
     function initialize(DAORoles roles) public initializer {
+        require(address(roles) != address(0), "Voting: 0x0 not allowed");
         _setRoles(roles);
     }
 

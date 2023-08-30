@@ -96,7 +96,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     /**
      * @notice Hook called on every governance token transfer.
-     * @dev Only the governance token can call this method.
+     * @dev Called by GovernanceToken and ShareholderRegistry.
      * @param from The sender's address.
      * @param to The receiver's address.
      * @param amount The amount transferred.

@@ -28,6 +28,10 @@ contract ShareholderRegistry is
         string memory name,
         string memory symbol
     ) public initializer {
+        require(
+            address(roles) != address(0),
+            "ShareholderRegistry: 0x0 not allowed"
+        );
         _initialize(name, symbol);
         _setRoles(roles);
     }

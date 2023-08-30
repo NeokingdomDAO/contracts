@@ -35,6 +35,10 @@ contract RedemptionController is
      * @param roles The addresses of DAORoles for this contract.
      */
     function initialize(DAORoles roles) public initializer {
+        require(
+            address(roles) != address(0),
+            "RedemptionController: 0x0 not allowed"
+        );
         _setRoles(roles);
         _initialize();
     }

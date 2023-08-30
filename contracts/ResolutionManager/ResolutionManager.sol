@@ -26,6 +26,13 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
         IGovernanceToken governanceToken,
         IVoting voting
     ) public initializer {
+        require(
+            address(roles) != address(0) &&
+                address(shareholderRegistry) != address(0) &&
+                address(governanceToken) != address(0) &&
+                address(voting) != address(0),
+            "ResolutionManager: 0x0 not allowed"
+        );
         _setRoles(roles);
         _initialize(shareholderRegistry, governanceToken, voting);
     }

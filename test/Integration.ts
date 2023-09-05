@@ -1301,7 +1301,7 @@ describe("Integration", async () => {
       expect(await voting.getVotingPower(user1.address)).equal(share.add(9));
     });
 
-    it("internal and external token amounts", async () => {
+    it.only("internal and external token amounts", async () => {
       async function check({
         internalSupply = 0,
         externalSupply = 0,
@@ -1375,6 +1375,8 @@ describe("Integration", async () => {
           e(reserveUsdcBalance)
         );
       }
+
+      await governanceToken.setSettlementPeriod(3600 * 24 * 7);
 
       await check({});
 
@@ -1454,6 +1456,45 @@ describe("Integration", async () => {
         user2InternalBalance: 35,
         user2UsdcBalance: INITIAL_USDC - 5,
         user3ExternalBalance: 15,
+        reserveExternalBalance: 0, // tokens were burnt
+        reserveUsdcBalance: INITIAL_USDC - 20,
+      });
+
+      await tokenMock
+        .connect(user3)
+        .approve(internalMarket.address, MaxUint256);
+      await internalMarket.connect(user3).deposit(e(10));
+      await check({
+        internalSupply: 95,
+        externalSupply: 110,
+        marketInternalBalance: 0,
+        governanceTokenWrappedBalance: 95,
+        user1InternalBalance: 60,
+        user1UsdcBalance: INITIAL_USDC + 5 + 20,
+        user2InternalBalance: 35,
+        user2UsdcBalance: INITIAL_USDC - 5,
+        user3ExternalBalance: 15,
+        reserveExternalBalance: 0, // tokens were burnt
+        reserveUsdcBalance: INITIAL_USDC - 20,
+      });
+      // Settlement can be called after 7 days
+      await timeTravel(7, true);
+      // deposit is finalized
+      await governanceToken.settleTokens(user3.address);
+
+      await check({
+        // +10
+        internalSupply: 105,
+        // -10
+        externalSupply: 100,
+        marketInternalBalance: 0,
+        // -20
+        governanceTokenWrappedBalance: 95,
+        user1InternalBalance: 60,
+        user1UsdcBalance: INITIAL_USDC + 5 + 20,
+        user2InternalBalance: 35,
+        user2UsdcBalance: INITIAL_USDC - 5,
+        user3ExternalBalance: 5,
         reserveExternalBalance: 0, // tokens were burnt
         reserveUsdcBalance: INITIAL_USDC - 20,
       });

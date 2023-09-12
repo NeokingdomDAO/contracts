@@ -101,6 +101,7 @@ describe("GovernanceToken", () => {
     redemption.afterMint.reset();
     daoRoles.hasRole.reset();
     shareholderRegistry.isAtLeast.reset();
+    neokingdomToken.mint.reset();
   });
 
   describe("transfer hooks", async () => {
@@ -335,7 +336,7 @@ describe("GovernanceToken", () => {
     });
   });
 
-  describe("processDepositedTokens", async () => {
+  describe("settleTokens", async () => {
     describe("when no tokens have been wrapped", async () => {
       it("should mint nothing", async () => {
         await governanceToken.settleTokens(contributor.address);
@@ -383,7 +384,7 @@ describe("GovernanceToken", () => {
         expect(result).equal(41);
       });
 
-      it("should only not mint non cooled tokens", async () => {
+      it("should not mint non cooled tokens", async () => {
         await governanceToken.wrap(contributor.address, 42);
         await governanceToken.settleTokens(contributor.address);
 
@@ -417,6 +418,14 @@ describe("GovernanceToken", () => {
         );
 
         expect(balanceAfter).equal(balanceBefore.add(42));
+      });
+
+      it("should not mint an equivalent amount of neok tokens to the governance contract", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+
+        expect(neokingdomToken.mint).to.not.have.been.called;
       });
     });
   });

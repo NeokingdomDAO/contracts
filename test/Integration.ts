@@ -1332,6 +1332,13 @@ describe("Integration", async () => {
     });
 
     it("back and forth NEOK <-> Governance", async () => {
+      async function _expectWrapped(count: number) {
+        let wrappedNEOKs = await neokingdomToken.balanceOf(
+          governanceToken.address
+        );
+        expect(wrappedNEOKs).equal(count);
+      }
+
       await governanceToken.setSettlementPeriod(3600 * 24 * 7);
       const share = parseEther("1");
       await shareholderRegistry.mint(user1.address, parseEther("1"));
@@ -1339,18 +1346,25 @@ describe("Integration", async () => {
       await shareholderRegistry.setStatus(contributorStatus, user1.address);
       await shareholderRegistry.setStatus(contributorStatus, user2.address);
 
+      await _expectWrapped(0);
+
       // 15 Governance Tokens to user2
       await governanceToken.mint(user2.address, 15);
+      await _expectWrapped(15);
+
       // 5 Governance tokens minted to user1
       await governanceToken.mint(user1.address, 5);
+      await _expectWrapped(20);
 
       // user2 withdraws 10 Governance tokens to user1
       await internalMarket.connect(user2).makeOffer(10);
       await timeTravel(7, true);
       await internalMarket.connect(user2).withdraw(user1.address, 10);
+      await _expectWrapped(10);
 
       // user1 deposit 4 NEOK
       await internalMarket.connect(user1).deposit(4);
+      await _expectWrapped(14);
       // user1 voting power is 5
       expect(await voting.getVotingPower(user1.address)).equal(share.add(5));
       // user1 offers 3 NEOK
@@ -1365,6 +1379,7 @@ describe("Integration", async () => {
       );
       // user1 deposit 3 NEOK
       await internalMarket.connect(user1).deposit(3);
+      await _expectWrapped(17);
       // user1 voting power is 2
       expect(await voting.getVotingPower(user1.address)).equal(share.add(2));
       // deposit is finalized
@@ -1377,6 +1392,8 @@ describe("Integration", async () => {
       await governanceToken.settleTokens(user1.address);
       // user1 voting power is 9
       expect(await voting.getVotingPower(user1.address)).equal(share.add(9));
+
+      await _expectWrapped(17);
     });
 
     it("internal and external token amounts", async () => {

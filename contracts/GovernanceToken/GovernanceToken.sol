@@ -368,7 +368,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
             DepositedTokens storage tokens = depositedTokens[from][i - 1];
             if (block.timestamp >= tokens.settlementTimestamp) {
                 if (tokens.amount > 0) {
-                    _mint(from, tokens.amount);
+                    ERC20Upgradeable._mint(from, tokens.amount);
                     tokens.amount = 0;
                 } else {
                     break;

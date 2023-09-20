@@ -2472,7 +2472,7 @@
             "label": "_roles",
             "offset": 0,
             "slot": "51",
-            "type": "t_contract(DAORoles)13255",
+            "type": "t_contract(DAORoles)7607",
             "contract": "HasRole",
             "src": "contracts/extensions/HasRole.sol:11"
           },
@@ -2528,7 +2528,7 @@
             "label": "_voting",
             "offset": 0,
             "slot": "102",
-            "type": "t_contract(IVoting)12166",
+            "type": "t_contract(IVoting)7591",
             "contract": "GovernanceTokenBase",
             "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:15"
           },
@@ -2536,7 +2536,7 @@
             "label": "_redemptionController",
             "offset": 0,
             "slot": "103",
-            "type": "t_contract(IRedemptionController)8761",
+            "type": "t_contract(IRedemptionController)7397",
             "contract": "GovernanceTokenBase",
             "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:16"
           },
@@ -2544,7 +2544,7 @@
             "label": "tokenExternal",
             "offset": 0,
             "slot": "104",
-            "type": "t_contract(INeokingdomToken)8400",
+            "type": "t_contract(INeokingdomToken)7364",
             "contract": "GovernanceTokenBase",
             "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:17"
           },
@@ -2568,7 +2568,7 @@
             "label": "_accountBalanceSnapshots",
             "offset": 0,
             "slot": "107",
-            "type": "t_mapping(t_address,t_struct(Snapshots)7016_storage)",
+            "type": "t_mapping(t_address,t_struct(Snapshots)5954_storage)",
             "contract": "GovernanceTokenSnapshot",
             "src": "contracts/GovernanceToken/GovernanceTokenSnapshot.sol:21"
           },
@@ -2576,7 +2576,7 @@
             "label": "_totalSupplySnapshots",
             "offset": 0,
             "slot": "108",
-            "type": "t_struct(Snapshots)7016_storage",
+            "type": "t_struct(Snapshots)5954_storage",
             "contract": "GovernanceTokenSnapshot",
             "src": "contracts/GovernanceToken/GovernanceTokenSnapshot.sol:22"
           },
@@ -2584,7 +2584,7 @@
             "label": "_shareholderRegistry",
             "offset": 0,
             "slot": "110",
-            "type": "t_contract(IShareholderRegistry)11142",
+            "type": "t_contract(IShareholderRegistry)7494",
             "contract": "GovernanceToken",
             "src": "contracts/GovernanceToken/GovernanceToken.sol:20"
           },
@@ -2592,7 +2592,7 @@
             "label": "depositedTokens",
             "offset": 0,
             "slot": "111",
-            "type": "t_mapping(t_address,t_array(t_struct(DepositedTokens)6201_storage)dyn_storage)",
+            "type": "t_mapping(t_address,t_array(t_struct(DepositedTokens)5139_storage)dyn_storage)",
             "contract": "GovernanceToken",
             "src": "contracts/GovernanceToken/GovernanceToken.sol:33"
           },
@@ -2610,7 +2610,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_array(t_struct(DepositedTokens)6201_storage)dyn_storage": {
+          "t_array(t_struct(DepositedTokens)5139_storage)dyn_storage": {
             "label": "struct GovernanceToken.DepositedTokens[]",
             "numberOfBytes": "32"
           },
@@ -2630,27 +2630,27 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(DAORoles)13255": {
+          "t_contract(DAORoles)7607": {
             "label": "contract DAORoles",
             "numberOfBytes": "20"
           },
-          "t_contract(INeokingdomToken)8400": {
+          "t_contract(INeokingdomToken)7364": {
             "label": "contract INeokingdomToken",
             "numberOfBytes": "20"
           },
-          "t_contract(IRedemptionController)8761": {
+          "t_contract(IRedemptionController)7397": {
             "label": "contract IRedemptionController",
             "numberOfBytes": "20"
           },
-          "t_contract(IShareholderRegistry)11142": {
+          "t_contract(IShareholderRegistry)7494": {
             "label": "contract IShareholderRegistry",
             "numberOfBytes": "20"
           },
-          "t_contract(IVoting)12166": {
+          "t_contract(IVoting)7591": {
             "label": "contract IVoting",
             "numberOfBytes": "20"
           },
-          "t_mapping(t_address,t_array(t_struct(DepositedTokens)6201_storage)dyn_storage)": {
+          "t_mapping(t_address,t_array(t_struct(DepositedTokens)5139_storage)dyn_storage)": {
             "label": "mapping(address => struct GovernanceToken.DepositedTokens[])",
             "numberOfBytes": "32"
           },
@@ -2658,7 +2658,7 @@
             "label": "mapping(address => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(Snapshots)7016_storage)": {
+          "t_mapping(t_address,t_struct(Snapshots)5954_storage)": {
             "label": "mapping(address => struct GovernanceTokenSnapshot.Snapshots)",
             "numberOfBytes": "32"
           },
@@ -2670,7 +2670,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(DepositedTokens)6201_storage": {
+          "t_struct(DepositedTokens)5139_storage": {
             "label": "struct GovernanceToken.DepositedTokens",
             "members": [
               {
@@ -2688,7 +2688,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Snapshots)7016_storage": {
+          "t_struct(Snapshots)5954_storage": {
             "label": "struct GovernanceTokenSnapshot.Snapshots",
             "members": [
               {
@@ -3375,6 +3375,286 @@
           "t_uint128": {
             "label": "uint128",
             "numberOfBytes": "16"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "8f84054f22cda16e676faba845b0dc14336134dee5ff01b1ac755874f1f8ffa0": {
+      "address": "0xF28797507FA95A2A093dE9484F5c2E56Ad1b0585",
+      "txHash": "0x8b227b514473a5039593aafb8a1915f80bb43ae7a154136c6f79abf59e5d7f1e",
+      "layout": {
+        "solcVersion": "0.8.19",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_roles",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_contract(DAORoles)7625",
+            "contract": "HasRole",
+            "src": "contracts/extensions/HasRole.sol:11"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:37"
+          },
+          {
+            "label": "_allowances",
+            "offset": 0,
+            "slot": "53",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:39"
+          },
+          {
+            "label": "_totalSupply",
+            "offset": 0,
+            "slot": "54",
+            "type": "t_uint256",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:41"
+          },
+          {
+            "label": "_name",
+            "offset": 0,
+            "slot": "55",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:43"
+          },
+          {
+            "label": "_symbol",
+            "offset": 0,
+            "slot": "56",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "57",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:400"
+          },
+          {
+            "label": "_voting",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_contract(IVoting)7609",
+            "contract": "GovernanceTokenBase",
+            "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:15"
+          },
+          {
+            "label": "_redemptionController",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IRedemptionController)7415",
+            "contract": "GovernanceTokenBase",
+            "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:16"
+          },
+          {
+            "label": "tokenExternal",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(INeokingdomToken)7382",
+            "contract": "GovernanceTokenBase",
+            "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:17"
+          },
+          {
+            "label": "_vestingBalance",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "GovernanceTokenBase",
+            "src": "contracts/GovernanceToken/GovernanceTokenBase.sol:28"
+          },
+          {
+            "label": "_currentSnapshotId",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "Snapshottable",
+            "src": "contracts/extensions/Snapshottable.sol:11"
+          },
+          {
+            "label": "_accountBalanceSnapshots",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_mapping(t_address,t_struct(Snapshots)5972_storage)",
+            "contract": "GovernanceTokenSnapshot",
+            "src": "contracts/GovernanceToken/GovernanceTokenSnapshot.sol:21"
+          },
+          {
+            "label": "_totalSupplySnapshots",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_struct(Snapshots)5972_storage",
+            "contract": "GovernanceTokenSnapshot",
+            "src": "contracts/GovernanceToken/GovernanceTokenSnapshot.sol:22"
+          },
+          {
+            "label": "_shareholderRegistry",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_contract(IShareholderRegistry)7512",
+            "contract": "GovernanceToken",
+            "src": "contracts/GovernanceToken/GovernanceToken.sol:20"
+          },
+          {
+            "label": "depositedTokens",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_mapping(t_address,t_array(t_struct(DepositedTokens)5139_storage)dyn_storage)",
+            "contract": "GovernanceToken",
+            "src": "contracts/GovernanceToken/GovernanceToken.sol:33"
+          },
+          {
+            "label": "settlementPeriod",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_uint256",
+            "contract": "GovernanceToken",
+            "src": "contracts/GovernanceToken/GovernanceToken.sol:35"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(DepositedTokens)5139_storage)dyn_storage": {
+            "label": "struct GovernanceToken.DepositedTokens[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(DAORoles)7625": {
+            "label": "contract DAORoles",
+            "numberOfBytes": "20"
+          },
+          "t_contract(INeokingdomToken)7382": {
+            "label": "contract INeokingdomToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IRedemptionController)7415": {
+            "label": "contract IRedemptionController",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IShareholderRegistry)7512": {
+            "label": "contract IShareholderRegistry",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVoting)7609": {
+            "label": "contract IVoting",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_array(t_struct(DepositedTokens)5139_storage)dyn_storage)": {
+            "label": "mapping(address => struct GovernanceToken.DepositedTokens[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Snapshots)5972_storage)": {
+            "label": "mapping(address => struct GovernanceTokenSnapshot.Snapshots)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(DepositedTokens)5139_storage": {
+            "label": "struct GovernanceToken.DepositedTokens",
+            "members": [
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "settlementTimestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Snapshots)5972_storage": {
+            "label": "struct GovernanceTokenSnapshot.Snapshots",
+            "members": [
+              {
+                "label": "ids",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "values",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
           },
           "t_uint256": {
             "label": "uint256",

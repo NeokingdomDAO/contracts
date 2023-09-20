@@ -360,12 +360,18 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
             DepositedTokens storage tokens = depositedTokens[from][i - 1];
             if (block.timestamp >= tokens.settlementTimestamp) {
                 if (tokens.amount > 0) {
-                    super._mint(from, tokens.amount);
+                    ERC20Upgradeable._mint(from, tokens.amount);
                     tokens.amount = 0;
                 } else {
                     break;
                 }
             }
         }
+    }
+
+    function _burnExtra() external onlyRole(Roles.OPERATOR_ROLE) {
+        // From https://escan.live/tx/0x4973105a8215b74f356b503b1dadfaa7044008c4336ac506d91d1cbbeb56410e
+        uint256 extraTokens = 7818999911120000000000;
+        tokenExternal.burn(extraTokens);
     }
 }

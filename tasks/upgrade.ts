@@ -63,9 +63,6 @@ task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
     "GovernanceToken"
   )) as GovernanceToken__factory;
 
-  const [deployer] = await hre.ethers.getSigners();
-  console.log(deployer.address);
-
   const neokingdom = await NeokingdomDAOHardhat.initialize(hre);
   const contracts = await neokingdom.loadContracts();
   console.log(`Upgrade GovernanceToken ${contracts.governanceToken.address}`);

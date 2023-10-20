@@ -769,7 +769,7 @@ describe("InternalMarket", async () => {
         );
       });
 
-      it.only("should emit a Withdrawn event", async () => {
+      it("should emit a Withdrawn event", async () => {
         await setEVMTimestamp(ts + WEEK + DAY * 3);
         expect(internalMarket.connect(alice).withdraw(bob.address, 11))
           .to.emit(internalMarket, "Withdrawn")

@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
-
-// TODO: update _statuses when account has no shares
-// TODO: check who can move shares
-
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../Voting/IVoting.sol";
 
 contract ShareholderRegistryBase is ERC20Upgradeable {
@@ -40,6 +37,10 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
     }
 
     function _setStatus(bytes32 status, address account) internal virtual {
+        require(
+            !Address.isContract(account),
+            "ShareholderRegistry: cannot set status for smart contract"
+        );
         require(
             status == 0 || isAtLeast(SHAREHOLDER_STATUS, account),
             "ShareholderRegistry: address has no tokens"
@@ -83,7 +84,10 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
     ) internal view virtual returns (bool) {
         return
             balance > 0 &&
-            // shareholder < investor < contributor < managing board
+            // investor < contributor < managing board
+            // TODO: shareholder is currently equivalent to investor.
+            // We need to verify with the lawyer whether we can remove it
+            // completely from the smart contracts.
             (status == INVESTOR_STATUS ||
                 status == SHAREHOLDER_STATUS ||
                 status == accountStatus ||

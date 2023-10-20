@@ -12,6 +12,8 @@ interface IShareholderRegistry is ISnapshot {
 
     function MANAGING_BOARD_STATUS() external view returns (bytes32);
 
+    function setStatus(bytes32 status, address account) external;
+
     function getStatus(address account) external view returns (bytes32);
 
     function getStatusAt(

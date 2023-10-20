@@ -4,8 +4,7 @@ pragma solidity ^0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
-import "../PriceOracle/IStdReference.sol";
-
+import "./IDIAOracleV2.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
 
@@ -30,13 +29,13 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    IGovernanceToken public governanceToken;
+    IGovernanceToken public tokenInternal;
 
     // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
-    IStdReference public priceOracle;
+    IDIAOracleV2 public priceOracle;
     IShareholderRegistry internal _shareholderRegistry;
 
     address public reserve;
@@ -50,7 +49,7 @@ contract InternalMarketBase {
         IGovernanceToken _governanceToken,
         uint256 _offerDuration
     ) internal virtual {
-        governanceToken = _governanceToken;
+        tokenInternal = _governanceToken;
         offerDuration = _offerDuration;
     }
 
@@ -62,8 +61,8 @@ contract InternalMarketBase {
         return offers.end++;
     }
 
-    function _setGovernanceToken(IGovernanceToken token) internal virtual {
-        governanceToken = token;
+    function _setTokenInternal(IGovernanceToken token) internal virtual {
+        tokenInternal = token;
     }
 
     function _setShareholderRegistry(
@@ -74,7 +73,7 @@ contract InternalMarketBase {
 
     function _setExchangePair(
         ERC20 token,
-        IStdReference oracle
+        IDIAOracleV2 oracle
     ) internal virtual {
         exchangeToken = token;
         priceOracle = oracle;
@@ -103,7 +102,7 @@ contract InternalMarketBase {
         emit OfferCreated(id, from, amount, expiredAt);
 
         require(
-            governanceToken.transferFrom(from, address(this), amount),
+            tokenInternal.transferFrom(from, address(this), amount),
             "InternalMarketBase: transfer failed"
         );
         redemptionController.afterOffer(from, amount);
@@ -179,7 +178,7 @@ contract InternalMarketBase {
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
         require(
-            governanceToken.transfer(to, amount),
+            tokenInternal.transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
         require(
@@ -200,9 +199,9 @@ contract InternalMarketBase {
             )
         ) {
             _beforeWithdraw(from, amount);
-            governanceToken.unwrap(address(this), to, amount);
+            tokenInternal.unwrap(address(this), to, amount);
         } else {
-            governanceToken.unwrap(from, to, amount);
+            tokenInternal.unwrap(from, to, amount);
         }
     }
 
@@ -214,15 +213,15 @@ contract InternalMarketBase {
             )
         );
         _beforeWithdraw(from, amount);
-        governanceToken.burn(address(this), amount);
+        tokenInternal.burn(address(this), amount);
     }
 
     function _deposit(address to, uint256 amount) internal virtual {
-        governanceToken.wrap(to, amount);
+        tokenInternal.wrap(to, amount);
     }
 
     function _finalizeDeposit(address to) internal virtual {
-        governanceToken.settleTokens(to);
+        tokenInternal.settleTokens(to);
     }
 
     function _redeem(address from, uint256 amount) internal virtual {
@@ -231,7 +230,7 @@ contract InternalMarketBase {
             uint256 difference = amount - withdrawableBalance;
             // governanceToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
-            governanceToken.burn(from, difference);
+            tokenInternal.burn(from, difference);
             _burn(from, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {
@@ -247,9 +246,11 @@ contract InternalMarketBase {
         redemptionController.afterRedeem(from, amount);
     }
 
-    function _convertToUSDC(uint256 eurAmount) internal view returns (uint256) {
-        uint256 eurUsd = priceOracle.getReferenceData("EUR", "USD").rate;
-        uint256 usdUsdc = priceOracle.getReferenceData("USDC", "USD").rate;
+    function _convertToUSDC(
+        uint256 eurAmount
+    ) internal view virtual returns (uint256) {
+        (uint256 eurUsd, ) = priceOracle.getValue("EUR/USD");
+        (uint256 usdUsdc, ) = priceOracle.getValue("USDC/USD");
 
         // 18 is the default amount of decimals for ERC20 tokens, including neokingdom ones
         return

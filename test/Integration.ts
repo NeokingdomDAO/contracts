@@ -94,7 +94,6 @@ describe("Integration", async () => {
       governanceToken,
       neokingdomToken,
       shareholderRegistry,
-
       resolutionManager,
       internalMarket,
       redemptionController,
@@ -1332,6 +1331,13 @@ describe("Integration", async () => {
     });
 
     it("back and forth NEOK <-> Governance", async () => {
+      async function _expectWrapped(count: number) {
+        let wrappedNEOKs = await neokingdomToken.balanceOf(
+          governanceToken.address
+        );
+        expect(wrappedNEOKs).equal(count);
+      }
+
       await governanceToken.setSettlementPeriod(3600 * 24 * 7);
       const share = parseEther("1");
       await shareholderRegistry.mint(user1.address, parseEther("1"));
@@ -1339,18 +1345,25 @@ describe("Integration", async () => {
       await shareholderRegistry.setStatus(contributorStatus, user1.address);
       await shareholderRegistry.setStatus(contributorStatus, user2.address);
 
+      await _expectWrapped(0);
+
       // 15 Governance Tokens to user2
       await governanceToken.mint(user2.address, 15);
+      await _expectWrapped(15);
+
       // 5 Governance tokens minted to user1
       await governanceToken.mint(user1.address, 5);
+      await _expectWrapped(20);
 
       // user2 withdraws 10 Governance tokens to user1
       await internalMarket.connect(user2).makeOffer(10);
       await timeTravel(7, true);
       await internalMarket.connect(user2).withdraw(user1.address, 10);
+      await _expectWrapped(10);
 
       // user1 deposit 4 NEOK
       await internalMarket.connect(user1).deposit(4);
+      await _expectWrapped(14);
       // user1 voting power is 5
       expect(await voting.getVotingPower(user1.address)).equal(share.add(5));
       // user1 offers 3 NEOK
@@ -1365,6 +1378,7 @@ describe("Integration", async () => {
       );
       // user1 deposit 3 NEOK
       await internalMarket.connect(user1).deposit(3);
+      await _expectWrapped(17);
       // user1 voting power is 2
       expect(await voting.getVotingPower(user1.address)).equal(share.add(2));
       // deposit is finalized
@@ -1377,6 +1391,8 @@ describe("Integration", async () => {
       await governanceToken.settleTokens(user1.address);
       // user1 voting power is 9
       expect(await voting.getVotingPower(user1.address)).equal(share.add(9));
+
+      await _expectWrapped(17);
     });
 
     it("internal and external token amounts", async () => {
@@ -1535,6 +1551,47 @@ describe("Integration", async () => {
         reserveExternalBalance: 0, // tokens were burnt
         reserveUsdcBalance: INITIAL_USDC - 20,
       });
+    });
+
+    it("total voting power for a resolution with exclusion doesn't include the voting power of the excluded contributor", async () => {
+      await _makeContributor(user1, 20);
+      await _makeContributor(user2, 70);
+      await _makeContributor(user3, 10);
+
+      // We have an extra of 4 shares:
+      // 3 are the shares of user1, user2, and user3
+      // 1 is the share of the board
+      expect(await voting.getTotalVotingPower()).equal(e(20 + 70 + 10 + 4));
+
+      // resolution 1 excludes user 2
+      const abi = ["function setStatus(bytes32 status, address account)"];
+      const iface = new ethers.utils.Interface(abi);
+      const data = iface.encodeFunctionData("setStatus", [
+        investorStatus,
+        user2.address,
+      ]);
+
+      // Contributors propose a distrust vote against user3
+      const distrust = ++currentResolution;
+      await resolutionManager
+        .connect(user1)
+        .createResolutionWithExclusion(
+          "Qxdistrust",
+          0,
+          [shareholderRegistry.address],
+          [data],
+          user2.address
+        );
+
+      await resolutionManager
+        .connect(managingBoard)
+        .approveResolution(distrust);
+      const { snapshotId } = await resolutionManager.resolutions(distrust);
+
+      // Now we have 3 extra shares as user2 is not a contributor anymore
+      expect(await voting.getTotalVotingPowerAt(snapshotId)).equal(
+        e(20 + 10 + 3)
+      );
     });
 
     it("voting with exclusion stress test", async () => {

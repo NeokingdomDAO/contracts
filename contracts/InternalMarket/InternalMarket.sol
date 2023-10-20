@@ -9,6 +9,7 @@ import "./InternalMarketBase.sol";
 import { Roles } from "../extensions/Roles.sol";
 import "../extensions/DAORoles.sol";
 import "../extensions/HasRole.sol";
+import "./IDIAOracleV2.sol";
 
 /**
  * @title InternalMarket
@@ -16,16 +17,18 @@ import "../extensions/HasRole.sol";
  * allowing them to make an offer, match existing offers, deposit, withdraw, and redeem locked tokens.
  */
 contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+    IDIAOracleV2 internal _diaPriceOracle;
+
     /**
      * @dev Initializes the contract with the given roles and internal token.
      * @param roles DAORoles instance containing custom access control roles.
-     * @param governanceToken Reference to governance token.
+     * @param tokenInternal_ Reference to governance token.
      */
     function initialize(
         DAORoles roles,
-        IGovernanceToken governanceToken
+        IGovernanceToken tokenInternal_
     ) public initializer {
-        _initialize(governanceToken, 7 days);
+        _initialize(tokenInternal_, 7 days);
         _setRoles(roles);
     }
 
@@ -90,10 +93,10 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      * @dev Set internal token reference.
      * @param token The address of the internal governance token.
      */
-    function setGovernanceToken(
+    function setTokenInternal(
         IGovernanceToken token
     ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(token)) {
-        _setGovernanceToken(token);
+        _setTokenInternal(token);
     }
 
     /**
@@ -117,7 +120,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setExchangePair(
         ERC20 token,
-        IStdReference oracle
+        IDIAOracleV2 oracle
     )
         public
         onlyRole(Roles.RESOLUTION_ROLE)

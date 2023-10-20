@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ShareholderRegistrySnapshot.sol";
@@ -28,6 +28,10 @@ contract ShareholderRegistry is
         string memory name,
         string memory symbol
     ) public initializer {
+        require(
+            address(roles) != address(0),
+            "ShareholderRegistry: 0x0 not allowed"
+        );
         _initialize(name, symbol);
         _setRoles(roles);
     }

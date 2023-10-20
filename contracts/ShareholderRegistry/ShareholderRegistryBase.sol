@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -84,7 +84,10 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
     ) internal view virtual returns (bool) {
         return
             balance > 0 &&
-            // shareholder < investor < contributor < managing board
+            // investor < contributor < managing board
+            // TODO: shareholder is currently equivalent to investor.
+            // We need to verify with the lawyer whether we can remove it
+            // completely from the smart contracts.
             (status == INVESTOR_STATUS ||
                 status == SHAREHOLDER_STATUS ||
                 status == accountStatus ||

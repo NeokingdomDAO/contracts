@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -46,6 +46,10 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         string memory name,
         string memory symbol
     ) public initializer {
+        require(
+            address(roles) != address(0),
+            "GovernanceToken: 0x0 not allowed"
+        );
         _initialize(name, symbol);
         _setRoles(roles);
     }

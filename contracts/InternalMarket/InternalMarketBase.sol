@@ -17,6 +17,7 @@ contract InternalMarketBase {
     );
 
     event OfferMatched(uint128 id, address from, address to, uint256 amount);
+    event Withdrawn(address from, address to, uint256 amount);
 
     struct Offer {
         uint256 expiredAt;
@@ -203,6 +204,8 @@ contract InternalMarketBase {
         } else {
             tokenInternal.unwrap(from, to, amount);
         }
+
+        emit Withdrawn(from, to, amount);
     }
 
     function _burn(address from, uint256 amount) internal virtual {

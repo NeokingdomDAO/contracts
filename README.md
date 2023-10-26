@@ -54,3 +54,12 @@ npx hardhat test
 # Deploy to production
 npx hardhat deploy --network evmos
 ```
+
+# Audits
+
+- [SolidProof](https://solidproof.io/)
+  - Tag: https://github.com/NeokingdomDAO/contracts/releases/tag/audit1
+  - Report: https://github.com/solidproof/projects/blob/main/2023/NeokingdomDAO/SmartContract_Audit_Solidproof_NeoKingdomDAO.pdf
+- [LeastAuthority](https://leastauthority.com)
+  - Tag: https://github.com/NeokingdomDAO/contracts/releases/tag/audit2
+  - Report: https://leastauthority.com/blog/audits/neokingdom-dao-smart-contracts/

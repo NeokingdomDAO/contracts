@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
@@ -267,7 +266,7 @@ abstract contract ResolutionManagerBase {
         bool isNegative,
         address[] memory executionTo,
         bytes[] memory executionData
-    ) internal virtual onlyPending(resolutionId) {
+    ) internal virtual onlyPending(resolutionId) exists(resolutionId) {
         emit ResolutionUpdated(msg.sender, resolutionId);
 
         Resolution storage resolution = resolutions[resolutionId];

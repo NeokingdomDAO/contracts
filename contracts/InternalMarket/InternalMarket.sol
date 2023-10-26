@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -23,13 +22,18 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     /**
      * @dev Initializes the contract with the given roles and internal token.
      * @param roles DAORoles instance containing custom access control roles.
-     * @param tokenInternal_ Reference to governance token.
+     * @param governanceToken Reference to governance token.
      */
     function initialize(
         DAORoles roles,
-        IGovernanceToken tokenInternal_
+        IGovernanceToken governanceToken
     ) public initializer {
-        _initialize(tokenInternal_, 7 days);
+        require(
+            address(roles) != address(0) &&
+                address(governanceToken) != address(0),
+            "InternalMarket: 0x0 not allowed"
+        );
+        _initialize(governanceToken, 7 days);
         _setRoles(roles);
     }
 

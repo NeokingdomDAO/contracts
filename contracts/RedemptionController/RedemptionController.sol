@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./RedemptionControllerBase.sol";
@@ -36,6 +35,10 @@ contract RedemptionController is
      * @param roles The addresses of DAORoles for this contract.
      */
     function initialize(DAORoles roles) public initializer {
+        require(
+            address(roles) != address(0),
+            "RedemptionController: 0x0 not allowed"
+        );
         _setRoles(roles);
         _initialize();
     }

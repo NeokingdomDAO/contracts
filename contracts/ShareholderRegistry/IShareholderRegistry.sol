@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "../extensions/ISnapshot.sol";
 
@@ -12,6 +11,8 @@ interface IShareholderRegistry is ISnapshot {
     function CONTRIBUTOR_STATUS() external view returns (bytes32);
 
     function MANAGING_BOARD_STATUS() external view returns (bytes32);
+
+    function setStatus(bytes32 status, address account) external;
 
     function getStatus(address account) external view returns (bytes32);
 

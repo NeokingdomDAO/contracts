@@ -115,11 +115,15 @@ describe("GovernanceTokenSnapshot", () => {
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot");
     daoRoles.hasRole.returns(true);
+    neokingdomToken.transfer.returns(true);
+    neokingdomToken.transferFrom.returns(true);
   });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
     daoRoles.hasRole.reset();
+    neokingdomToken.transfer.reset();
+    neokingdomToken.transferFrom.reset();
   });
 
   describe("snapshot logic", async () => {

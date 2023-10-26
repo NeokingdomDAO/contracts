@@ -35,6 +35,8 @@ describe("Resolution", async () => {
   let resolutionSnapshotId = 42;
 
   let managingBoardStatus: string;
+  let investorStatus: string;
+  let contributorStatus: string;
   let daoRoles: MockContract<DAORoles>;
   let voting: FakeContract<Voting>;
   let token: FakeContract<GovernanceToken>;
@@ -78,6 +80,8 @@ describe("Resolution", async () => {
     await resolutionExecutorMock.deployed();
 
     managingBoardStatus = await shareholderRegistry.MANAGING_BOARD_STATUS();
+    investorStatus = await shareholderRegistry.INVESTOR_STATUS();
+    contributorStatus = await shareholderRegistry.CONTRIBUTOR_STATUS();
 
     resolution = (await upgrades.deployProxy(
       ResolutionFactory,
@@ -300,6 +304,14 @@ describe("Resolution", async () => {
           .connect(managingBoard)
           .updateResolution(resolutionId, "updated test", 6, true, [], [])
       ).revertedWith("Resolution: already rejected");
+    });
+
+    it("doesn't allow the managing board to update a non-existing resolution", async () => {
+      await expect(
+        resolution
+          .connect(managingBoard)
+          .updateResolution(42, "updated test", 6, true, [], [])
+      ).revertedWith("Resolution: does not exist");
     });
 
     it("doesn't allow anyone else to update a resolution", async () => {
@@ -1743,9 +1755,8 @@ describe("Resolution", async () => {
     });
   });
 
-  describe("addressable resolution", async () => {
-    let totalVotingPower = 100;
-    async function _prepare() {
+  describe("resolution with exclusion", async () => {
+    async function _prepare(totalVotingPower = 100) {
       await resolution
         .connect(managingBoard)
         .createResolutionWithExclusion("test", 6, [], [], user2.address);
@@ -1771,20 +1782,28 @@ describe("Resolution", async () => {
       expect(voting.delegateFrom).not.called;
     });
 
-    it("should remove and re-add delegation when delegating", async () => {
+    it("should downgrade the contributor to investor and, if delegating, restore status and delegation", async () => {
       await resolution
         .connect(managingBoard)
         .createResolutionWithExclusion("test", 0, [], [], user2.address);
 
       voting.getDelegate.whenCalledWith(user2.address).returns(user1.address);
+      shareholderRegistry.getStatus
+        .whenCalledWith(user2.address)
+        .returns(contributorStatus);
 
       await resolution.connect(managingBoard).approveResolution(resolutionId);
 
-      expect(voting.delegateFrom.getCall(0).args).deep.equal([
-        user2.address,
+      expect(shareholderRegistry.setStatus.getCall(0).args).deep.equal([
+        investorStatus,
         user2.address,
       ]);
-      expect(voting.delegateFrom.getCall(1).args).deep.equal([
+
+      expect(shareholderRegistry.setStatus.getCall(1).args).deep.equal([
+        contributorStatus,
+        user2.address,
+      ]);
+      expect(voting.delegateFrom.getCall(0).args).deep.equal([
         user2.address,
         user1.address,
       ]);
@@ -1797,87 +1816,6 @@ describe("Resolution", async () => {
       await expect(
         resolution.connect(user2).vote(resolutionId, false)
       ).revertedWith("Resolution: account cannot vote");
-    });
-
-    it("should not count excluded contributor balance for quorum", async () => {
-      setupUser(user2, 42, 60);
-      setupUser(user1, 42, 40);
-      await _prepare();
-
-      await resolution.connect(user1).vote(resolutionId, true);
-
-      const result = await resolution.getResolutionResult(resolutionId);
-
-      expect(result).to.be.true;
-    });
-
-    it("should not count excluded contributor shares for quorum", async () => {
-      setupUser(user2, 42, 0);
-      setupUser(user1, 42, 40);
-      shareholderRegistry.balanceOfAt
-        .whenCalledWith(user2.address, resolutionSnapshotId)
-        .returns(60);
-      await _prepare();
-
-      await resolution.connect(user1).vote(resolutionId, true);
-
-      const result = await resolution.getResolutionResult(resolutionId);
-
-      expect(result).to.be.true;
-    });
-
-    it("should count excluded contributor delegated's balance for quorum", async () => {
-      setupUser(user2, 42, 60, user1);
-      setupUser(user1, 42, 40);
-      await _prepare();
-
-      await resolution.connect(user1).vote(resolutionId, true);
-
-      const result = await resolution.getResolutionResult(resolutionId);
-
-      expect(result).to.be.true;
-    });
-
-    it("should count excluded contributor delegated's shares for quorum", async () => {
-      setupUser(user2, 42, 60, user1);
-      setupUser(user1, 42, 0);
-      shareholderRegistry.balanceOfAt
-        .whenCalledWith(user1.address, resolutionSnapshotId)
-        .returns(40);
-      await _prepare();
-
-      await resolution.connect(user1).vote(resolutionId, true);
-
-      const result = await resolution.getResolutionResult(resolutionId);
-
-      expect(result).to.be.true;
-    });
-
-    it("should count excluded contributor delegator's balance for quorum", async () => {
-      setupUser(user2, 42, 60);
-      setupUser(user1, 42, 40, user2);
-      await _prepare();
-
-      await resolution.connect(user1).vote(resolutionId, true);
-
-      const result = await resolution.getResolutionResult(resolutionId);
-
-      expect(result).to.be.true;
-    });
-
-    it("should count excluded contributor delegator's shares for quorum", async () => {
-      setupUser(user2, 42, 60);
-      setupUser(user1, 42, 0, user2);
-      shareholderRegistry.balanceOfAt
-        .whenCalledWith(user1.address, resolutionSnapshotId)
-        .returns(40);
-      await _prepare();
-
-      await resolution.connect(user1).vote(resolutionId, true);
-
-      const result = await resolution.getResolutionResult(resolutionId);
-
-      expect(result).to.be.true;
     });
 
     describe("getVoterVote", async () => {

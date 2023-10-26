@@ -94,6 +94,8 @@ describe("GovernanceToken", () => {
     shareholderRegistry.isAtLeast
       .whenCalledWith(contributorStatus, contributor2.address)
       .returns(true);
+    neokingdomToken.transfer.returns(true);
+    neokingdomToken.transferFrom.returns(true);
   });
 
   afterEach(async () => {
@@ -101,6 +103,9 @@ describe("GovernanceToken", () => {
     redemption.afterMint.reset();
     daoRoles.hasRole.reset();
     shareholderRegistry.isAtLeast.reset();
+    neokingdomToken.transfer.reset();
+    neokingdomToken.transferFrom.reset();
+    neokingdomToken.mint.reset();
   });
 
   describe("transfer hooks", async () => {
@@ -252,6 +257,19 @@ describe("GovernanceToken", () => {
       );
     });
 
+    it("should fail when the transfer fails", async () => {
+      neokingdomToken.transferFrom.returns(false);
+      await expect(governanceToken.wrap(contributor.address, 1)).revertedWith(
+        "GovernanceToken: transfer failed"
+      );
+    });
+
+    it("should fail wrapping 0 tokens", async () => {
+      await expect(
+        governanceToken.connect(contributor).wrap(contributor.address, 0)
+      ).revertedWith("GovernanceToken: attempt to wrap 0 tokens");
+    });
+
     it("should transfer external token to itself", async () => {
       await governanceToken.wrap(contributor.address, 41);
       expect(neokingdomToken.transferFrom).calledWith(
@@ -335,7 +353,7 @@ describe("GovernanceToken", () => {
     });
   });
 
-  describe("processDepositedTokens", async () => {
+  describe("settleTokens", async () => {
     describe("when no tokens have been wrapped", async () => {
       it("should mint nothing", async () => {
         await governanceToken.settleTokens(contributor.address);
@@ -383,7 +401,7 @@ describe("GovernanceToken", () => {
         expect(result).equal(41);
       });
 
-      it("should only not mint non cooled tokens", async () => {
+      it("should not mint non cooled tokens", async () => {
         await governanceToken.wrap(contributor.address, 42);
         await governanceToken.settleTokens(contributor.address);
 
@@ -418,6 +436,30 @@ describe("GovernanceToken", () => {
 
         expect(balanceAfter).equal(balanceBefore.add(42));
       });
+
+      it("should not mint an equivalent amount of neok tokens to the governance contract", async () => {
+        neokingdomToken.mint.reset();
+        await governanceToken.wrap(contributor.address, 42);
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+
+        expect(neokingdomToken.mint).to.not.have.been.called;
+      });
+
+      it("should not call RedemptionController.afterMint", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+        expect(redemption.afterMint).not.called;
+      });
+
+      it("should not mint an equivalent amount of neok tokens to the governance contract", async () => {
+        await governanceToken.wrap(contributor.address, 42);
+        await timeTravel(7);
+        await governanceToken.settleTokens(contributor.address);
+
+        expect(neokingdomToken.mint).to.not.have.been.called;
+      });
     });
   });
 
@@ -439,6 +481,13 @@ describe("GovernanceToken", () => {
       await expect(
         governanceToken.unwrap(contributor.address, contributor.address, 1)
       ).revertedWith("ERC20: burn amount exceeds balance");
+    });
+
+    it("should fail when the transfer fails", async () => {
+      neokingdomToken.transfer.returns(false);
+      await expect(
+        governanceToken.unwrap(contributor.address, contributor.address, 1)
+      ).revertedWith("GovernanceToken: transfer failed");
     });
 
     it("should transfer external token to 'to' address", async () => {

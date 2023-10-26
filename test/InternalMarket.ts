@@ -12,11 +12,11 @@ import {
   ERC20,
   IGovernanceToken,
   IRedemptionController,
-  IStdReference,
   InternalMarket,
   InternalMarket__factory,
   ShareholderRegistry,
 } from "../typechain";
+import { IDIAOracleV2 } from "../typechain/contracts/InternalMarket/IDIAOracleV2";
 
 import { getEVMTimestamp, mineEVMBlock, setEVMTimestamp } from "./utils/evm";
 import { roles } from "./utils/roles";
@@ -38,7 +38,7 @@ describe("InternalMarket", async () => {
   let registry: FakeContract<ShareholderRegistry>;
   let internalMarket: InternalMarket;
   let redemption: FakeContract<IRedemptionController>;
-  let stdReference: FakeContract<IStdReference>;
+  let oracle: FakeContract<IDIAOracleV2>;
   let usdc: FakeContract<ERC20>;
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
@@ -69,7 +69,7 @@ describe("InternalMarket", async () => {
     ])) as InternalMarket;
 
     redemption = await smock.fake("IRedemptionController");
-    stdReference = await smock.fake("IStdReference");
+    oracle = await smock.fake("IDIAOracleV2");
     registry = await smock.fake("ShareholderRegistry");
 
     RESOLUTION_ROLE = await roles.RESOLUTION_ROLE();
@@ -78,7 +78,7 @@ describe("InternalMarket", async () => {
       .whenCalledWith(RESOLUTION_ROLE, deployer.address)
       .returns(true);
     await internalMarket.setRedemptionController(redemption.address);
-    await internalMarket.setExchangePair(usdc.address, stdReference.address);
+    await internalMarket.setExchangePair(usdc.address, oracle.address);
     await internalMarket.setReserve(reserve.address);
     await internalMarket.setShareholderRegistry(registry.address);
 
@@ -92,17 +92,16 @@ describe("InternalMarket", async () => {
     governanceToken.unwrap.reset();
     usdc.transfer.reset();
     usdc.transferFrom.reset();
-    stdReference.getReferenceData.reset();
+    oracle.getValue.reset();
     registry.isAtLeast.returns(true);
 
     // make transferFrom always succeed
     governanceToken.transferFrom.returns(true);
 
     // Exchange rate is always 1
-    stdReference.getReferenceData.returns({
-      rate: parseEther("1"),
-      lastUpdatedBase: parseEther("0"),
-      lastUpdatedQuote: parseEther("0"),
+    oracle.getValue.returns({
+      value: parseEther("1"),
+      timestamp: parseEther("0"),
     });
   });
 
@@ -220,18 +219,14 @@ describe("InternalMarket", async () => {
 
         describe("when the exchange rate is 1/1", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-              rate: parseEther("1"),
-              lastUpdatedBase: parseEther("0"),
-              lastUpdatedQuote: parseEther("0"),
+            oracle.getValue.whenCalledWith("EUR/USD").returns({
+              value: parseEther("1"),
+              timestamp: parseEther("0"),
             });
-            stdReference.getReferenceData
-              .whenCalledWith("USDC", "USD")
-              .returns({
-                rate: parseEther("1"),
-                lastUpdatedBase: parseEther("0"),
-                lastUpdatedQuote: parseEther("0"),
-              });
+            oracle.getValue.whenCalledWith("USDC/USD").returns({
+              value: parseEther("1"),
+              timestamp: parseEther("0"),
+            });
           });
 
           it("should burn the 10 DAO tokens for 10 USDC of the reserve", async () => {
@@ -250,18 +245,14 @@ describe("InternalMarket", async () => {
 
         describe("when the exchange rate is 1/2", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-              rate: parseEther("2"),
-              lastUpdatedBase: parseEther("0"),
-              lastUpdatedQuote: parseEther("0"),
+            oracle.getValue.whenCalledWith("EUR/USD").returns({
+              value: parseEther("2"),
+              timestamp: parseEther("0"),
             });
-            stdReference.getReferenceData
-              .whenCalledWith("USDC", "USD")
-              .returns({
-                rate: parseEther("1"),
-                lastUpdatedBase: parseEther("0"),
-                lastUpdatedQuote: parseEther("0"),
-              });
+            oracle.getValue.whenCalledWith("USDC/USD").returns({
+              value: parseEther("1"),
+              timestamp: parseEther("0"),
+            });
           });
 
           it("should burn 10 DAO token for 20 USDC", async () => {
@@ -281,18 +272,14 @@ describe("InternalMarket", async () => {
 
         describe("when the exchange rate is 1.12 eur/usd and 0.998 usdc/usd", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-              rate: parseEther("1.12"),
-              lastUpdatedBase: parseEther("0"),
-              lastUpdatedQuote: parseEther("0"),
+            oracle.getValue.whenCalledWith("EUR/USD").returns({
+              value: parseEther("1.12"),
+              timestamp: parseEther("0"),
             });
-            stdReference.getReferenceData
-              .whenCalledWith("USDC", "USD")
-              .returns({
-                rate: parseEther("0.998"),
-                lastUpdatedBase: parseEther("0"),
-                lastUpdatedQuote: parseEther("0"),
-              });
+            oracle.getValue.whenCalledWith("USDC/USD").returns({
+              value: parseEther("0.998"),
+              timestamp: parseEther("0"),
+            });
           });
 
           it("should burn the 10 DAO tokens for 11.222444 USDC", async () => {
@@ -311,18 +298,14 @@ describe("InternalMarket", async () => {
 
         describe("when the exchange rate is 2/1", async () => {
           beforeEach(async () => {
-            stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-              rate: parseEther("1"),
-              lastUpdatedBase: parseEther("0"),
-              lastUpdatedQuote: parseEther("0"),
+            oracle.getValue.whenCalledWith("EUR/USD").returns({
+              value: parseEther("1"),
+              timestamp: parseEther("0"),
             });
-            stdReference.getReferenceData
-              .whenCalledWith("USDC", "USD")
-              .returns({
-                rate: parseEther("2"),
-                lastUpdatedBase: parseEther("0"),
-                lastUpdatedQuote: parseEther("0"),
-              });
+            oracle.getValue.whenCalledWith("USDC/USD").returns({
+              value: parseEther("2"),
+              timestamp: parseEther("0"),
+            });
           });
 
           it("should burn the 11 DAO tokens for 5.5 USDC", async () => {
@@ -575,15 +558,13 @@ describe("InternalMarket", async () => {
 
       describe("when the exchange rate is 1/1", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-            rate: parseEther("1"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("EUR/USD").returns({
+            value: parseEther("1"),
+            timestamp: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
-            rate: parseEther("1"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("USDC/USD").returns({
+            value: parseEther("1"),
+            timestamp: parseEther("0"),
           });
         });
 
@@ -607,15 +588,13 @@ describe("InternalMarket", async () => {
 
       describe("when the exchange rate is 1/2", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-            rate: parseEther("2"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("EUR/USD").returns({
+            value: parseEther("2"),
+            timestamp: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
-            rate: parseEther("1"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("USDC/USD").returns({
+            value: parseEther("1"),
+            timestamp: parseEther("0"),
           });
         });
 
@@ -639,15 +618,13 @@ describe("InternalMarket", async () => {
 
       describe("when the exchange rate is 1.12 eur/usd and 0.998 usdc/usd", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-            rate: parseEther("1.12"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("EUR/USD").returns({
+            value: parseEther("1.12"),
+            timestamp: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
-            rate: parseEther("0.998"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("USDC/USD").returns({
+            value: parseEther("0.998"),
+            timestamp: parseEther("0"),
           });
         });
 
@@ -671,15 +648,13 @@ describe("InternalMarket", async () => {
 
       describe("when the exchange rate is 2/1", async () => {
         beforeEach(async () => {
-          stdReference.getReferenceData.whenCalledWith("EUR", "USD").returns({
-            rate: parseEther("1"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("EUR/USD").returns({
+            value: parseEther("1"),
+            timestamp: parseEther("0"),
           });
-          stdReference.getReferenceData.whenCalledWith("USDC", "USD").returns({
-            rate: parseEther("2"),
-            lastUpdatedBase: parseEther("0"),
-            lastUpdatedQuote: parseEther("0"),
+          oracle.getValue.whenCalledWith("USDC/USD").returns({
+            value: parseEther("2"),
+            timestamp: parseEther("0"),
           });
         });
 
@@ -792,6 +767,13 @@ describe("InternalMarket", async () => {
           bob.address,
           11 + 25
         );
+      });
+
+      it("should emit a Withdrawn event", async () => {
+        await setEVMTimestamp(ts + WEEK + DAY * 3);
+        expect(internalMarket.connect(alice).withdraw(bob.address, 11))
+          .to.emit(internalMarket, "Withdrawn")
+          .withArgs(alice.address, bob.address, 11);
       });
     });
 

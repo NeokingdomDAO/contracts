@@ -2,6 +2,7 @@
 pragma solidity 0.8.16;
 
 import "./IRedemptionController.sol";
+import "hardhat/console.sol";
 
 // The contract tells how many tokens are redeemable by Contributors
 abstract contract RedemptionControllerBase is IRedemptionController {
@@ -28,6 +29,21 @@ abstract contract RedemptionControllerBase is IRedemptionController {
 
     mapping(address => MintBudget[]) internal _mintBudgets;
     mapping(address => uint256) internal _mintBudgetsStartIndex;
+
+    event RedemptionCreated(
+        address account,
+        uint256 index,
+        uint256 amount,
+        uint256 starts,
+        uint256 ends
+    );
+
+    event RedemptionUpdated(
+        address from,
+        uint256 index,
+        uint256 amountRequested,
+        uint256 amountRedeemed
+    );
 
     function _initialize() internal {
         redemptionStart = 60 days;
@@ -69,7 +85,7 @@ abstract contract RedemptionControllerBase is IRedemptionController {
     }
 
     function _afterOffer(address account, uint256 amount) internal virtual {
-        // Find tokens minted ofer the last 3 months of activity, no earlier than 15 months
+        // Find tokens minted over the last 3 months of activity, no earlier than 15 months
         if (_mintBudgets[account].length == 0) {
             return;
         }
@@ -192,20 +208,36 @@ abstract contract RedemptionControllerBase is IRedemptionController {
         }
     }
 
-    function _afterRedeem(address account, uint256 amount) internal virtual {
+    function _afterRedeem(
+        address account,
+        uint256 amountRequested
+    ) internal virtual {
         Redeemable[] storage redeemables = _redeemables[account];
+        uint256 amountLeft = amountRequested;
 
-        for (uint256 i = 0; i < redeemables.length && amount > 0; i++) {
+        for (uint256 i = 0; i < redeemables.length && amountLeft > 0; i++) {
             Redeemable storage redeemable = redeemables[i];
             if (
                 block.timestamp >= redeemable.start &&
                 block.timestamp < redeemable.end
             ) {
-                if (amount < redeemable.amount) {
-                    redeemable.amount -= amount;
-                    amount = 0;
+                if (amountLeft < redeemable.amount) {
+                    redeemable.amount -= amountLeft;
+                    emit RedemptionUpdated(
+                        account,
+                        i,
+                        amountRequested,
+                        amountLeft
+                    );
+                    amountLeft = 0;
                 } else {
-                    amount -= redeemable.amount;
+                    amountLeft -= redeemable.amount;
+                    emit RedemptionUpdated(
+                        account,
+                        i,
+                        amountRequested,
+                        redeemable.amount
+                    );
                     redeemable.amount = 0;
                     // FIXME: delete object from array?
                 }
@@ -213,7 +245,7 @@ abstract contract RedemptionControllerBase is IRedemptionController {
         }
 
         require(
-            amount == 0,
+            amountLeft == 0,
             "Redemption controller: amount exceeds redeemable balance"
         );
     }
@@ -231,6 +263,13 @@ abstract contract RedemptionControllerBase is IRedemptionController {
             mintTimestamp,
             redemptionStarts,
             redemptionStarts + redemptionWindow
+        );
+        emit RedemptionCreated(
+            account,
+            _redeemables[account].length,
+            amount,
+            offerRedeemable.start,
+            offerRedeemable.end
         );
         _redeemables[account].push(offerRedeemable);
     }

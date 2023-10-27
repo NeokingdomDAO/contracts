@@ -12,12 +12,19 @@ import {
   RedemptionController__factory,
 } from "../typechain";
 
-import { mineEVMBlock, timeTravel } from "./utils/evm";
+import {
+  getEVMTimestamp,
+  mineEVMBlock,
+  setEVMTimestamp,
+  timeTravel,
+} from "./utils/evm";
 import { roles } from "./utils/roles";
 
 chai.use(solidity);
 chai.use(chaiAsPromised);
 const { expect } = chai;
+
+const DAY = 3600 * 24;
 
 describe("RedemptionController", () => {
   let snapshotId: string;
@@ -92,6 +99,90 @@ describe("RedemptionController", () => {
         `AccessControl: account ${account.address.toLowerCase()} is missing role ${TOKEN_MANAGER_ROLE}`
       );
     });
+
+    describe("when 10 tokens are minted", async () => {
+      async function _timestamps() {
+        const nextTimestamp = (await getEVMTimestamp()) + 1;
+        await setEVMTimestamp(nextTimestamp);
+        const expectedStart = nextTimestamp + 60 * DAY;
+        const expectedEnd = nextTimestamp + 70 * DAY;
+
+        return [expectedStart, expectedEnd];
+      }
+
+      beforeEach(async () => {
+        await redemptionController.afterMint(account.address, 10);
+      });
+
+      it("emits a RedeemCreated with 10 tokens and expiration data after offer", async () => {
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 10))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 0, 10, expectedStart, expectedEnd);
+      });
+
+      it("emits a RedeemCreated with partially matched mints and expiration data after offer", async () => {
+        await redemptionController.afterOffer(account.address, 7);
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 10))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 1, 3, expectedStart, expectedEnd);
+      });
+
+      it("emits a RedeemCreated from multiple mints with incremental ids", async () => {
+        await redemptionController.afterMint(account.address, 12);
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 22))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 0, 10, expectedStart, expectedEnd)
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 1, 12, expectedStart, expectedEnd);
+      });
+
+      it("emits a RedeemCreated from expired redemptions", async () => {
+        await redemptionController.afterOffer(account.address, 10);
+        await timeTravel(70, true); // redemption expires
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 10))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 1, 10, expectedStart, expectedEnd);
+      });
+
+      it("emits a RedeemCreated from partially matched expired redemptions", async () => {
+        await redemptionController.afterOffer(account.address, 10);
+        await timeTravel(60, true); // redemption starts
+        await redemptionController.afterRedeem(account.address, 7);
+        await timeTravel(10, true); // redemption starts
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 10))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 1, 3, expectedStart, expectedEnd);
+      });
+
+      it("emits a RedeemCreated from multiple expired redemptions, partially", async () => {
+        await redemptionController.afterOffer(account.address, 6);
+        await redemptionController.afterOffer(account.address, 4);
+        await timeTravel(70, true); // redemption expires
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 9))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 2, 6, expectedStart, expectedEnd)
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 3, 3, expectedStart, expectedEnd);
+      });
+
+      it("emits a RedeemCreated from multiple expired redemptions, completely", async () => {
+        await redemptionController.afterOffer(account.address, 6);
+        await redemptionController.afterOffer(account.address, 4);
+        await timeTravel(70, true); // redemption expires
+        const [expectedStart, expectedEnd] = await _timestamps();
+        await expect(redemptionController.afterOffer(account.address, 15))
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 2, 6, expectedStart, expectedEnd)
+          .to.emit(redemptionController, "RedemptionCreated")
+          .withArgs(account.address, 3, 4, expectedStart, expectedEnd);
+      });
+    });
   });
 
   describe("afterRedeem", async () => {
@@ -109,6 +200,39 @@ describe("RedemptionController", () => {
       ).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
+    });
+
+    describe.only("when 10 tokens are redeemable", async () => {
+      beforeEach(async () => {
+        await redemptionController.afterMint(account.address, 10);
+        await redemptionController.afterOffer(account.address, 10);
+        await timeTravel(60, true);
+      });
+
+      it("emits a RedeemUpdated upon full redemption", async () => {
+        await expect(redemptionController.afterRedeem(account.address, 10))
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 0, 10, 10);
+      });
+
+      it("emits a RedeemUpdated upon partial redemption", async () => {
+        await expect(redemptionController.afterRedeem(account.address, 7))
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 0, 7, 7);
+      });
+
+      it("emits a RedeemUpdated upon partial redemption for each redemption covering the amount requested", async () => {
+        await timeTravel(10, true); // expire old redemption
+        // make two redemptions
+        await redemptionController.afterOffer(account.address, 7);
+        await redemptionController.afterOffer(account.address, 3);
+        await timeTravel(60, true); // redemption time
+        await expect(redemptionController.afterRedeem(account.address, 10))
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 1, 10, 7)
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 2, 10, 3);
+      });
     });
   });
 

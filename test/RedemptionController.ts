@@ -201,6 +201,39 @@ describe("RedemptionController", () => {
         "Redemption controller: amount exceeds redeemable balance"
       );
     });
+
+    describe.only("when 10 tokens are redeemable", async () => {
+      beforeEach(async () => {
+        await redemptionController.afterMint(account.address, 10);
+        await redemptionController.afterOffer(account.address, 10);
+        await timeTravel(60, true);
+      });
+
+      it("emits a RedeemUpdated upon full redemption", async () => {
+        await expect(redemptionController.afterRedeem(account.address, 10))
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 0, 10, 10);
+      });
+
+      it("emits a RedeemUpdated upon partial redemption", async () => {
+        await expect(redemptionController.afterRedeem(account.address, 7))
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 0, 7, 7);
+      });
+
+      it("emits a RedeemUpdated upon partial redemption for each redemption covering the amount requested", async () => {
+        await timeTravel(10, true); // expire old redemption
+        // make two redemptions
+        await redemptionController.afterOffer(account.address, 7);
+        await redemptionController.afterOffer(account.address, 3);
+        await timeTravel(60, true); // redemption time
+        await expect(redemptionController.afterRedeem(account.address, 10))
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 1, 10, 7)
+          .to.emit(redemptionController, "RedemptionUpdated")
+          .withArgs(account.address, 2, 10, 3);
+      });
+    });
   });
 
   describe("redeemableBalance", async () => {

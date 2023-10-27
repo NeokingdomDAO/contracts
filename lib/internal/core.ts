@@ -44,17 +44,19 @@ export abstract class NeokingdomDAO {
     } as Config;
   }
 
-  public getNextStepFilename() {
-    return `./deployments/${this.config.chainId}.nextstep`;
+  public getNextStepFilename(sequenceName: string) {
+    return `./deployments/${this.config.chainId}.${sequenceName}.nextstep`;
   }
 
-  public async setNextStep(n: number) {
-    await writeFile(this.getNextStepFilename(), n.toString());
+  public async setNextStep(n: number, sequenceName: string) {
+    await writeFile(this.getNextStepFilename(sequenceName), n.toString());
   }
 
-  public async getNextStep() {
+  public async getNextStep(sequenceName: string) {
     try {
-      return parseInt(await readFile(this.getNextStepFilename(), "utf8"));
+      return parseInt(
+        await readFile(this.getNextStepFilename(sequenceName), "utf8")
+      );
     } catch (e) {
       if ((e as any).code !== "ENOENT") {
         throw e;
@@ -66,12 +68,13 @@ export abstract class NeokingdomDAO {
   async run<T extends Context>(
     c: ContextGenerator<T>,
     s: Sequence<T>,
+    sequenceName: string,
     config: { force?: boolean; restart?: boolean } = {}
   ) {
     const { force, restart } = config;
     const sequence = await this._preprocessSequence(c, s);
-    const nextStep = restart ? 0 : await this.getNextStep();
-    await this._executeSequence(c, sequence, nextStep, force);
+    const nextStep = restart ? 0 : await this.getNextStep(sequenceName);
+    await this._executeSequence(c, sequence, sequenceName, nextStep, force);
   }
 
   // There are situations where you don't have all contracts available, and a
@@ -117,9 +120,16 @@ export abstract class NeokingdomDAO {
   private async _executeSequence<T extends Context>(
     c: ContextGenerator<T>,
     s: ProcessedSequence<T>,
+    sequenceName: string,
     nextStep = 0,
     force = false
   ) {
+    if (nextStep >= s.length) {
+      throw new Error(
+        `Sequence already executed, to run it use the "--restart" flag or ` +
+          `remove the file ${this.getNextStepFilename(sequenceName)}.`
+      );
+    }
     for (let i = nextStep; i < s.length; i++) {
       const context = await c(this);
       const step = s[i];
@@ -143,7 +153,7 @@ export abstract class NeokingdomDAO {
       if (tx) {
         await tx.wait(1);
       }
-      await this.setNextStep(i + 1);
+      await this.setNextStep(i + 1, sequenceName);
     }
   }
 }

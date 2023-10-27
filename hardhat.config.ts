@@ -13,7 +13,7 @@ import("./tasks").catch((e) => console.log("Cannot load tasks", e.toString()));
 
 const BLAST_API_KEY = process.env.BLAST_API_KEY || "";
 const MUMBAI_PRIVATE_KEY =
-  process.env.RINKEBY_PRIVATE_KEY! ||
+  process.env.MUMBAI_PRIVATE_KEY! ||
   "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"; // well known private key
 const POLYGON_PRIVATE_KEY =
   process.env.POLYGON_PRIVATE_KEY! ||
@@ -65,7 +65,8 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
     },
     mumbai: {
-      url: `https://polygon-testnet.blastapi.io/${BLAST_API_KEY}`,
+      //url: `https://polygon-testnet.blastapi.io/${BLAST_API_KEY}`,
+      url: "https://polygon-mumbai-bor.publicnode.com",
       accounts: [MUMBAI_PRIVATE_KEY],
     },
     polygon: {

@@ -52,7 +52,7 @@ export function isContractName(name: string): name is ContractNames {
 }
 const WAIT_BLOCKS = process.env.WAIT_BLOCKS
   ? parseInt(process.env.WAIT_BLOCKS)
-  : 1;
+  : 5;
 
 function getConfigPath(chainId: number) {
   return `./deployments/${chainId}.network.json`;
@@ -128,8 +128,8 @@ export async function _deployContract(
   );
 
   if (verify) {
-    console.log("Wait 2 blocks");
-    await contract.deployTransaction.wait(2);
+    console.log(`Wait ${WAIT_BLOCKS} blocks`);
+    await contract.deployTransaction.wait(WAIT_BLOCKS);
     console.log("Verify contract");
     try {
       await hre.run("verify", {
@@ -224,6 +224,7 @@ const CHAINID_TO_NAME = {
   666666: "localhost",
   9000: "tevmos",
   9001: "evmos",
+  80001: "mumbai",
 } as const;
 
 const CHAINIDS = Object.keys(CHAINID_TO_NAME).map((c) => parseInt(c));

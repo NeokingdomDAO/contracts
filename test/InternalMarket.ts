@@ -205,7 +205,7 @@ describe("InternalMarket", async () => {
     it("should revert when called by a non-contributor", async () => {
       registry.isAtLeast.returns(false);
       await expect(internalMarket.makeOffer(1000)).revertedWith(
-        "InternalMarket: only Contributors can make offers"
+        "InternalMarket: only contributors can make offers"
       );
     });
 

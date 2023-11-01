@@ -55,7 +55,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
                 _shareholderRegistry.CONTRIBUTOR_STATUS(),
                 msg.sender
             ),
-            "InternalMarket: only Contributors can make offers"
+            "InternalMarket: only contributors can make offers"
         );
         _makeOffer(_msgSender(), amount);
     }

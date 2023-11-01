@@ -237,7 +237,7 @@ describe("Resolution", async () => {
   });
 
   describe("createResolutionWithExclusion", async () => {
-    it("allows to create an addressable resolution", async () => {
+    it("allows to create a resolution to exclude an address from voting", async () => {
       await expect(
         resolution
           .connect(managingBoard)
@@ -245,6 +245,20 @@ describe("Resolution", async () => {
       )
         .to.emit(resolution, "ResolutionCreated")
         .withArgs(managingBoard.address, resolutionId);
+    });
+
+    it.only("doesn't allow to create a resolution to exclude an address that is not a contributor from votin", async () => {
+      await expect(
+        resolution
+          .connect(managingBoard)
+          .createResolutionWithExclusion(
+            "test",
+            0,
+            [],
+            [],
+            nonContributor.address
+          )
+      ).revertedWith("Resolution: address is not a contributor");
     });
 
     it("doesn't allow non contributors to create an addressable resolution", async () => {

@@ -247,7 +247,7 @@ describe("Resolution", async () => {
         .withArgs(managingBoard.address, resolutionId);
     });
 
-    it.only("doesn't allow to create a resolution to exclude an address that is not a contributor from votin", async () => {
+    it("doesn't allow to create a resolution to exclude an address that is not a contributor from voting", async () => {
       await expect(
         resolution
           .connect(managingBoard)
@@ -258,7 +258,7 @@ describe("Resolution", async () => {
             [],
             nonContributor.address
           )
-      ).revertedWith("Resolution: address is not a contributor");
+      ).revertedWith("Resolution: excluded address is not a contributor");
     });
 
     it("doesn't allow non contributors to create an addressable resolution", async () => {

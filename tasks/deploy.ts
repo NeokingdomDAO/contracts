@@ -15,11 +15,12 @@ import { question } from "../lib/utils";
 const MULTISIG_MAINNET = "0xd232121c41EF9ad4e4d0251BdCbe60b9F3D20758";
 const MULTISIG_TESTNET = "0x7549fe2ED3c16240f97FE736146347409C6dD81D";
 
-task("deploy", "Deploy DAO")
+task("deploy:dao", "Deploy DAO")
   .addFlag("verify", "Verify contracts")
   .addFlag("restart", "Start a new deployment from scratch")
   .setAction(
     async ({ verify, restart }: { verify: boolean; restart: boolean }, hre) => {
+      if (restart) await hre.run("compile", { force: true });
       const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
         verifyContracts: verify,
         verbose: true,
@@ -28,7 +29,7 @@ task("deploy", "Deploy DAO")
     }
   );
 
-task("setup", "Set up the DAO")
+task("setup:dao", "Set up the DAO")
   .addFlag("mainnet", "Go to Mainnet")
   .setAction(async ({ mainnet }: { mainnet: boolean }, hre) => {
     let sequence = SETUP_SEQUENCE_TESTNET;

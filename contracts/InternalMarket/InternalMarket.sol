@@ -50,6 +50,13 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      * @param amount The amount of tokens to offer for sale.
      */
     function makeOffer(uint256 amount) public virtual {
+        require(
+            _shareholderRegistry.isAtLeast(
+                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                msg.sender
+            ),
+            "InternalMarket: only contributors can make offers"
+        );
         _makeOffer(_msgSender(), amount);
     }
 

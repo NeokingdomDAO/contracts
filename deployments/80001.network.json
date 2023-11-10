@@ -1,0 +1,57 @@
+{
+  "DAORoles": {
+    "address": "0x7c5303cD3375711ff47CDEe2CB2AD2cF2e415608",
+    "blockNumber": 41716417,
+    "blockHash": "0x22e4050701fc9b3f840bccc7ac4a435f91da91d8d313f7c17b0b3b2d26f51653"
+  },
+  "TokenMock": {
+    "address": "0x32cac81e324F5eca265DfEcf0eDCcc277e1B4DE6",
+    "blockNumber": 41716430,
+    "blockHash": "0xafd5e2fd7f21556162a960c1cf61d919174d5eb59c17875c01168ccc7ae02c8d"
+  },
+  "DIAOracleV2Mock": {
+    "address": "0x0F7755e7B1cf0f8015180E67C97271471808d150",
+    "blockNumber": 41716448,
+    "blockHash": "0xc689bf80159aac4f28568bb580b75924d138d4055be50129d316e0b62a733b93"
+  },
+  "Voting": {
+    "address": "0x74FdD2b10cF71B9b7AEB402F90aDE1a67D9C2258",
+    "blockNumber": 41716462,
+    "blockHash": "0x6f251f3ad964601e4906d4966a98f9abfe85df3b530e764b6d05b2f71e4ba265"
+  },
+  "GovernanceToken": {
+    "address": "0xf4537D936a31abb933acdBF288a274eC732B15aF",
+    "blockNumber": 41716500,
+    "blockHash": "0x03652b4a41e53f8d614e6af957b670b92df43a30404e33b9a38a1931467324ea"
+  },
+  "NeokingdomToken": {
+    "address": "0xdC6dc5c5524A77633EF1b3eFb08fe0950A155E44",
+    "blockNumber": 41716528,
+    "blockHash": "0xbc5935a875c8b4283b9e1b7f2867cb9c65b9c5e0d76600cd2492b9006209b71f"
+  },
+  "RedemptionController": {
+    "address": "0xF610a6EB92023DCb716E218Bf8225d862F8e4A0e",
+    "blockNumber": 41716550,
+    "blockHash": "0x44a5d8b3b4065446cebf4af1abb8ed05b2439939e4611cc5e6bcc4e01e5f54d2"
+  },
+  "InternalMarket": {
+    "address": "0xd345D53144E237C69F08B543553FAFc78d14Ab24",
+    "blockNumber": 41716575,
+    "blockHash": "0x6e496da76dfde9f860abbf95aba5c51be0f779e3c7be5999a2a18bb0b66b4175"
+  },
+  "ShareholderRegistry": {
+    "address": "0x5b8f86C4010e58347afCEB7820A1c410b845D5d1",
+    "blockNumber": 41716600,
+    "blockHash": "0x2e41d94bedaa5dce30d553e37837256f533c0eb258d5e6a59f2974a92fbc93c0"
+  },
+  "ResolutionManager": {
+    "address": "0x62279b0624da9Ade912273C9F88287596c66e1F1",
+    "blockNumber": 41716626,
+    "blockHash": "0x098660d6b4fcc1faab2a517c78cf6b25e55c2c290b03ddf3ee1f6bbfe5d465a7"
+  },
+  "ProxyAdmin": {
+    "address": "0x5928Ffd33a8a57D1e82d5D5fCa6D1C9c6fe3150d",
+    "blockNumber": 41716645,
+    "blockHash": "0x405695bff1ae47693a5ddc7b25ec2c0a1c0e5e55d511c2698ba067b6598ef965"
+  }
+}

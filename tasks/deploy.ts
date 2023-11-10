@@ -25,7 +25,9 @@ task("deploy:dao", "Deploy DAO")
         verifyContracts: verify,
         verbose: true,
       });
-      await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE, { restart });
+      await neokingdom.run(generateDeployContext, DEPLOY_SEQUENCE, "deploy", {
+        restart,
+      });
     }
   );
 
@@ -43,7 +45,11 @@ task("setup:dao", "Set up the DAO")
     const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
       verbose: true,
     });
-    await neokingdom.run(generateSetupContext(contributors, hre), sequence);
+    await neokingdom.run(
+      generateSetupContext(contributors, hre),
+      sequence,
+      "setup"
+    );
   });
 
 task("setup:vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
@@ -52,7 +58,11 @@ task("setup:vigodarzere", "Set up the DAO").setAction(async (_, hre) => {
   const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
     verbose: true,
   });
-  await neokingdom.run(generateSetupContext([], hre), sequence);
+  await neokingdom.run(
+    generateSetupContext([], hre),
+    sequence,
+    "setup-vigodarzere"
+  );
 });
 
 task("setup:acl", "Set up ACL")
@@ -78,6 +88,10 @@ task("setup:acl", "Set up ACL")
       const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
         verbose: true,
       });
-      await neokingdom.run(generateSetupContext([], hre), sequence);
+      await neokingdom.run(
+        generateSetupContext([], hre),
+        sequence,
+        "setup-acl"
+      );
     }
   });

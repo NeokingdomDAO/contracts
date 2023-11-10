@@ -2,13 +2,13 @@
   {
     "name": "albi",
     "address": "0x197970E48082CD46f277ABDb8afe492bCCd78300",
-    "status": "contributor",
+    "status": "board",
     "tokens": "20000000000000000000000"
   },
   {
     "name": "gian",
     "address": "0x8e2e09eb2a0a8e6e1d8de3e5fb09ec1e05b0cdbf",
-    "status": "contributor",
+    "status": "board",
     "tokens": "12000000000000000000000"
   },
   {
@@ -20,7 +20,7 @@
   {
     "name": "nicola",
     "address": "0x2e1aF63Cd595A6D715E5e2D92151801F0d406a6b",
-    "status": "contributor",
+    "status": "board",
     "tokens": "22000000000000000000000"
   }
 ]

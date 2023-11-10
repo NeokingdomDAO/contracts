@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
@@ -18,6 +18,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
      * @param roles Instance of a DAORoles contract.
      */
     function initialize(DAORoles roles) public initializer {
+        require(address(roles) != address(0), "Voting: 0x0 not allowed");
         _setRoles(roles);
     }
 
@@ -95,7 +96,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
 
     /**
      * @notice Hook called on every governance token transfer.
-     * @dev Only the governance token can call this method.
+     * @dev Called by GovernanceToken and ShareholderRegistry.
      * @param from The sender's address.
      * @param to The receiver's address.
      * @param amount The amount transferred.

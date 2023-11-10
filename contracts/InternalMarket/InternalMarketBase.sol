@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
-import "../PriceOracle/IStdReference.sol";
-
+import "./IDIAOracleV2.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
 
@@ -19,6 +17,7 @@ contract InternalMarketBase {
     );
 
     event OfferMatched(uint128 id, address from, address to, uint256 amount);
+    event Withdrawn(address from, address to, uint256 amount);
 
     struct Offer {
         uint256 expiredAt;
@@ -37,7 +36,7 @@ contract InternalMarketBase {
     ERC20 public exchangeToken;
 
     IRedemptionController public redemptionController;
-    IStdReference public priceOracle;
+    IDIAOracleV2 public priceOracle;
     IShareholderRegistry internal _shareholderRegistry;
 
     address public reserve;
@@ -75,7 +74,7 @@ contract InternalMarketBase {
 
     function _setExchangePair(
         ERC20 token,
-        IStdReference oracle
+        IDIAOracleV2 oracle
     ) internal virtual {
         exchangeToken = token;
         priceOracle = oracle;
@@ -205,6 +204,8 @@ contract InternalMarketBase {
         } else {
             tokenInternal.unwrap(from, to, amount);
         }
+
+        emit Withdrawn(from, to, amount);
     }
 
     function _burn(address from, uint256 amount) internal virtual {
@@ -248,9 +249,11 @@ contract InternalMarketBase {
         redemptionController.afterRedeem(from, amount);
     }
 
-    function _convertToUSDC(uint256 eurAmount) internal view returns (uint256) {
-        uint256 eurUsd = priceOracle.getReferenceData("EUR", "USD").rate;
-        uint256 usdUsdc = priceOracle.getReferenceData("USDC", "USD").rate;
+    function _convertToUSDC(
+        uint256 eurAmount
+    ) internal view virtual returns (uint256) {
+        (uint256 eurUsd, ) = priceOracle.getValue("EUR/USD");
+        (uint256 usdUsdc, ) = priceOracle.getValue("USDC/USD");
 
         // 18 is the default amount of decimals for ERC20 tokens, including neokingdom ones
         return

@@ -5,6 +5,12 @@ import { expandable } from "../internal/core";
 import { Sequence, SetupContext } from "../internal/types";
 
 export const SETUP_SEQUENCE: Sequence<SetupContext> = [
+  (c) =>
+    c.internalMarket.setExchangePair(
+      "0x15c3eb3b621d1bff62cba1c9536b7c1ae9149b57", // USDC
+      "0x3141274e597116f0bfcf07aeafa81b6b39c94325" // DIA Price Oracle
+    ),
+
   // Give each address one share
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(
@@ -60,6 +66,11 @@ export const SETUP_SEQUENCE_TESTNET: Sequence<SetupContext> = [
       30,
       60 * 3,
       false
+    ),
+  (c) =>
+    c.internalMarket.setExchangePair(
+      c.tokenMock.address,
+      c.diaOracleV2Mock.address
     ),
   expandable((preprocessContext: SetupContext) =>
     preprocessContext.contributors.map(

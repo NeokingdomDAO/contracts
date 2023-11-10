@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.16;
+pragma solidity 0.8.16;
 
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -39,6 +39,9 @@ contract ShareholderRegistryMock is Initializable, IShareholderRegistry {
     ) public view override returns (bool) {
         return mockResult_isAtLeast[status][account];
     }
+
+    // Unneeded for testing
+    function setStatus(bytes32 status, address account) public {}
 
     // Unneeded for testing
     function getStatus(

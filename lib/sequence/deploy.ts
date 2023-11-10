@@ -42,7 +42,7 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
   /////////////////////
   (c) => c.deploy("DAORoles"),
   (c) => c.deploy("TokenMock"),
-  (c) => c.deploy("PriceOracle"),
+  (c) => c.deploy("DIAOracleV2Mock"),
   (c) => c.deployProxy("Voting", [c.daoRoles.address]),
   (c) =>
     c.deployProxy("GovernanceToken", [
@@ -71,8 +71,6 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
       c.voting.address,
     ]),
   (c) => c.deploy("ProxyAdmin"),
-  (c) => c.priceOracle.relay(["EUR", "USD"], [1, 1], [1, 1]),
-  (c) => c.priceOracle.relay(["USDC", "USD"], [1, 1], [1, 1]),
 
   // Set ACLs
   /////////////
@@ -123,13 +121,13 @@ export const DEPLOY_SEQUENCE: Sequence<DeployContext> = [
 
   (c) =>
     c.internalMarket.setRedemptionController(c.redemptionController.address),
+  (c) => c.internalMarket.setReserve(c.reserve),
+  (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),
+  (c) => c.diaOracleV2Mock.setValue("EUR/USD", 100000000, 1688997107),
+  (c) => c.diaOracleV2Mock.setValue("USDC/USD", 100000000, 1688997107),
   (c) =>
     c.internalMarket.setExchangePair(
       c.tokenMock.address,
-      c.priceOracle.address
-      //"0x15c3eb3b621d1bff62cba1c9536b7c1ae9149b57",
-      //"0x666CDb721838B1b8C0C234DAa0D9Dbc821103aA5"
+      c.diaOracleV2Mock.address
     ),
-  (c) => c.internalMarket.setReserve(c.reserve),
-  (c) => c.internalMarket.setShareholderRegistry(c.shareholderRegistry.address),
 ];

@@ -44,7 +44,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.19",
+        version: "0.8.16",
         settings: {
           optimizer: {
             enabled: true,
@@ -77,7 +77,7 @@ const config: HardhatUserConfig = {
       accounts: [TEVMOS_PRIVATE_KEY],
     },
     evmos: {
-      url: "https://jsonrpc-evmos-ia.cosmosia.notional.ventures/",
+      url: "https://eth.bd.evmos.org:8545",
       accounts: [EVMOS_PRIVATE_KEY],
     },
   },

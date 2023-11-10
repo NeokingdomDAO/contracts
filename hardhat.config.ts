@@ -73,7 +73,7 @@ const config: HardhatUserConfig = {
       accounts: [POLYGON_PRIVATE_KEY],
     },
     tevmos: {
-      url: "https://eth.bd.evmos.dev:8545",
+      url: "https://evmos-testnet.lava.build",
       accounts: [TEVMOS_PRIVATE_KEY],
     },
     evmos: {

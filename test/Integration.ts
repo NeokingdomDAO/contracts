@@ -42,6 +42,7 @@ const INITIAL_USDC = 1000;
 describe("Integration", async () => {
   let snapshotId: string;
   let offerDurationDays: number;
+  let settlementPeriod = 7;
   let redemptionStartDays: number;
   let redemptionWindowDays: number;
   let redemptionMaxDaysInThePast: number;
@@ -1130,6 +1131,82 @@ describe("Integration", async () => {
       );
     });
 
+    describe("least authority audit proof of fix (july 2023)", async () => {
+      it("issue A: Deposited Tokens Can Be Redeemed", async () => {
+        await _makeContributor(user1, 10);
+        await _makeContributor(user2, 10);
+
+        // user2 offers 10 tokens
+        await internalMarket.connect(user2).makeOffer(e(10));
+        await timeTravel(offerDurationDays, true);
+
+        // user2 transfers 10 tokens to user1
+        await internalMarket.connect(user2).withdraw(user1.address, e(10));
+
+        // user1 deposit their tokens
+        await internalMarket.connect(user1).deposit(e(10));
+        await timeTravel(settlementPeriod);
+        await governanceToken.settleTokens(user1.address);
+
+        // user2 offer all tokens, hoping to redeem all of them...
+        await internalMarket.connect(user1).makeOffer(e(20));
+        await timeTravel(redemptionStartDays, true);
+        await expect(internalMarket.connect(user1).redeem(e(20))).revertedWith(
+          "Redemption controller: amount exceeds redeemable balance"
+        );
+
+        // ...but they can only redeem those that were minted directly to them
+        await internalMarket.connect(user1).redeem(e(10));
+        expect(await tokenMock.balanceOf(user1.address)).equal(
+          e(INITIAL_USDC + 10)
+        );
+      });
+
+      it("Issue B: Unsettled Deposits Can Be Locked", async () => {
+        await _makeContributor(user1, 10);
+        await _makeContributor(user2, 0);
+
+        // user1 offers token, no one buys
+        await internalMarket.connect(user1).makeOffer(e(10));
+        await timeTravel(offerDurationDays, true);
+
+        // tokens are transferred to user 2
+        await internalMarket.connect(user1).withdraw(user2.address, e(10));
+
+        // user 2 makes 2 deposits, one of which with 0 tokens, which
+        // could lock the previous deposit forever
+        await internalMarket.connect(user2).deposit(e(9));
+        await expect(internalMarket.connect(user2).deposit(e(0))).revertedWith(
+          "GovernanceToken: attempt to wrap 0 tokens"
+        );
+
+        await timeTravel(settlementPeriod, true);
+        await governanceToken.settleTokens(user2.address);
+
+        expect(await governanceToken.balanceOf(user2.address)).equal(e(9));
+      });
+
+      it("Issue C: Missing Modifier Preventing the Update of Non-Existent Resolutions", async () => {
+        const nonExistingResolutionId = 999;
+        await expect(
+          resolutionManager
+            .connect(managingBoard)
+            .updateResolution(nonExistingResolutionId, "", 0, false, [], [])
+        ).revertedWith("Resolution: does not exist");
+      });
+
+      it("issue D: the status of internalMarket or shareholderRegistry can be set to contributor status", async () => {
+        await expect(
+          shareholderRegistry.setStatus(
+            contributorStatus,
+            internalMarket.address
+          )
+        ).revertedWith(
+          "ShareholderRegistry: cannot set status for smart contract"
+        );
+      });
+    });
+
     it("redemption edge cases", async () => {
       await _makeContributor(user1, 10);
       await _makeContributor(user2, 0);
@@ -1254,6 +1331,13 @@ describe("Integration", async () => {
     });
 
     it("back and forth NEOK <-> Governance", async () => {
+      async function _expectWrapped(count: number) {
+        let wrappedNEOKs = await neokingdomToken.balanceOf(
+          governanceToken.address
+        );
+        expect(wrappedNEOKs).equal(count);
+      }
+
       await governanceToken.setSettlementPeriod(3600 * 24 * 7);
       const share = parseEther("1");
       await shareholderRegistry.mint(user1.address, parseEther("1"));
@@ -1261,18 +1345,25 @@ describe("Integration", async () => {
       await shareholderRegistry.setStatus(contributorStatus, user1.address);
       await shareholderRegistry.setStatus(contributorStatus, user2.address);
 
+      await _expectWrapped(0);
+
       // 15 Governance Tokens to user2
       await governanceToken.mint(user2.address, 15);
+      await _expectWrapped(15);
+
       // 5 Governance tokens minted to user1
       await governanceToken.mint(user1.address, 5);
+      await _expectWrapped(20);
 
       // user2 withdraws 10 Governance tokens to user1
       await internalMarket.connect(user2).makeOffer(10);
       await timeTravel(7, true);
       await internalMarket.connect(user2).withdraw(user1.address, 10);
+      await _expectWrapped(10);
 
       // user1 deposit 4 NEOK
       await internalMarket.connect(user1).deposit(4);
+      await _expectWrapped(14);
       // user1 voting power is 5
       expect(await voting.getVotingPower(user1.address)).equal(share.add(5));
       // user1 offers 3 NEOK
@@ -1287,6 +1378,7 @@ describe("Integration", async () => {
       );
       // user1 deposit 3 NEOK
       await internalMarket.connect(user1).deposit(3);
+      await _expectWrapped(17);
       // user1 voting power is 2
       expect(await voting.getVotingPower(user1.address)).equal(share.add(2));
       // deposit is finalized
@@ -1299,6 +1391,8 @@ describe("Integration", async () => {
       await governanceToken.settleTokens(user1.address);
       // user1 voting power is 9
       expect(await voting.getVotingPower(user1.address)).equal(share.add(9));
+
+      await _expectWrapped(17);
     });
 
     it("internal and external token amounts", async () => {

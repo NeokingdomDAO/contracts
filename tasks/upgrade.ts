@@ -62,7 +62,7 @@ task("upgrade")
     console.log(contract);
     if (!validContracts.includes(contract)) {
       console.error(`Invalid contract. Valid options are: ${validContracts}`);
-      exit();
+      exit(1);
     }
 
     await upgrade(hre, contract as keyof NeokingdomContracts);

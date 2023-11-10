@@ -20,7 +20,7 @@ task("deploy:dao", "Deploy DAO")
   .addFlag("restart", "Start a new deployment from scratch")
   .setAction(
     async ({ verify, restart }: { verify: boolean; restart: boolean }, hre) => {
-      await hre.run("compile", { force: true });
+      if (restart) await hre.run("compile", { force: true });
       const neokingdom = await NeokingdomDAOHardhat.initialize(hre, {
         verifyContracts: verify,
         verbose: true,

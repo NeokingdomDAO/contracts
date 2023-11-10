@@ -1,8 +1,6 @@
-import { Contract, ContractFactory } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-
-import { ProxyAdmin } from "../typechain";
+import { exit } from "process";
 
 import { NeokingdomDAOHardhat } from "../lib";
 import { NeokingdomContracts } from "../lib/internal/types";
@@ -18,6 +16,15 @@ function toPascalCase(str: string): string {
 
   return pascalCase;
 }
+
+const validContracts = [
+  "governanceToken",
+  "internalMarket",
+  "redemptionController",
+  "resolutionManager",
+  "shareholderRegistry",
+  "voting",
+];
 
 async function upgrade(
   hre: HardhatRuntimeEnvironment,
@@ -49,34 +56,14 @@ async function upgrade(
   }
 }
 
-task("upgrade:resolution", "Upgrade ResolutionManager", async (_, hre) => {
-  await upgrade(hre, "resolutionManager");
-});
-
-task("upgrade:market", "Upgrade Internal Market", async (_, hre) => {
-  await upgrade(hre, "internalMarket");
-});
-
-task("upgrade:governance", "Upgrade Governance Token", async (_, hre) => {
-  await upgrade(hre, "governanceToken");
-});
-
-task("impl", "Get Proxy Impl")
-  .addParam("admin", "Proxy Admin")
-  .addParam("address", "Proxy address")
-  .setAction(
-    async ({ admin, address }: { admin: string; address: string }, hre) => {
-      const [deployer] = await hre.ethers.getSigners();
-      const ProxyAdmin = await hre.ethers.getContractFactory("ProxyAdmin");
-      const proxyAdmin = ProxyAdmin.attach(admin).connect(
-        deployer
-      ) as ProxyAdmin;
-
-      console.log("   Proxy Owner:", await proxyAdmin.owner());
-
-      console.log(
-        "    Address:",
-        await proxyAdmin.getProxyImplementation(address)
-      );
+task("upgrade")
+  .addPositionalParam("contract", "The smart contract to upgrade")
+  .setAction(async ({ contract }: { contract: string }, hre) => {
+    console.log(contract);
+    if (!validContracts.includes(contract)) {
+      console.error(`Invalid contract. Valid options are: ${validContracts}`);
+      exit();
     }
-  );
+
+    await upgrade(hre, contract as keyof NeokingdomContracts);
+  });

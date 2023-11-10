@@ -202,7 +202,7 @@ describe("RedemptionController", () => {
       );
     });
 
-    describe.only("when 10 tokens are redeemable", async () => {
+    describe("when 10 tokens are redeemable", async () => {
       beforeEach(async () => {
         await redemptionController.afterMint(account.address, 10);
         await redemptionController.afterOffer(account.address, 10);

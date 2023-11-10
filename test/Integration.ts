@@ -679,6 +679,11 @@ describe("Integration", async () => {
         "Resolution: account cannot vote"
       );
 
+      // user3 cannot offer tokens
+      await expect(internalMarket.connect(user3).makeOffer(10)).revertedWith(
+        "InternalMarket: only contributors can make offers"
+      );
+
       // ... and finally the world is saved.
       expect(await resolutionManager.getResolutionResult(resolutionId)).to.be
         .true;

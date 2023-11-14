@@ -2,37 +2,25 @@
 
 pragma solidity 0.8.16;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../Voting/IVoting.sol";
 import "../RedemptionController/IRedemptionController.sol";
-import "../ResolutionManager/ResolutionManager.sol";
+import "../ResolutionManager/IResolutionManager.sol";
 import "../InternalMarket/InternalMarket.sol";
 
-contract DAORegistry is AccessControl {
+contract DAORegistry is Ownable {
     INeokingdomToken internal _neokingdomToken;
     IGovernanceToken internal _governanceToken;
     IShareholderRegistry internal _shareholderRegistry;
     IVoting internal _voting;
     IRedemptionController internal _redemptionController;
-    ResolutionManager internal _resolutionManager;
+    IResolutionManager internal _resolutionManager;
     InternalMarket internal _internalMarket;
 
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-    }
-
-    /*
-    function initialize() {
-
-    }
-    */
-
-    function setNeokingdomToken(
-        INeokingdomToken neokingdomToken
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+    function setNeokingdomToken(INeokingdomToken neokingdomToken) public owner {
         _neokingdomToken = neokingdomToken;
     }
 
@@ -48,9 +36,7 @@ contract DAORegistry is AccessControl {
         );
     }
 
-    function setGovernanceToken(
-        IGovernanceToken governanceToken
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+    function setGovernanceToken(IGovernanceToken governanceToken) public owner {
         _governanceToken = governanceToken;
     }
 
@@ -68,7 +54,7 @@ contract DAORegistry is AccessControl {
 
     function setShareholderRegistry(
         IShareholderRegistry shareholderRegistry
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+    ) public owner {
         _shareholderRegistry = shareholderRegistry;
     }
 
@@ -88,7 +74,7 @@ contract DAORegistry is AccessControl {
         );
     }
 
-    function setVoting(IVoting voting) public onlyRole(Roles.OPERATOR_ROLE) {
+    function setVoting(IVoting voting) public owner {
         _voting = voting;
     }
 
@@ -103,7 +89,7 @@ contract DAORegistry is AccessControl {
 
     function setRedemptionController(
         IRedemptionController redemptionController
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+    ) public owner {
         _redemptionController = redemptionController;
     }
 
@@ -124,12 +110,12 @@ contract DAORegistry is AccessControl {
     }
 
     function setResolutionManager(
-        ResolutionManager resolutionManager
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+        IResolutionManager resolutionManager
+    ) public owner {
         _resolutionManager = resolutionManager;
     }
 
-    function getResolutionManager() public view returns (ResolutionManager) {
+    function getResolutionManager() public view returns (IResolutionManager) {
         return _resolutionManager;
     }
 
@@ -141,9 +127,7 @@ contract DAORegistry is AccessControl {
         );
     }
 
-    function setInternalMarket(
-        InternalMarket internalMarket
-    ) public onlyRole(Roles.OPERATOR_ROLE) {
+    function setInternalMarket(InternalMarket internalMarket) public owner {
         _internalMarket = internalMarket;
     }
 

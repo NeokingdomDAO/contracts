@@ -86,7 +86,7 @@ contract DAORegistryProxy is ContextUpgradeable {
 
     // Resolution Manager contract
 
-    function getResolutionManager() public view returns (ResolutionManager) {
+    function getResolutionManager() public view returns (IResolutionManager) {
         return _daoRegistry.getResolutionManager();
     }
 

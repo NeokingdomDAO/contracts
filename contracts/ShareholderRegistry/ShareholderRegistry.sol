@@ -41,7 +41,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
         public
         virtual
         override
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyResolutionManager
         returns (uint256)
     {
         return _snapshot();
@@ -56,7 +56,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
     function setStatus(
         bytes32 status,
         address account
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _setStatus(status, account);
     }
 
@@ -69,7 +69,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
     function mint(
         address account,
         uint256 amount
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _mint(account, amount);
     }
 
@@ -82,7 +82,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
     function burn(
         address account,
         uint256 amount
-    ) external virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) external virtual onlyResolutionManager {
         _burn(account, amount);
     }
 
@@ -93,7 +93,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
      */
     function batchTransferFromDAO(
         address[] memory recipients
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         super._batchTransferFromDAO(recipients);
     }
 
@@ -109,7 +109,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
         address from,
         address to,
         uint256 amount
-    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) returns (bool) {
+    ) public virtual override onlyResolutionManager returns (bool) {
         _transfer(from, to, amount);
         return true;
     }
@@ -124,7 +124,7 @@ contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
     function transfer(
         address to,
         uint256 amount
-    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) returns (bool) {
+    ) public virtual override onlyResolutionManager returns (bool) {
         return super.transfer(to, amount);
     }
 }

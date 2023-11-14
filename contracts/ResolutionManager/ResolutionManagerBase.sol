@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import "../extensions/DAORegistryProxy.sol";
 
-contract ResolutionManagerBase is DAORegistryProxy {
+abstract contract ResolutionManagerBase is DAORegistryProxy {
     event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
 
     event ResolutionUpdated(address indexed from, uint256 indexed resolutionId);

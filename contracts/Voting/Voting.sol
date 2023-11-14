@@ -9,7 +9,7 @@ import "./VotingSnapshot.sol";
  * @title Voting
  * @notice The smart contract handles voting power delegation and manages voting snapshots.
  */
-contract Voting is VotingSnapshot, Initializable {
+contract Voting is VotingSnapshot {
     /**
      * @notice Initializes the contract with given DAO roles.
      * @param daoRegistry Instance of a DAORoles contract.

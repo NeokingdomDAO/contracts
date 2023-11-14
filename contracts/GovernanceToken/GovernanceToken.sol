@@ -4,9 +4,6 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "./GovernanceTokenSnapshot.sol";
-import { Roles } from "../extensions/Roles.sol";
-import "../extensions/DAORoles.sol";
-import "../extensions/HasRole.sol";
 
 /**
  * @title GovernanceToken
@@ -16,7 +13,7 @@ import "../extensions/HasRole.sol";
  * functionality for voting, minting, burning, wrapping/unwrapping, and settling tokens. Only authorized
  * roles (as defined in DAORoles contract) can call certain functions such as mint, burn, wrap, unwrap, and others.
  */
-contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
+contract GovernanceToken is Initializable, GovernanceTokenSnapshot {
     IShareholderRegistry internal _shareholderRegistry;
 
     event DepositStarted(
@@ -37,21 +34,17 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     /**
      * @notice Initializes a new GovernanceToken instance with the provided roles, name, and symbol.
      * @dev Sets the roles, ERC20 name and symbol using provided args and calls the internal `_initialize` function.
-     * @param roles DAORoles instance that controls roles within the token contract.
+     * @param daoRegistry DAORegistry instance that controls roles within the token contract.
      * @param name string for the ERC20 token name of GovernanceToken.
      * @param symbol string for the ERC20 token symbol of GovernanceToken.
      */
     function initialize(
-        DAORoles roles,
+        DAORegistry daoRegistry,
         string memory name,
         string memory symbol
     ) public initializer {
-        require(
-            address(roles) != address(0),
-            "GovernanceToken: 0x0 not allowed"
-        );
+        _setDAORegistry(daoRegistry);
         _initialize(name, symbol);
-        _setRoles(roles);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -71,37 +64,10 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         public
         virtual
         override
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyResolutionManager
         returns (uint256)
     {
         return _snapshot();
-    }
-
-    /**
-     * @notice Set address of the Voting logic for the contract.
-     * @dev Can be called only by the operator role.
-     * @param voting IVoting instance that controls the voting logic.
-     */
-    function setVoting(
-        IVoting voting
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(voting))
-    {
-        _setVoting(voting);
-    }
-
-    /**
-     * @notice Set the shareholder registry contract address.
-     * @dev Can be called only by the operator role.
-     * @param shareholderRegistry IShareholderRegistry instance that maintains the shareholder data.
-     */
-    function setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
-        _shareholderRegistry = shareholderRegistry;
     }
 
     /**
@@ -111,40 +77,8 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
      */
     function setSettlementPeriod(
         uint256 settlementPeriod_
-    ) external virtual onlyRole(Roles.OPERATOR_ROLE) {
+    ) external virtual onlyResolutionManager {
         settlementPeriod = settlementPeriod_;
-    }
-
-    /**
-     * @notice Set the external token reference for wrapping into the GovernanceToken.
-     * @dev Can be called only by the operator role.
-     * @param tokenExternalAddress Address of the external token to wrap into GovernanceToken.
-     */
-    function setTokenExternal(
-        address tokenExternalAddress
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(tokenExternalAddress)
-    {
-        _setTokenExternal(tokenExternalAddress);
-    }
-
-    /**
-     * @notice Set redemption controller.
-     * @dev Can be called only by the operator role.
-     * @param redemption IRedemptionController instance that controls token redemption.
-     */
-    function setRedemptionController(
-        IRedemptionController redemption
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(redemption))
-    {
-        _setRedemptionController(redemption);
     }
 
     /**
@@ -156,7 +90,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     function mint(
         address to,
         uint256 amount
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _mint(to, amount);
 
         if (
@@ -165,7 +99,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
                 to
             )
         ) {
-            _redemptionController.afterMint(to, amount);
+            getRedemptionController().afterMint(to, amount);
         }
     }
 
@@ -178,7 +112,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     function burn(
         address from,
         uint256 amount
-    ) public virtual onlyRole(Roles.MARKET_ROLE) {
+    ) public virtual onlyInternalMarket {
         _burn(from, amount);
     }
 
@@ -191,7 +125,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     function wrap(
         address from,
         uint256 amount
-    ) public virtual onlyRole(Roles.MARKET_ROLE) {
+    ) public virtual onlyInternalMarket {
         _wrap(from, amount);
     }
 
@@ -206,7 +140,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         address from,
         address to,
         uint256 amount
-    ) public virtual onlyRole(Roles.MARKET_ROLE) {
+    ) public virtual onlyInternalMarket {
         _unwrap(from, to, amount);
     }
 
@@ -228,7 +162,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     function mintVesting(
         address to,
         uint256 amount
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _mintVesting(to, amount);
     }
 
@@ -241,7 +175,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
     function setVesting(
         address to,
         uint256 amount
-    ) public virtual onlyRole(Roles.OPERATOR_ROLE) {
+    ) public virtual onlyResolutionManager {
         _setVesting(to, amount);
     }
 
@@ -259,7 +193,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         public
         virtual
         override(ERC20Upgradeable, IERC20Upgradeable)
-        onlyRole(Roles.MARKET_ROLE)
+        onlyInternalMarket
         returns (bool)
     {
         return super.transfer(to, amount);
@@ -281,7 +215,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         public
         virtual
         override(ERC20Upgradeable, IERC20Upgradeable)
-        onlyRole(Roles.MARKET_ROLE)
+        onlyInternalMarket
         returns (bool)
     {
         return super.transferFrom(from, to, amount);
@@ -303,7 +237,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
         uint256 amount
     ) internal virtual override {
         super._afterTokenTransfer(from, to, amount);
-        _voting.afterTokenTransfer(from, to, amount);
+        getVoting().afterTokenTransfer(from, to, amount);
 
         // Invariants
         require(
@@ -346,7 +280,7 @@ contract GovernanceToken is Initializable, HasRole, GovernanceTokenSnapshot {
      */
     function _wrap(address from, uint amount) internal virtual {
         require(
-            tokenExternal.transferFrom(from, address(this), amount),
+            getNeokingdomToken().transferFrom(from, address(this), amount),
             "GovernanceToken: transfer failed"
         );
         require(amount > 0, "GovernanceToken: attempt to wrap 0 tokens");

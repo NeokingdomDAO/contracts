@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "../extensions/DAORegistryProxy.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../Voting/IVoting.sol";
 
-contract ShareholderRegistryBase is ERC20Upgradeable {
+contract ShareholderRegistryBase is ERC20Upgradeable, DAORegistryProxy {
     bytes32 public SHAREHOLDER_STATUS;
     bytes32 public INVESTOR_STATUS;
     bytes32 public CONTRIBUTOR_STATUS;
     bytes32 public MANAGING_BOARD_STATUS;
-
-    IVoting internal _voting;
 
     event StatusChanged(
         address indexed account,
@@ -22,18 +21,16 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
     mapping(address => bytes32) internal _statuses;
 
     function _initialize(
+        DAORegistry daoRegistry,
         string memory name,
         string memory symbol
     ) internal virtual {
+        _setDAORegistry(daoRegistry);
         __ERC20_init(name, symbol);
         SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
         INVESTOR_STATUS = keccak256("INVESTOR_STATUS");
         CONTRIBUTOR_STATUS = keccak256("CONTRIBUTOR_STATUS");
         MANAGING_BOARD_STATUS = keccak256("MANAGING_BOARD_STATUS");
-    }
-
-    function _setVoting(IVoting voting) internal virtual {
-        _voting = voting;
     }
 
     function _setStatus(bytes32 status, address account) internal virtual {
@@ -104,7 +101,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
             _isAtLeast(1, statusBefore, CONTRIBUTOR_STATUS) &&
             !_isAtLeast(1, statusAfter, CONTRIBUTOR_STATUS)
         ) {
-            _voting.beforeRemoveContributor(account);
+            getVoting().beforeRemoveContributor(account);
         }
     }
 
@@ -117,7 +114,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
             !_isAtLeast(1, statusBefore, CONTRIBUTOR_STATUS) &&
             _isAtLeast(1, statusAfter, CONTRIBUTOR_STATUS)
         ) {
-            _voting.afterAddContributor(account);
+            getVoting().afterAddContributor(account);
         }
     }
 
@@ -142,6 +139,6 @@ contract ShareholderRegistryBase is ERC20Upgradeable {
         if (balanceOf(from) == 0) {
             _setStatus(0, from);
         }
-        _voting.afterTokenTransfer(from, to, amount);
+        getVoting().afterTokenTransfer(from, to, amount);
     }
 }

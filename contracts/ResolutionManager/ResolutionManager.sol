@@ -1,49 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "../extensions/DAORegistryProxy.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { Roles } from "../extensions/Roles.sol";
 import "./ResolutionManagerBase.sol";
-import "../extensions/DAORoles.sol";
-import "../extensions/HasRole.sol";
 
 /**
  * @title ResolutionManager
  * @dev This contract manages the creation, approval, rejection, updating and
  * execution of resolutions. It also allows shareholders to vote on resolutions.
  */
-contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
+contract ResolutionManager is Initializable, ResolutionManagerBase {
     /**
      * @dev Initializes the contract with the required dependencies.
-     * @param roles The roles extension of the DAO.
-     * @param shareholderRegistry The registry of shareholders of the DAO.
-     * @param governanceToken The governance token of the DAO.
-     * @param voting The voting extension of the DAO.
+     * @param daoRegistry The roles extension of the DAO.
      */
-    function initialize(
-        DAORoles roles,
-        IShareholderRegistry shareholderRegistry,
-        IGovernanceToken governanceToken,
-        IVoting voting
-    ) public initializer {
-        require(
-            address(roles) != address(0) &&
-                address(shareholderRegistry) != address(0) &&
-                address(governanceToken) != address(0) &&
-                address(voting) != address(0),
-            "ResolutionManager: 0x0 not allowed"
-        );
-        _setRoles(roles);
-        _initialize(shareholderRegistry, governanceToken, voting);
+    function initialize(DAORegistry daoRegistry) public initializer {
+        _setDAORegistry(daoRegistry);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
-
-    modifier zeroCheck(address address_) {
-        require(address_ != address(0), "ResolutionManager: 0x0 not allowed");
-        _;
-    }
 
     /**
      * @dev Adds a new resolution type.
@@ -59,7 +36,7 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
         uint256 noticePeriod,
         uint256 votingPeriod,
         bool canBeNegative
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _addResolutionType(
             name,
             quorum,
@@ -67,51 +44,6 @@ contract ResolutionManager is Initializable, ResolutionManagerBase, HasRole {
             votingPeriod,
             canBeNegative
         );
-    }
-
-    /**
-     * @dev Sets the shareholder registry.
-     * @param shareholderRegistry The new shareholder registry.
-     */
-    function setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(shareholderRegistry))
-    {
-        _setShareholderRegistry(shareholderRegistry);
-    }
-
-    /**
-     * @dev Sets the governance token.
-     * @param governanceToken The new governance token.
-     */
-    function setGovernanceToken(
-        IGovernanceToken governanceToken
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(governanceToken))
-    {
-        _setGovernanceToken(governanceToken);
-    }
-
-    /**
-     * @dev Sets the voting extension.
-     * @param voting The new voting extension.
-     */
-    function setVoting(
-        IVoting voting
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(voting))
-    {
-        _setVoting(voting);
     }
 
     /**

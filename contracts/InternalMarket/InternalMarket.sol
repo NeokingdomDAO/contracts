@@ -6,9 +6,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./InternalMarketBase.sol";
-import { Roles } from "../extensions/Roles.sol";
-import "../extensions/DAORoles.sol";
-import "../extensions/HasRole.sol";
 import "./IDIAOracleV2.sol";
 
 /**
@@ -16,25 +13,16 @@ import "./IDIAOracleV2.sol";
  * @dev A smart contract that handles trading of governance tokens between users,
  * allowing them to make an offer, match existing offers, deposit, withdraw, and redeem locked tokens.
  */
-contract InternalMarket is Initializable, HasRole, InternalMarketBase {
+contract InternalMarket is Initializable, InternalMarketBase {
     IDIAOracleV2 internal _diaPriceOracle;
 
     /**
      * @dev Initializes the contract with the given roles and internal token.
-     * @param roles DAORoles instance containing custom access control roles.
-     * @param governanceToken Reference to governance token.
+     * @param daoRegistry DAORegistry instance containing custom access control roles.
      */
-    function initialize(
-        DAORoles roles,
-        IGovernanceToken governanceToken
-    ) public initializer {
-        require(
-            address(roles) != address(0) &&
-                address(governanceToken) != address(0),
-            "InternalMarket: 0x0 not allowed"
-        );
-        _initialize(governanceToken, 7 days);
-        _setRoles(roles);
+    function initialize(DAORegistry daoRegistry) public initializer {
+        _setDAORegistry(daoRegistry);
+        _initialize(7 days);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -51,8 +39,8 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function makeOffer(uint256 amount) public virtual {
         require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().CONTRIBUTOR_STATUS(),
                 msg.sender
             ),
             "InternalMarket: only contributors can make offers"
@@ -102,30 +90,6 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
     }
 
     /**
-     * @dev Set internal token reference.
-     * @param token The address of the internal governance token.
-     */
-    function setTokenInternal(
-        IGovernanceToken token
-    ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(token)) {
-        _setTokenInternal(token);
-    }
-
-    /**
-     * @dev Set shareholder registry reference.
-     * @param shareholderRegistry The address of the shareholder registry contract.
-     */
-    function setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    )
-        public
-        onlyRole(Roles.RESOLUTION_ROLE)
-        zeroCheck(address(shareholderRegistry))
-    {
-        _setShareholderRegistry(shareholderRegistry);
-    }
-
-    /**
      * @dev Set the exchange pair and Oracle reference.
      * @param token The address of the ERC20 token to set as the exchange pair.
      * @param oracle The address of the Oracle contract used for price reference.
@@ -135,7 +99,7 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
         IDIAOracleV2 oracle
     )
         public
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyResolutionManager
         zeroCheck(address(token))
         zeroCheck(address(oracle))
     {
@@ -148,31 +112,15 @@ contract InternalMarket is Initializable, HasRole, InternalMarketBase {
      */
     function setReserve(
         address reserve_
-    ) public onlyRole(Roles.RESOLUTION_ROLE) zeroCheck(address(reserve_)) {
+    ) public onlyResolutionManager zeroCheck(address(reserve_)) {
         _setReserve(reserve_);
-    }
-
-    /**
-     * @dev Set redemption controller address.
-     * @param redemptionController_ The address of the redemption controller.
-     */
-    function setRedemptionController(
-        IRedemptionController redemptionController_
-    )
-        public
-        onlyRole(Roles.RESOLUTION_ROLE)
-        zeroCheck(address(redemptionController_))
-    {
-        _setRedemptionController(redemptionController_);
     }
 
     /**
      * @dev Set offer duration.
      * @param duration The duration of the offer in seconds.
      */
-    function setOfferDuration(
-        uint duration
-    ) public onlyRole(Roles.RESOLUTION_ROLE) {
+    function setOfferDuration(uint duration) public onlyResolutionManager {
         _setOfferDuration(duration);
     }
 }

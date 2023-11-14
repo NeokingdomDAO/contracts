@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 contract DAORegistryProxy is ContextUpgradeable {
     DAORegistry internal _daoRegistry;
 
-    function _setDAORegistry(DAORegistry daoRegistry) internal {
+    function __DAORegistryProxy_init(DAORegistry daoRegistry) internal {
         require(
             address(daoRegistry) != address(0),
             "DAORegistryProxy: 0x0 not allowed"

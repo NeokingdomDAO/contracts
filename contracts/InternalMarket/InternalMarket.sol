@@ -21,7 +21,7 @@ contract InternalMarket is Initializable, InternalMarketBase {
      * @param daoRegistry DAORegistry instance containing custom access control roles.
      */
     function initialize(DAORegistry daoRegistry) public initializer {
-        _setDAORegistry(daoRegistry);
+        __DAORegistryProxy_init(daoRegistry);
         _initialize(7 days);
     }
 

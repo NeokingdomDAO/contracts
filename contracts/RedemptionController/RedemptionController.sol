@@ -28,7 +28,7 @@ contract RedemptionController is Initializable, RedemptionControllerBase {
      * @param daoRegistry The addresses of DAORoles for this contract.
      */
     function initialize(DAORegistry daoRegistry) public initializer {
-        _setDAORegistry(daoRegistry);
+        __DAORegistryProxy_init(daoRegistry);
         _initialize();
     }
 

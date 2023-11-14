@@ -16,7 +16,7 @@ contract ResolutionManager is Initializable, ResolutionManagerBase {
      * @param daoRegistry The roles extension of the DAO.
      */
     function initialize(DAORegistry daoRegistry) public initializer {
-        _setDAORegistry(daoRegistry);
+        __DAORegistryProxy_init(daoRegistry);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor

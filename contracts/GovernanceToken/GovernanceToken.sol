@@ -43,7 +43,7 @@ contract GovernanceToken is Initializable, GovernanceTokenSnapshot {
         string memory name,
         string memory symbol
     ) public initializer {
-        _setDAORegistry(daoRegistry);
+        __DAORegistryProxy_init(daoRegistry);
         _initialize(name, symbol);
     }
 

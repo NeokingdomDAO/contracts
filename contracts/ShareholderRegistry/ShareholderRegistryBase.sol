@@ -25,7 +25,7 @@ contract ShareholderRegistryBase is ERC20Upgradeable, DAORegistryProxy {
         string memory name,
         string memory symbol
     ) internal virtual {
-        _setDAORegistry(daoRegistry);
+        __DAORegistryProxy_init(daoRegistry);
         __ERC20_init(name, symbol);
         SHAREHOLDER_STATUS = keccak256("SHAREHOLDER_STATUS");
         INVESTOR_STATUS = keccak256("INVESTOR_STATUS");

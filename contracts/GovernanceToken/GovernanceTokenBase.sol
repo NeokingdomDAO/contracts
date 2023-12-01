@@ -5,15 +5,15 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "../RedemptionController/IRedemptionController.sol";
 import "../Voting/IVoting.sol";
 import "../InternalMarket/InternalMarket.sol";
-import "../extensions/DAORoles.sol";
+import "../extensions/DAORegistryProxy.sol";
 import "./IGovernanceToken.sol";
 
-abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
+abstract contract GovernanceTokenBase is
+    ERC20Upgradeable,
+    IGovernanceToken,
+    DAORegistryProxy
+{
     event VestingSet(address to, uint256 amount);
-
-    IVoting internal _voting;
-    IRedemptionController internal _redemptionController;
-    INeokingdomToken public tokenExternal;
 
     function _initialize(
         string memory name,
@@ -25,21 +25,6 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
     // TODO: what happens to vesting tokens when someone loses the contributor status?
     // In theory they should be burned or added to a pool
     mapping(address => uint256) internal _vestingBalance;
-
-    // mapping(address => uint256) internal _unlockedBalance;
-    function _setVoting(IVoting voting) internal {
-        _voting = voting;
-    }
-
-    function _setRedemptionController(
-        IRedemptionController redemptionController
-    ) internal virtual {
-        _redemptionController = redemptionController;
-    }
-
-    function _setTokenExternal(address tokenExternalAddress) internal {
-        tokenExternal = INeokingdomToken(tokenExternalAddress);
-    }
 
     function _beforeTokenTransfer(
         address from,
@@ -57,7 +42,7 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
     }
 
     function _mint(address to, uint256 amount) internal virtual override {
-        tokenExternal.mint(address(this), amount);
+        getNeokingdomToken().mint(address(this), amount);
         super._mint(to, amount);
     }
 
@@ -69,14 +54,14 @@ abstract contract GovernanceTokenBase is ERC20Upgradeable, IGovernanceToken {
 
     function _unwrap(address from, address to, uint amount) internal virtual {
         require(
-            tokenExternal.transfer(to, amount),
+            getNeokingdomToken().transfer(to, amount),
             "GovernanceToken: transfer failed"
         );
         super._burn(from, amount);
     }
 
     function _burn(address from, uint amount) internal virtual override {
-        tokenExternal.burn(amount);
+        getNeokingdomToken().burn(amount);
         super._burn(from, amount);
     }
 

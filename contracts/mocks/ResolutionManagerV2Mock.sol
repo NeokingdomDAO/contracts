@@ -3,7 +3,6 @@
 pragma solidity 0.8.16;
 
 import "../ResolutionManager/ResolutionManager.sol";
-import "../extensions/Roles.sol";
 
 contract ResolutionManagerV2Mock is ResolutionManager {
     function reinitialize() public reinitializer(2) {

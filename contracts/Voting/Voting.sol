@@ -4,77 +4,22 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./VotingSnapshot.sol";
-import { Roles } from "../extensions/Roles.sol";
-import "../extensions/DAORoles.sol";
-import "../extensions/HasRole.sol";
 
 /**
  * @title Voting
  * @notice The smart contract handles voting power delegation and manages voting snapshots.
  */
-contract Voting is VotingSnapshot, Initializable, HasRole {
+contract Voting is VotingSnapshot {
     /**
      * @notice Initializes the contract with given DAO roles.
-     * @param roles Instance of a DAORoles contract.
+     * @param daoRegistry Instance of a DAORoles contract.
      */
-    function initialize(DAORoles roles) public initializer {
-        require(address(roles) != address(0), "Voting: 0x0 not allowed");
-        _setRoles(roles);
+    function initialize(DAORegistry daoRegistry) public initializer {
+        __DAORegistryProxy_init(daoRegistry);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
-
-    /**
-     * @dev Modifier that restricts access to only the token contract.
-     */
-    modifier onlyToken() virtual {
-        require(
-            msg.sender == address(_token) ||
-                msg.sender == address(_shareholderRegistry),
-            "Voting: only Token contract can call this method."
-        );
-        _;
-    }
-
-    modifier zeroCheck(address address_) {
-        require(address_ != address(0), "Voting: 0x0 not allowed");
-        _;
-    }
-
-    // Dependencies
-
-    /**
-     * @notice Sets the token contract address.
-     * @param token Address of the token contract.
-     */
-    function setToken(
-        IERC20Upgradeable token
-    )
-        external
-        virtual
-        override
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(token))
-    {
-        super._setToken(token);
-    }
-
-    /**
-     * @notice Sets the shareholder registry contract address.
-     * @param shareholderRegistry Address of the shareholder registry contract.
-     */
-    function setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    )
-        external
-        virtual
-        override
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(shareholderRegistry))
-    {
-        _setShareholderRegistry(shareholderRegistry);
-    }
 
     // Snapshottable
 
@@ -86,7 +31,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
         public
         virtual
         override
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyResolutionManager
         returns (uint256)
     {
         return _snapshot();
@@ -105,7 +50,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
         address from,
         address to,
         uint256 amount
-    ) external virtual override onlyToken {
+    ) external virtual override onlyGovernanceToken {
         _afterTokenTransfer(from, to, amount);
     }
 
@@ -115,7 +60,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
      */
     function beforeRemoveContributor(
         address account
-    ) external virtual override onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE) {
+    ) external virtual override onlyShareholderRegistry {
         _beforeRemoveContributor(account);
     }
 
@@ -125,7 +70,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
      */
     function afterAddContributor(
         address account
-    ) external virtual override onlyRole(Roles.SHAREHOLDER_REGISTRY_ROLE) {
+    ) external virtual override onlyShareholderRegistry {
         _afterAddContributor(account);
     }
 
@@ -149,7 +94,7 @@ contract Voting is VotingSnapshot, Initializable, HasRole {
     function delegateFrom(
         address delegator,
         address newDelegate
-    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual override onlyResolutionManager {
         _delegate(delegator, newDelegate);
     }
 }

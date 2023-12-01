@@ -3,7 +3,6 @@
 pragma solidity 0.8.16;
 
 import "../GovernanceToken/GovernanceToken.sol";
-import "../extensions/Roles.sol";
 
 contract GovernanceTokenV2Mock is GovernanceToken {
     function transfer(address, uint256) public virtual override returns (bool) {

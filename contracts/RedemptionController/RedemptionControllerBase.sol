@@ -2,10 +2,13 @@
 pragma solidity 0.8.16;
 
 import "./IRedemptionController.sol";
-import "hardhat/console.sol";
+import "../extensions/DAORegistryProxy.sol";
 
 // The contract tells how many tokens are redeemable by Contributors
-abstract contract RedemptionControllerBase is IRedemptionController {
+abstract contract RedemptionControllerBase is
+    IRedemptionController,
+    DAORegistryProxy
+{
     struct Redeemable {
         uint256 amount;
         uint256 mintTimestamp;

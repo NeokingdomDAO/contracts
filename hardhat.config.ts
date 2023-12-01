@@ -78,7 +78,7 @@ const config: HardhatUserConfig = {
       accounts: [TEVMOS_PRIVATE_KEY],
     },
     evmos: {
-      url: "https://eth.bd.evmos.org:8545",
+      url: "https://evmos-evm.publicnode.com",
       accounts: [EVMOS_PRIVATE_KEY],
     },
   },

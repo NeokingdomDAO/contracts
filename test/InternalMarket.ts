@@ -691,6 +691,32 @@ describe("InternalMarket", async () => {
       });
     });
 
+    describe("deposit", async () => {
+      it("should call deposit on tokenInternal", async () => {
+        await internalMarket.connect(bob).deposit(10);
+        expect(governanceToken.wrap).calledWith(bob.address, 10);
+      });
+
+      it("should emit a Deposit event", async () => {
+        await expect(internalMarket.connect(bob).deposit(10))
+          .to.emit(internalMarket, "Deposited")
+          .withArgs(bob.address, 10);
+      });
+    });
+
+    describe("finalizeDeposit", async () => {
+      it("should call settle on tokenInternal", async () => {
+        await internalMarket.connect(bob).finalizeDeposit();
+        expect(governanceToken.settleTokens).calledWith(bob.address);
+      });
+
+      it("should emit a Settled event", async () => {
+        await expect(internalMarket.connect(bob).finalizeDeposit())
+          .to.emit(internalMarket, "Settled")
+          .withArgs(bob.address);
+      });
+    });
+
     describe("withdraw", async () => {
       let ts: number;
 

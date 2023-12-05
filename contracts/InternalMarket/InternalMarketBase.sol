@@ -18,6 +18,8 @@ contract InternalMarketBase {
 
     event OfferMatched(uint128 id, address from, address to, uint256 amount);
     event Withdrawn(address from, address to, uint256 amount);
+    event Deposited(address from, uint256 amount);
+    event Settled(address from);
 
     struct Offer {
         uint256 expiredAt;
@@ -221,10 +223,12 @@ contract InternalMarketBase {
 
     function _deposit(address to, uint256 amount) internal virtual {
         tokenInternal.wrap(to, amount);
+        emit Deposited(to, amount);
     }
 
     function _finalizeDeposit(address to) internal virtual {
         tokenInternal.settleTokens(to);
+        emit Settled(to);
     }
 
     function _redeem(address from, uint256 amount) internal virtual {

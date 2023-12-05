@@ -177,6 +177,14 @@ abstract contract ResolutionManagerBase {
             executionTo.length == executionData.length,
             "Resolution: length mismatch"
         );
+        require(
+            addressedContributor == address(0) ||
+                _shareholderRegistry.isAtLeast(
+                    _shareholderRegistry.CONTRIBUTOR_STATUS(),
+                    addressedContributor
+                ),
+            "Resolution: excluded address is not a contributor"
+        );
         uint256 resolutionId = _currentResolutionId++;
         emit ResolutionCreated(msg.sender, resolutionId);
 

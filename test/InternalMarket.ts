@@ -219,7 +219,7 @@ describe("InternalMarket", async () => {
           await mineEVMBlock();
         });
         it("should call afterRedeem on redemptionController", async () => {
-          await internalMarket.connect(alice).redeem(50);
+          await internalMarket.redeem(alice.address, 50);
 
           expect(redemption.afterRedeem).calledWith(alice.address, 50);
         });
@@ -237,7 +237,7 @@ describe("InternalMarket", async () => {
           });
 
           it("should burn the 10 DAO tokens for 10 USDC of the reserve", async () => {
-            await internalMarket.connect(alice).redeem(parseEther("10"));
+            await internalMarket.redeem(alice.address, parseEther("10"));
             expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("10")
@@ -263,7 +263,7 @@ describe("InternalMarket", async () => {
           });
 
           it("should burn 10 DAO token for 20 USDC", async () => {
-            await internalMarket.connect(alice).redeem(parseEther("10"));
+            await internalMarket.redeem(alice.address, parseEther("10"));
 
             expect(governanceToken.burn).calledWith(
               internalMarket.address,
@@ -290,7 +290,7 @@ describe("InternalMarket", async () => {
           });
 
           it("should burn the 10 DAO tokens for 11.222444 USDC", async () => {
-            await internalMarket.connect(alice).redeem(parseEther("10"));
+            await internalMarket.redeem(alice.address, parseEther("10"));
             expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("10")
@@ -316,7 +316,7 @@ describe("InternalMarket", async () => {
           });
 
           it("should burn the 11 DAO tokens for 5.5 USDC", async () => {
-            await internalMarket.connect(alice).redeem(parseEther("11"));
+            await internalMarket.redeem(alice.address, parseEther("11"));
             expect(governanceToken.burn).calledWith(
               internalMarket.address,
               parseEther("11")
@@ -329,7 +329,7 @@ describe("InternalMarket", async () => {
           });
 
           it("should exchange the 1 DAO token sat for 0 USDC sats", async () => {
-            await internalMarket.connect(alice).redeem(1);
+            await internalMarket.redeem(alice.address, 1);
             expect(governanceToken.burn).calledWith(internalMarket.address, 1);
             expect(usdc.transferFrom).calledWith(
               reserve.address,
@@ -361,7 +361,7 @@ describe("InternalMarket", async () => {
               .reverts("ERC20: burn amount exceeds balance");
             // smock2 bug causes this error rather than the faked one
             await expect(
-              internalMarket.connect(alice).redeem(parseEther("70"))
+              internalMarket.redeem(alice.address, parseEther("70"))
             ).revertedWith("function returned an unexpected amount of data");
           });
 
@@ -372,13 +372,13 @@ describe("InternalMarket", async () => {
               .whenCalledWith(alice.address, parseEther("10"))
               .reverts("ERC20: burn amount exceeds balance");
             await expect(
-              internalMarket.connect(alice).redeem(parseEther("60"))
+              internalMarket.redeem(alice.address, parseEther("60"))
             ).revertedWith("function returned an unexpected amount of data");
           });
 
           describe("when user redeems 50 tokens", async () => {
             beforeEach(async () => {
-              await internalMarket.connect(alice).redeem(parseEther("50"));
+              await internalMarket.redeem(alice.address, parseEther("50"));
             });
 
             it("should burn 50 tokens from market", async () => {
@@ -408,13 +408,13 @@ describe("InternalMarket", async () => {
 
           it("should fail when the user redeems 70 tokens", async () => {
             await expect(
-              internalMarket.connect(alice).redeem(parseEther("70"))
+              internalMarket.redeem(alice.address, parseEther("70"))
             ).revertedWith("function returned an unexpected amount of data");
           });
 
           describe("when the user redeems 60 tokens", async () => {
             beforeEach(async () => {
-              await internalMarket.connect(alice).redeem(parseEther("60"));
+              await internalMarket.redeem(alice.address, parseEther("60"));
             });
 
             it("should burn 10 tokens from alice", async () => {
@@ -442,7 +442,7 @@ describe("InternalMarket", async () => {
 
           describe("when the user redeems 50 tokens", async () => {
             beforeEach(async () => {
-              await internalMarket.connect(alice).redeem(parseEther("50"));
+              await internalMarket.redeem(alice.address, parseEther("50"));
             });
 
             it("should not burn 10 tokens from alice", async () => {

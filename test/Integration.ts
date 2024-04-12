@@ -1088,7 +1088,7 @@ describe("Integration", async () => {
         e(4)
       );
 
-      await internalMarket.connect(user1).redeem(e(10));
+      await internalMarket.redeem(user1.address, e(10));
       // Chaining two changeTokenBalances seems to execute the "redeem"
       // function twice. Anyway, this second redeem should fail.
       /*
@@ -1111,7 +1111,7 @@ describe("Integration", async () => {
       );
       expect(await tokenMock.balanceOf(internalMarket.address)).equal(0);
 
-      await expect(internalMarket.connect(user1).redeem(e(4))).revertedWith(
+      await expect(internalMarket.redeem(user1.address, e(4))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
 
@@ -1121,17 +1121,17 @@ describe("Integration", async () => {
       await internalMarket.connect(user2).withdraw(free2.address, e(90));
       await timeTravel(redemptionStartDays - offerDurationDays, true);
       // then tries to redeem but fails because not enough balance.
-      await expect(internalMarket.connect(user2).redeem(e(90))).revertedWith(
+      await expect(internalMarket.redeem(user2.address, e(90))).revertedWith(
         "ERC20: burn amount exceeds balance"
       );
 
       // then tries to redeem 6 and succeeds.
-      await internalMarket.connect(user2).redeem(e(6));
+      await internalMarket.redeem(user2.address, e(6));
 
       // then 4 after the redeem window and fails
       await timeTravel(redemptionWindowDays, true);
 
-      await expect(internalMarket.connect(user2).redeem(e(4))).revertedWith(
+      await expect(internalMarket.redeem(user2.address, e(4))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
     });
@@ -1156,12 +1156,12 @@ describe("Integration", async () => {
         // user2 offer all tokens, hoping to redeem all of them...
         await internalMarket.connect(user1).makeOffer(e(20));
         await timeTravel(redemptionStartDays, true);
-        await expect(internalMarket.connect(user1).redeem(e(20))).revertedWith(
+        await expect(internalMarket.redeem(user1.address, e(20))).revertedWith(
           "Redemption controller: amount exceeds redeemable balance"
         );
 
         // ...but they can only redeem those that were minted directly to them
-        await internalMarket.connect(user1).redeem(e(10));
+        await internalMarket.redeem(user1.address, e(10));
         expect(await tokenMock.balanceOf(user1.address)).equal(
           e(INITIAL_USDC + 10)
         );
@@ -1247,7 +1247,7 @@ describe("Integration", async () => {
       // 53 days later (60 since beginning) user1 redeems 3 tokens
       await timeTravel(redemptionStartDays - offerDurationDays, true);
       daysSinceMinting += redemptionStartDays - offerDurationDays;
-      await internalMarket.connect(user1).redeem(e(3));
+      await internalMarket.redeem(user1.address, e(3));
       tokensRedeemed += 3;
 
       // at the end of the redemption window, redemption of the 7 remaining
@@ -1255,7 +1255,7 @@ describe("Integration", async () => {
       await timeTravel(redemptionWindowDays, true);
       daysSinceMinting += redemptionWindowDays;
 
-      await expect(internalMarket.connect(user1).redeem(e(7))).revertedWith(
+      await expect(internalMarket.redeem(user1.address, e(7))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
 
@@ -1265,7 +1265,7 @@ describe("Integration", async () => {
       // after 60 days, user1 redeems 4 tokens
       await timeTravel(redemptionStartDays, true);
       daysSinceMinting += redemptionStartDays;
-      await internalMarket.connect(user1).redeem(e(4));
+      await internalMarket.redeem(user1.address, e(4));
       tokensRedeemed += 4;
 
       // redemption window expires
@@ -1287,7 +1287,7 @@ describe("Integration", async () => {
       // 67 days later, redemption fails
       await timeTravel(redemptionStartDays + redemptionWindowDays, true);
 
-      await expect(internalMarket.connect(user1).redeem(e(3))).revertedWith(
+      await expect(internalMarket.redeem(user1.address, e(3))).revertedWith(
         "Redemption controller: amount exceeds redeemable balance"
       );
 
@@ -1311,7 +1311,7 @@ describe("Integration", async () => {
       );
 
       // user1 redeems their only token and withdraws the others, sobbing again
-      await internalMarket.connect(user1).redeem(e(1));
+      await internalMarket.redeem(user1.address, e(1));
       tokensRedeemed += 1;
       await internalMarket.connect(user1).withdraw(user1.address, e(13));
       await internalMarket.connect(user1).deposit(e(13));
@@ -1538,7 +1538,7 @@ describe("Integration", async () => {
       });
 
       await timeTravel(redemptionStartDays, true);
-      await internalMarket.connect(user1).redeem(e(20));
+      await internalMarket.redeem(user1.address, e(20));
       await check({
         // -20
         internalSupply: 95,

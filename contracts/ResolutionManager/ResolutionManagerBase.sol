@@ -383,6 +383,7 @@ abstract contract ResolutionManagerBase {
             //if (!resolution.hasVoted[msg.sender]) {
             // Did sender's delegate vote?
             if (
+                !resolution.hasVoted[msg.sender] &&
                 resolution.hasVoted[delegate] &&
                 resolution.hasVotedYes[delegate]
             ) {

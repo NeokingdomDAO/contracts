@@ -291,6 +291,28 @@ describe("Integration", async () => {
       expect(resolutionResult).equal(true);
     });
 
+    it("bug #10", async () => {
+      await _makeContributor(user1, 65);
+      await _makeContributor(user2, 32);
+
+      await _delegate(user1, user2); // yesTotalVote == 33
+
+      const resolutionId = await _prepareResolution();
+      await _makeVotable(resolutionId);
+
+      await _vote(user1, false, resolutionId);
+      await _vote(user2, true, resolutionId);
+      await _vote(user1, true, resolutionId);
+
+      await _endResolution();
+
+      const resolutionResult = await resolutionManager.getResolutionResult(
+        resolutionId
+      );
+
+      expect(resolutionResult).equal(true);
+    });
+
     // Mint token to a multiple shareholder
     // Promote them to contributor
     // Self-delegate

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "../extensions/DAORegistryProxy.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "./IVoting.sol";
 
-abstract contract VotingBase is IVoting {
+abstract contract VotingBase is IVoting, DAORegistryProxy {
     event DelegateChanged(
         address indexed delegator,
         address currentDelegate,
@@ -18,9 +19,6 @@ abstract contract VotingBase is IVoting {
         uint256 newVotingPower
     );
 
-    IShareholderRegistry internal _shareholderRegistry;
-    IERC20Upgradeable internal _token;
-
     bytes32 internal _contributorRole;
 
     mapping(address => address) internal _delegates;
@@ -29,16 +27,9 @@ abstract contract VotingBase is IVoting {
 
     uint256 internal _totalVotingPower;
 
-    // Abstract
-    function setToken(IERC20Upgradeable token) external virtual;
-
     function beforeRemoveContributor(address account) external virtual;
 
     function afterAddContributor(address account) external virtual;
-
-    function setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) external virtual;
 
     function canVote(address account) public view virtual returns (bool) {
         return getDelegate(account) != address(0);
@@ -75,17 +66,6 @@ abstract contract VotingBase is IVoting {
 
     // Internal
 
-    function _setToken(IERC20Upgradeable token) internal virtual {
-        _token = token;
-    }
-
-    function _setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) internal virtual {
-        _shareholderRegistry = shareholderRegistry;
-        _contributorRole = _shareholderRegistry.CONTRIBUTOR_STATUS();
-    }
-
     function _afterTokenTransfer(
         address from,
         address to,
@@ -106,11 +86,11 @@ abstract contract VotingBase is IVoting {
         // - participants are contributors
         // (this automatically enforces also that the address is not 0)
         require(
-            _shareholderRegistry.isAtLeast(_contributorRole, delegator),
+            getShareholderRegistry().isAtLeast(_contributorRole, delegator),
             "Voting: only contributors can delegate."
         );
         require(
-            _shareholderRegistry.isAtLeast(_contributorRole, newDelegate),
+            getShareholderRegistry().isAtLeast(_contributorRole, newDelegate),
             "Voting: only contributors can be delegated."
         );
         // - no sub delegation allowed
@@ -138,8 +118,8 @@ abstract contract VotingBase is IVoting {
 
         _beforeDelegate(delegator);
 
-        uint256 delegatorBalance = _token.balanceOf(delegator) +
-            _shareholderRegistry.balanceOf(delegator);
+        uint256 delegatorBalance = getGovernanceToken().balanceOf(delegator) +
+            getShareholderRegistry().balanceOf(delegator);
         _delegates[delegator] = newDelegate;
 
         if (delegator != newDelegate && newDelegate != address(0)) {
@@ -197,8 +177,9 @@ abstract contract VotingBase is IVoting {
 
         delete _delegates[account];
 
-        uint256 individualVotingPower = _token.balanceOf(account) +
-            _shareholderRegistry.balanceOf(account);
+        uint256 individualVotingPower = getGovernanceToken().balanceOf(
+            account
+        ) + getShareholderRegistry().balanceOf(account);
         if (individualVotingPower > 0) {
             _moveVotingPower(account, address(0), individualVotingPower);
         }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "../extensions/DAORegistryProxy.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../ShareholderRegistry/IShareholderRegistry.sol";
 import "../RedemptionController/IRedemptionController.sol";
@@ -8,7 +9,7 @@ import "./IDIAOracleV2.sol";
 import "../NeokingdomToken/INeokingdomToken.sol";
 import "../GovernanceToken/IGovernanceToken.sol";
 
-contract InternalMarketBase {
+contract InternalMarketBase is DAORegistryProxy {
     event OfferCreated(
         uint128 id,
         address from,
@@ -30,14 +31,10 @@ contract InternalMarketBase {
         mapping(uint128 => Offer) offer;
     }
 
-    IGovernanceToken public tokenInternal;
-
     // Cannot use IERC20 here because it lacks `decimals`
     ERC20 public exchangeToken;
 
-    IRedemptionController public redemptionController;
     IDIAOracleV2 public priceOracle;
-    IShareholderRegistry internal _shareholderRegistry;
 
     address public reserve;
     uint256 public offerDuration;
@@ -46,11 +43,7 @@ contract InternalMarketBase {
 
     mapping(address => uint256) internal _vaultContributors;
 
-    function _initialize(
-        IGovernanceToken _governanceToken,
-        uint256 _offerDuration
-    ) internal virtual {
-        tokenInternal = _governanceToken;
+    function _initialize(uint256 _offerDuration) internal virtual {
         offerDuration = _offerDuration;
     }
 
@@ -60,16 +53,6 @@ contract InternalMarketBase {
     ) internal virtual returns (uint128) {
         offers.offer[offers.end] = offer;
         return offers.end++;
-    }
-
-    function _setTokenInternal(IGovernanceToken token) internal virtual {
-        tokenInternal = token;
-    }
-
-    function _setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) internal virtual {
-        _shareholderRegistry = shareholderRegistry;
     }
 
     function _setExchangePair(
@@ -82,12 +65,6 @@ contract InternalMarketBase {
 
     function _setReserve(address reserve_) internal virtual {
         reserve = reserve_;
-    }
-
-    function _setRedemptionController(
-        IRedemptionController redemptionController_
-    ) internal virtual {
-        redemptionController = redemptionController_;
     }
 
     function _setOfferDuration(uint duration) internal virtual {
@@ -103,10 +80,10 @@ contract InternalMarketBase {
         emit OfferCreated(id, from, amount, expiredAt);
 
         require(
-            tokenInternal.transferFrom(from, address(this), amount),
+            getGovernanceToken().transferFrom(from, address(this), amount),
             "InternalMarketBase: transfer failed"
         );
-        redemptionController.afterOffer(from, amount);
+        getRedemptionController().afterOffer(from, amount);
     }
 
     function _beforeWithdraw(address from, uint256 amount) internal virtual {
@@ -179,7 +156,7 @@ contract InternalMarketBase {
     ) internal virtual {
         _beforeMatchOffer(from, to, amount);
         require(
-            tokenInternal.transfer(to, amount),
+            getGovernanceToken().transfer(to, amount),
             "InternalMarketBase: transfer failed"
         );
         require(
@@ -194,15 +171,15 @@ contract InternalMarketBase {
         uint256 amount
     ) internal virtual {
         if (
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().CONTRIBUTOR_STATUS(),
                 from
             )
         ) {
             _beforeWithdraw(from, amount);
-            tokenInternal.unwrap(address(this), to, amount);
+            getGovernanceToken().unwrap(address(this), to, amount);
         } else {
-            tokenInternal.unwrap(from, to, amount);
+            getGovernanceToken().unwrap(from, to, amount);
         }
 
         emit Withdrawn(from, to, amount);
@@ -210,21 +187,21 @@ contract InternalMarketBase {
 
     function _burn(address from, uint256 amount) internal virtual {
         assert(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().CONTRIBUTOR_STATUS(),
                 from
             )
         );
         _beforeWithdraw(from, amount);
-        tokenInternal.burn(address(this), amount);
+        getGovernanceToken().burn(address(this), amount);
     }
 
     function _deposit(address to, uint256 amount) internal virtual {
-        tokenInternal.wrap(to, amount);
+        getGovernanceToken().wrap(to, amount);
     }
 
     function _finalizeDeposit(address to) internal virtual {
-        tokenInternal.settleTokens(to);
+        getGovernanceToken().settleTokens(to);
     }
 
     function _redeem(address from, uint256 amount) internal virtual {
@@ -233,7 +210,7 @@ contract InternalMarketBase {
             uint256 difference = amount - withdrawableBalance;
             // governanceToken is an address set by the operators of the DAO, hence trustworthy
             // slither-disable-start reentrancy-no-eth
-            tokenInternal.burn(from, difference);
+            getGovernanceToken().burn(from, difference);
             _burn(from, withdrawableBalance);
             // slither-disable-end reentrancy-no-eth
         } else {
@@ -246,7 +223,7 @@ contract InternalMarketBase {
             exchangeToken.transferFrom(reserve, from, _convertToUSDC(amount)),
             "InternalMarketBase: transfer failed"
         );
-        redemptionController.afterRedeem(from, amount);
+        getRedemptionController().afterRedeem(from, amount);
     }
 
     function _convertToUSDC(

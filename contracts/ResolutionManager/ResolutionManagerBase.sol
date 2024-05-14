@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "../ShareholderRegistry/IShareholderRegistry.sol";
-import "../GovernanceToken/IGovernanceToken.sol";
-import "../Voting/IVoting.sol";
+import "../extensions/DAORegistryProxy.sol";
 
-abstract contract ResolutionManagerBase {
+abstract contract ResolutionManagerBase is DAORegistryProxy {
     event ResolutionCreated(address indexed from, uint256 indexed resolutionId);
 
     event ResolutionUpdated(address indexed from, uint256 indexed resolutionId);
@@ -71,23 +69,11 @@ abstract contract ResolutionManagerBase {
 
     uint256 internal _currentResolutionId;
 
-    IShareholderRegistry internal _shareholderRegistry;
-    IGovernanceToken internal _governanceToken;
-    IVoting internal _voting;
-
     ResolutionType[] public resolutionTypes;
 
     mapping(uint256 => Resolution) public resolutions;
 
-    function _initialize(
-        IShareholderRegistry shareholderRegistry,
-        IGovernanceToken governanceToken,
-        IVoting voting
-    ) internal {
-        _shareholderRegistry = shareholderRegistry;
-        _governanceToken = governanceToken;
-        _voting = voting;
-
+    function _initialize() internal {
         // TODO: check if there are any rounding errors
         _addResolutionType("amendment", 66, 14 days, 6 days, false);
         _addResolutionType("capitalChange", 66, 14 days, 6 days, false);
@@ -124,27 +110,11 @@ abstract contract ResolutionManagerBase {
         _;
     }
 
-    function _setShareholderRegistry(
-        IShareholderRegistry shareholderRegistry
-    ) internal virtual {
-        _shareholderRegistry = shareholderRegistry;
-    }
-
-    function _setGovernanceToken(
-        IGovernanceToken governanceToken
-    ) internal virtual {
-        _governanceToken = governanceToken;
-    }
-
-    function _setVoting(IVoting voting) internal virtual {
-        _voting = voting;
-    }
-
     function _snapshotAll() internal virtual returns (uint256) {
-        uint256 snapshotId = _shareholderRegistry.snapshot();
+        uint256 snapshotId = getShareholderRegistry().snapshot();
         require(
-            _governanceToken.snapshot() == snapshotId &&
-                _voting.snapshot() == snapshotId,
+            getGovernanceToken().snapshot() == snapshotId &&
+                getVoting().snapshot() == snapshotId,
             "ResolutionManager: snapshot ids are inconsistent"
         );
 
@@ -163,8 +133,8 @@ abstract contract ResolutionManagerBase {
             resolutionTypeId
         ];
         require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.CONTRIBUTOR_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().CONTRIBUTOR_STATUS(),
                 msg.sender
             ),
             "Resolution: only contributor can create"
@@ -197,8 +167,8 @@ abstract contract ResolutionManagerBase {
     ) internal virtual onlyPending(resolutionId) exists(resolutionId) {
         emit ResolutionApproved(msg.sender, resolutionId);
         require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.MANAGING_BOARD_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().MANAGING_BOARD_STATUS(),
                 msg.sender
             ),
             "Resolution: only managing board can approve"
@@ -217,13 +187,13 @@ abstract contract ResolutionManagerBase {
         bytes32 originalStatus;
 
         if (addressedContributor != address(0)) {
-            originalDelegate = _voting.getDelegate(addressedContributor);
-            originalStatus = _shareholderRegistry.getStatus(
+            originalDelegate = getVoting().getDelegate(addressedContributor);
+            originalStatus = getShareholderRegistry().getStatus(
                 addressedContributor
             );
             // Downgrading to investor removes delegation
-            _shareholderRegistry.setStatus(
-                _shareholderRegistry.INVESTOR_STATUS(),
+            getShareholderRegistry().setStatus(
+                getShareholderRegistry().INVESTOR_STATUS(),
                 addressedContributor
             );
         }
@@ -231,12 +201,15 @@ abstract contract ResolutionManagerBase {
         resolution.snapshotId = _snapshotAll();
 
         if (addressedContributor != address(0)) {
-            _shareholderRegistry.setStatus(
+            getShareholderRegistry().setStatus(
                 originalStatus,
                 addressedContributor
             );
             if (addressedContributor != originalDelegate) {
-                _voting.delegateFrom(addressedContributor, originalDelegate);
+                getVoting().delegateFrom(
+                    addressedContributor,
+                    originalDelegate
+                );
             }
         }
     }
@@ -247,8 +220,8 @@ abstract contract ResolutionManagerBase {
         emit ResolutionRejected(msg.sender, resolutionId);
 
         require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.MANAGING_BOARD_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().MANAGING_BOARD_STATUS(),
                 msg.sender
             ),
             "Resolution: only managing board can reject"
@@ -276,8 +249,8 @@ abstract contract ResolutionManagerBase {
         );
 
         require(
-            _shareholderRegistry.isAtLeast(
-                _shareholderRegistry.MANAGING_BOARD_STATUS(),
+            getShareholderRegistry().isAtLeast(
+                getShareholderRegistry().MANAGING_BOARD_STATUS(),
                 msg.sender
             ),
             "Resolution: only managing board can update"
@@ -342,7 +315,7 @@ abstract contract ResolutionManagerBase {
         );
 
         require(
-            _voting.canVoteAt(msg.sender, resolution.snapshotId),
+            getVoting().canVoteAt(msg.sender, resolution.snapshotId),
             "Resolution: account cannot vote"
         );
 
@@ -359,11 +332,11 @@ abstract contract ResolutionManagerBase {
             "Resolution: not votable"
         );
 
-        uint256 votingPower = _voting.getVotingPowerAt(
+        uint256 votingPower = getVoting().getVotingPowerAt(
             msg.sender,
             resolution.snapshotId
         );
-        address delegate = _voting.getDelegateAt(
+        address delegate = getVoting().getDelegateAt(
             msg.sender,
             resolution.snapshotId
         );
@@ -371,11 +344,11 @@ abstract contract ResolutionManagerBase {
         // If sender has a delegate, load voting power from GovernanceToken
         if (delegate != msg.sender) {
             votingPower =
-                _governanceToken.balanceOfAt(
+                getGovernanceToken().balanceOfAt(
                     msg.sender,
                     resolution.snapshotId
                 ) +
-                _shareholderRegistry.balanceOfAt(
+                getShareholderRegistry().balanceOfAt(
                     msg.sender,
                     resolution.snapshotId
                 );
@@ -467,7 +440,7 @@ abstract contract ResolutionManagerBase {
         Resolution storage resolution = resolutions[resolutionId];
         require(
             voter != resolution.addressedContributor &&
-                _voting.canVoteAt(voter, resolution.snapshotId),
+                getVoting().canVoteAt(voter, resolution.snapshotId),
             "Resolution: account cannot vote"
         );
 
@@ -475,15 +448,18 @@ abstract contract ResolutionManagerBase {
         hasVoted = resolution.hasVoted[voter];
 
         if (
-            _voting.getDelegateAt(voter, resolution.snapshotId) != voter &&
+            getVoting().getDelegateAt(voter, resolution.snapshotId) != voter &&
             hasVoted
         ) {
             votingPower =
-                _governanceToken.balanceOfAt(voter, resolution.snapshotId) +
-                _shareholderRegistry.balanceOfAt(voter, resolution.snapshotId);
+                getGovernanceToken().balanceOfAt(voter, resolution.snapshotId) +
+                getShareholderRegistry().balanceOfAt(
+                    voter,
+                    resolution.snapshotId
+                );
         } else {
             votingPower =
-                _voting.getVotingPowerAt(voter, resolution.snapshotId) -
+                getVoting().getVotingPowerAt(voter, resolution.snapshotId) -
                 resolution.lostVotingPower[voter];
         }
     }
@@ -495,7 +471,7 @@ abstract contract ResolutionManagerBase {
         ResolutionType storage resolutionType = resolutionTypes[
             resolution.resolutionTypeId
         ];
-        uint256 totalVotingPower = _voting.getTotalVotingPowerAt(
+        uint256 totalVotingPower = getVoting().getTotalVotingPowerAt(
             resolution.snapshotId
         );
 

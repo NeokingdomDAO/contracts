@@ -3,37 +3,25 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ShareholderRegistrySnapshot.sol";
-import { Roles } from "../extensions/Roles.sol";
-import "../extensions/DAORoles.sol";
-import "../extensions/HasRole.sol";
 
 /**
  * @title ShareholderRegistry
  * @notice ShareholderRegistry provides an implementation of a registry system for
  * a) holding and distributing shares; and b) set the status of the holders.
  */
-contract ShareholderRegistry is
-    Initializable,
-    ShareholderRegistrySnapshot,
-    HasRole
-{
+contract ShareholderRegistry is Initializable, ShareholderRegistrySnapshot {
     /**
      * @notice Initializes the ShareholderRegistry contract with the given token name, symbol, and DAO roles.
-     * @param roles DAORoles struct containing DAO-specific roles.
+     * @param daoRegistry DAORegistry struct containing DAO-specific roles.
      * @param name string value representing the name of the token.
      * @param symbol string value representing the symbol of the token.
      */
     function initialize(
-        DAORoles roles,
+        DAORegistry daoRegistry,
         string memory name,
         string memory symbol
     ) public initializer {
-        require(
-            address(roles) != address(0),
-            "ShareholderRegistry: 0x0 not allowed"
-        );
-        _initialize(name, symbol);
-        _setRoles(roles);
+        _initialize(daoRegistry, name, symbol);
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -53,7 +41,7 @@ contract ShareholderRegistry is
         public
         virtual
         override
-        onlyRole(Roles.RESOLUTION_ROLE)
+        onlyResolutionManager
         returns (uint256)
     {
         return _snapshot();
@@ -68,24 +56,8 @@ contract ShareholderRegistry is
     function setStatus(
         bytes32 status,
         address account
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _setStatus(status, account);
-    }
-
-    /**
-     * @notice Sets the voting implementation for the registry.
-     * @dev Requires the sender to have the OPERATOR_ROLE.
-     * @param voting contract instance to set as the current voting contract.
-     */
-    function setVoting(
-        IVoting voting
-    )
-        external
-        virtual
-        onlyRole(Roles.OPERATOR_ROLE)
-        zeroCheck(address(voting))
-    {
-        _setVoting(voting);
     }
 
     /**
@@ -97,7 +69,7 @@ contract ShareholderRegistry is
     function mint(
         address account,
         uint256 amount
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         _mint(account, amount);
     }
 
@@ -110,7 +82,7 @@ contract ShareholderRegistry is
     function burn(
         address account,
         uint256 amount
-    ) external virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) external virtual onlyResolutionManager {
         _burn(account, amount);
     }
 
@@ -121,7 +93,7 @@ contract ShareholderRegistry is
      */
     function batchTransferFromDAO(
         address[] memory recipients
-    ) public virtual onlyRole(Roles.RESOLUTION_ROLE) {
+    ) public virtual onlyResolutionManager {
         super._batchTransferFromDAO(recipients);
     }
 
@@ -137,7 +109,7 @@ contract ShareholderRegistry is
         address from,
         address to,
         uint256 amount
-    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) returns (bool) {
+    ) public virtual override onlyResolutionManager returns (bool) {
         _transfer(from, to, amount);
         return true;
     }
@@ -152,7 +124,7 @@ contract ShareholderRegistry is
     function transfer(
         address to,
         uint256 amount
-    ) public virtual override onlyRole(Roles.RESOLUTION_ROLE) returns (bool) {
+    ) public virtual override onlyResolutionManager returns (bool) {
         return super.transfer(to, amount);
     }
 }

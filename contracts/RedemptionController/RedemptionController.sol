@@ -3,9 +3,6 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./RedemptionControllerBase.sol";
-import { Roles } from "../extensions/Roles.sol";
-import "../extensions/DAORoles.sol";
-import "../extensions/HasRole.sol";
 
 /**
  * @title RedemptionController
@@ -25,21 +22,13 @@ import "../extensions/HasRole.sol";
  *      redeemable. They can only be moved outside the vault (contributor or
  *      secondary).
  */
-contract RedemptionController is
-    Initializable,
-    HasRole,
-    RedemptionControllerBase
-{
+contract RedemptionController is Initializable, RedemptionControllerBase {
     /**
      * @dev Initializes the smart contract.
-     * @param roles The addresses of DAORoles for this contract.
+     * @param daoRegistry The addresses of DAORoles for this contract.
      */
-    function initialize(DAORoles roles) public initializer {
-        require(
-            address(roles) != address(0),
-            "RedemptionController: 0x0 not allowed"
-        );
-        _setRoles(roles);
+    function initialize(DAORegistry daoRegistry) public initializer {
+        __DAORegistryProxy_init(daoRegistry);
         _initialize();
     }
 
@@ -58,7 +47,7 @@ contract RedemptionController is
     function afterMint(
         address to,
         uint256 amount
-    ) external override onlyRole(Roles.TOKEN_MANAGER_ROLE) {
+    ) external override onlyGovernanceToken {
         _afterMint(to, amount);
     }
 
@@ -71,7 +60,7 @@ contract RedemptionController is
     function afterOffer(
         address account,
         uint256 amount
-    ) external override onlyRole(Roles.TOKEN_MANAGER_ROLE) {
+    ) external override onlyInternalMarket {
         _afterOffer(account, amount);
     }
 
@@ -84,7 +73,7 @@ contract RedemptionController is
     function afterRedeem(
         address account,
         uint256 amount
-    ) external override onlyRole(Roles.TOKEN_MANAGER_ROLE) {
+    ) external override onlyInternalMarket {
         _afterRedeem(account, amount);
     }
 }
